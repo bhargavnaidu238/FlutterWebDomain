@@ -15,7 +15,7 @@ class ApiConfig {
     return _localAndroid;
   }
   */
-  static String get baseUrl => 'https://test-host-server-tamg.onrender.com';
+  static String get baseUrl = 'https://test-host-server-tamg.onrender.com';
 
 
   /// 🔐 Razorpay Key IDs (SAFE TO KEEP IN FRONTEND)
