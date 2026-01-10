@@ -71,7 +71,7 @@ class ApiService {
     required String email,
     required String password,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}/login');
+    final url = Uri.parse('${ApiConfig.baseUrl}/weblogin');
     final body = jsonEncode({'email': email, 'password': password});
 
     try {
