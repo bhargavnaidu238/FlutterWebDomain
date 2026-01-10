@@ -8,16 +8,15 @@ class ApiConfig {
   static const String _localAndroid = 'http://10.0.2.2:8080';
   static const String _production = 'https://test-host-server-tamg.onrender.com';
 
-  /*
+
   static String get baseUrl {
     if (kIsWeb && kReleaseMode) return _production;
     if (kIsWeb) return _localWeb;
     return _localAndroid;
   }
-  */
-  static String get baseUrl = 'https://test-host-server-tamg.onrender.com';
 
-
+  //static String get baseUrl = 'https://test-host-server-tamg.onrender.com';
+  
   /// 🔐 Razorpay Key IDs (SAFE TO KEEP IN FRONTEND)
   static const String _razorpayTestKey = 'rzp_test_RyBLHvNxl52vtv';
   static const String _razorpayLiveKey = 'rzp_live_xxxxxxxx';
