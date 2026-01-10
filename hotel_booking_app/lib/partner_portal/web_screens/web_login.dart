@@ -22,10 +22,13 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
   // ===================== LOGIN FUNCTION =====================
   Future<void> login() async {
+    debugPrint("🟡 LOGIN BUTTON CLICKED");
+
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
+      debugPrint("🔴 VALIDATION FAILED: EMPTY FIELDS");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please enter email and password")),
       );
@@ -33,6 +36,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
     }
 
     if (!RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$').hasMatch(email)) {
+      debugPrint("🔴 VALIDATION FAILED: INVALID EMAIL");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Enter a valid email")),
       );
@@ -40,6 +44,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
     }
 
     if (password.length < 6) {
+      debugPrint("🔴 VALIDATION FAILED: PASSWORD TOO SHORT");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Password must be at least 6 characters")),
       );
@@ -47,9 +52,11 @@ class _WebLoginPageState extends State<WebLoginPage> {
     }
 
     setState(() => isLoading = true);
+    debugPrint("🟢 CALLING LOGIN API");
 
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/weblogin');
+      debugPrint("🌐 API URL => $url");
 
       final res = await http.post(
         url,
@@ -58,34 +65,54 @@ class _WebLoginPageState extends State<WebLoginPage> {
         'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
       );
 
+      debugPrint("📥 API STATUS CODE => ${res.statusCode}");
+      debugPrint("📥 API RESPONSE => ${res.body}");
+
       final data = json.decode(res.body);
 
       if (res.statusCode == 200 && data['status'] == 'success') {
+        debugPrint("✅ LOGIN SUCCESS");
+
         partnerDetails = Map<String, String>.from(data)
           ..removeWhere(
                 (key, value) => key == 'status' || key == 'message',
           );
 
-        if (!context.mounted) return;
+        debugPrint("📦 PARTNER DETAILS => $partnerDetails");
 
-        /// ✅ WEB-SAFE ROUTING
-        Navigator.pushReplacementNamed(
-          context,
+        if (!context.mounted) {
+          debugPrint("❌ CONTEXT NOT MOUNTED — NAVIGATION ABORTED");
+          return;
+        }
+
+        debugPrint("🚀 NAVIGATING TO /dashboard (ROOT NAVIGATOR)");
+
+        /// 🔥 CRITICAL FIX FOR FLUTTER WEB
+        Navigator.of(context, rootNavigator: true)
+            .pushReplacementNamed(
           '/dashboard',
           arguments: partnerDetails,
         );
+
+        debugPrint("✅ NAVIGATION CALL EXECUTED");
       } else {
+        debugPrint("❌ LOGIN FAILED: ${data['message']}");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data['message'] ?? "Login failed")),
         );
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint("🔥 EXCEPTION DURING LOGIN");
+      debugPrint(e.toString());
+      debugPrint(stack.toString());
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
+        debugPrint("🔵 LOADING STATE RESET");
       }
     }
   }
