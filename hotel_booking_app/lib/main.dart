@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
         return _noTransitionRoute(const LandingPage());
 
     // 🔐 Login Page (UI route)
-      case '/login':
+      case '/weblogin':
         return _noTransitionRoute(const WebLoginPage());
 
     // 📝 Register Page (UI route)
