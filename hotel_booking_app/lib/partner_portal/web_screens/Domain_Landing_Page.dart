@@ -55,7 +55,7 @@ class LandingPage extends StatelessWidget {
               const SizedBox(width: 12),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-                onPressed: () => Navigator.pushNamed(context, '/register'),
+                onPressed: () => Navigator.pushNamed(context, '/registerlogin'),
                 child: Text(
                   "Register",
                   style: TextStyle(color: Colors.green.shade700),

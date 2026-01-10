@@ -1,8 +1,7 @@
-import 'dart:convert';
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_strategy/url_strategy.dart';
+
 import 'partner_portal/web_screens/web_login.dart';
 import 'partner_portal/web_screens/web_register.dart';
 import 'partner_portal/web_screens/web_dashboard_page.dart';
@@ -45,66 +44,32 @@ class MyApp extends StatelessWidget {
   Route<dynamic> _generateRoute(RouteSettings settings) {
     switch (settings.name) {
 
-    // Landing Page
+    // 🌍 Landing Page
       case '/':
         return _noTransitionRoute(const LandingPage());
 
-    // Login Page
+    // 🔐 Login Page (UI route)
       case '/weblogin':
         return _noTransitionRoute(const WebLoginPage());
 
-    // Register Page
+    // 📝 Register Page (UI route)
       case '/register':
         return _noTransitionRoute(const WebRegisterPage());
 
-    // Dashboard (REFRESH-SAFE)
+    // 📊 Dashboard
       case '/dashboard':
-        final Map<String, String> partnerDetails =
-        _resolvePartnerDetails(settings.arguments);
-
-        if (partnerDetails.isEmpty) {
-          return _errorScreen(
-            "Session expired. Please login again.",
-          );
+        final args = settings.arguments as Map<String, String>?;
+        if (args == null) {
+          return _errorScreen("Missing partnerDetails for Dashboard");
         }
-
         return _noTransitionRoute(
-          WebDashboardPage(partnerDetails: partnerDetails),
+          WebDashboardPage(partnerDetails: args),
         );
 
-    // Unknown route
+    // ❌ Unknown route
       default:
         return _errorScreen("Route not found: ${settings.name}");
     }
-  }
-
-  /// Resolve partner details from:
-  /// 1. Navigator arguments
-  /// 2. sessionStorage (web refresh-safe)
-  Map<String, String> _resolvePartnerDetails(Object? args) {
-    // Navigator arguments (normal navigation)
-    if (args is Map<String, String> && args.isNotEmpty) {
-      if (kIsWeb) {
-        html.window.sessionStorage['partnerDetails'] =
-            jsonEncode(args);
-      }
-      return args;
-    }
-
-    // sessionStorage (page refresh / direct URL)
-    if (kIsWeb) {
-      final stored =
-      html.window.sessionStorage['partnerDetails'];
-      if (stored != null && stored.isNotEmpty) {
-        final decoded =
-        Map<String, dynamic>.from(jsonDecode(stored));
-        return decoded.map(
-              (key, value) => MapEntry(key, value.toString()),
-        );
-      }
-    }
-
-    return {};
   }
 
   /// Simple error screen
