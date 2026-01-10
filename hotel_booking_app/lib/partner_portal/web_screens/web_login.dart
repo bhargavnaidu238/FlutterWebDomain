@@ -68,12 +68,14 @@ class _WebLoginPageState extends State<WebLoginPage> {
         partnerDetails = Map<String, String>.from(data)
           ..removeWhere((key, value) => key == 'status' || key == 'message');
 
-        Navigator.pushReplacement(
+        if (!context.mounted) return;
+
+        Navigator.pushReplacementNamed(
           context,
-          MaterialPageRoute(
-            builder: (_) => WebDashboardPage(partnerDetails: partnerDetails),
-          ),
+          '/dashboard',
+          arguments: partnerDetails,
         );
+
       } else {
         // Display error message from backend
         ScaffoldMessenger.of(context).showSnackBar(
@@ -338,10 +340,10 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const WebRegisterPage()),
-                      );
+                      if (!context.mounted) return;
+
+                      Navigator.pushNamed(context, '/registerlogin');
+
                     },
                     child: const Text("Register", style: TextStyle(color: Colors.white70)),
                   ),
