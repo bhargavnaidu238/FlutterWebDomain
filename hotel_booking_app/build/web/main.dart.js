@@ -98387,10 +98387,10 @@ return new A.aR(B.u0,A.b1(A.c([q,B.eZ,A.ii(B.bn,s,30,30)],t.p),B.q,B.m,B.n),r)},
 J(a){var s=this,r=null,q=s.al8(a),p=s.al9(a),o=s.amF(),n=s.arl(),m=A.aL(20),l=A.c([new A.bf(0,B.I,B.cU,B.eO,10)],t.E),k=t.p
 return A.h0(r,r,A.i7(A.b1(A.c([q,p,o,n,A.bN(r,A.b1(B.Ux,B.q,B.m,B.n),B.t,r,r,new A.bw(B.fh,r,r,m,l,r,B.J),r,r,B.u_,B.cW,r,r,1/0),B.ql,A.ii(B.qS,A.c([s.w2(B.uC,B.eM,new A.afN()),s.w2(B.uB,B.E3,new A.afO()),s.w2(B.uz,B.E1,new A.afP()),s.w2(B.uA,B.pq,new A.afQ()),s.w2(B.uD,B.cs,new A.afR())],k),10,22),B.df,B.Ka,B.df],k),B.q,B.m,B.n),r,r,r,B.a4))}}
 A.afG.prototype={
-$0(){return A.RM(this.a,"/weblogin",t.X)},
+$0(){return A.RM(this.a,"/login",t.X)},
 $S:0}
 A.afH.prototype={
-$0(){return A.RM(this.a,"/registerlogin",t.X)},
+$0(){return A.RM(this.a,"/register",t.X)},
 $S:0}
 A.afK.prototype={
 $2(a,b){var s,r=null,q="Get Started",p="assets/LandingPageImages/LandingImage.png",o=t.p

@@ -49,13 +49,13 @@ class LandingPage extends StatelessWidget {
           Row(
             children: [
               TextButton(
-                onPressed: () => Navigator.pushNamed(context, '/weblogin'),
+                onPressed: () => Navigator.pushNamed(context, '/login'),
                 child: const Text("Login", style: TextStyle(color: Colors.white)),
               ),
               const SizedBox(width: 12),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-                onPressed: () => Navigator.pushNamed(context, '/registerlogin'),
+                onPressed: () => Navigator.pushNamed(context, '/register'),
                 child: Text(
                   "Register",
                   style: TextStyle(color: Colors.green.shade700),
