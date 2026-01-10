@@ -30906,7 +30906,7 @@ if(q!=null)r.m(0,"style",q)
 return r},
 b3Z(a){var s=J.aF(a)
 return{hue:A.cX(s.h(a,"hue")),lightness:A.Mc(s.h(a,"lightness")),saturation:A.Mc(s.h(a,"saturation")),gamma:A.Mc(s.h(a,"gamma")),invert_lightness:A.jX(s.h(a,"invert_lightness")),visibility:A.cX(s.h(a,"visibility")),color:A.cX(s.h(a,"color")),weight:A.hI(s.h(a,"weight"))}},
-fG(){return"https://test-host-server-tamg.onrender.com"},
+fG(){return"https://test-host-server-tamg.onrender.com/"},
 bcN(a){switch(a){case"area":case"base":case"br":case"col":case"command":case"embed":case"hr":case"img":case"input":case"keygen":case"link":case"meta":case"param":case"source":case"track":case"wbr":return!0}return!1},
 bdQ(a,b){var s,r,q=b.a
 if(q instanceof A.f9){s=q.x
@@ -97662,7 +97662,7 @@ AJ(a){var s=null,r=A.c([],t.Zt),q=$.aA,p=t.LR,o=t.zh,n=A.jA(B.cR),m=A.c([],t.wi)
 return new A.Ee(new A.aky(a),B.S,B.S,!1,!0,!1,s,s,s,r,A.aN(t.f9),new A.bC(s,t.Ts),new A.bC(s,t.re),new A.tL(),s,0,new A.bu(new A.ay(q,p),o),n,m,s,B.iA,new A.cU(s,l),new A.bu(new A.ay(k,p),o),new A.bu(new A.ay(k,p),o),t.K3)},
 agR(a){var s,r=this,q=a.a
 switch(q){case"/":return r.AJ(B.TE)
-case"/login":return r.AJ(B.lY)
+case"/weblogin":return r.AJ(B.lY)
 case"/register":return r.AJ(B.aBs)
 case"/dashboard":s=t.Px.a(a.b)
 if(s==null)return r.SU("Missing partnerDetails for Dashboard")
@@ -101328,7 +101328,7 @@ s=1
 break}m.I(new A.aJm(m))
 A.fm().$1("\ud83d\udfe2 CALLING LOGIN API")
 p=4
-j=A.cN(A.fG()+"login")
+j=A.cN(A.fG()+"/weblogin")
 A.fm().$1("\ud83c\udf10 API URL => "+A.n(j))
 e=t.N
 d=A.Q(["Content-Type","application/x-www-form-urlencoded"],e,e)
