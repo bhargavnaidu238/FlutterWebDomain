@@ -55,8 +55,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
     debugPrint("🟢 CALLING LOGIN API");
 
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/api/weblogin');
-      ');
+      final url = Uri.parse('${ApiConfig.baseUrl}login');
       debugPrint("🌐 API URL => $url");
 
       final res = await http.post(
