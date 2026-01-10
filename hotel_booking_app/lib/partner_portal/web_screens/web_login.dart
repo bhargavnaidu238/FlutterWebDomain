@@ -79,17 +79,9 @@ class _WebLoginPageState extends State<WebLoginPage> {
           );
 
         debugPrint("📦 PARTNER DETAILS => $partnerDetails");
+        debugPrint("🚀 NAVIGATING TO /dashboard (GLOBAL NAVIGATOR)");
 
-        if (!context.mounted) {
-          debugPrint("❌ CONTEXT NOT MOUNTED — NAVIGATION ABORTED");
-          return;
-        }
-
-        debugPrint("🚀 NAVIGATING TO /dashboard (ROOT NAVIGATOR)");
-
-        /// 🔥 CRITICAL FIX FOR FLUTTER WEB
-        Navigator.of(context, rootNavigator: true)
-            .pushReplacementNamed(
+        Navigator.of(context).pushReplacementNamed(
           '/dashboard',
           arguments: partnerDetails,
         );

@@ -9,7 +9,8 @@ import 'partner_portal/web_screens/Domain_Landing_Page.dart';
 
 void main() {
   if (kIsWeb) {
-    setPathUrlStrategy(); // removes # from web URLs
+    // Removes # from Flutter web URLs
+    setPathUrlStrategy();
   }
   runApp(const MyApp());
 }
@@ -22,13 +23,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: "Hotel Booking App",
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.indigo),
+      theme: ThemeData(
+        primarySwatch: Colors.indigo,
+      ),
       initialRoute: '/',
       onGenerateRoute: _generateRoute,
     );
   }
 
-  /// No animation route (better UX on web)
+  /// No-animation route (better UX on web)
   Route<dynamic> _noTransitionRoute(Widget page) {
     return PageRouteBuilder(
       pageBuilder: (_, __, ___) => page,
@@ -37,7 +40,7 @@ class MyApp extends StatelessWidget {
     );
   }
 
-  /// Centralized routing (WEB SAFE)
+  /// Centralized, web-safe routing
   Route<dynamic> _generateRoute(RouteSettings settings) {
     switch (settings.name) {
 
@@ -45,11 +48,11 @@ class MyApp extends StatelessWidget {
       case '/':
         return _noTransitionRoute(const LandingPage());
 
-    // 🔐 Login Page (UI ROUTE — NOT API)
+    // 🔐 Login Page (UI route)
       case '/login':
         return _noTransitionRoute(const WebLoginPage());
 
-    // 📝 Register Page (UI ROUTE — NOT API)
+    // 📝 Register Page (UI route)
       case '/register':
         return _noTransitionRoute(const WebRegisterPage());
 
@@ -63,7 +66,7 @@ class MyApp extends StatelessWidget {
           WebDashboardPage(partnerDetails: args),
         );
 
-    // ❌ Unknown Route
+    // ❌ Unknown route
       default:
         return _errorScreen("Route not found: ${settings.name}");
     }
