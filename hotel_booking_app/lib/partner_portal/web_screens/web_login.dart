@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:html' as html;
 
 import 'package:hotel_booking_app/services/api_service.dart';
 
@@ -79,7 +80,13 @@ class _WebLoginPageState extends State<WebLoginPage> {
           );
 
         debugPrint("📦 PARTNER DETAILS => $partnerDetails");
-        debugPrint("🚀 NAVIGATING TO /dashboard (GLOBAL NAVIGATOR)");
+
+        // ✅ ONLY REQUIRED FIX (WEB SESSION PERSISTENCE)
+        html.window.sessionStorage['partnerDetails'] =
+            jsonEncode(partnerDetails);
+
+        debugPrint("💾 partnerDetails saved to sessionStorage");
+        debugPrint("🚀 NAVIGATING TO /dashboard");
 
         Navigator.of(context).pushReplacementNamed(
           '/dashboard',
