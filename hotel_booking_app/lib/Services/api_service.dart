@@ -59,7 +59,7 @@ class ApiService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print('❌ Register Error: $e');
+      print('Register Error: $e');
       return false;
     }
   }
@@ -80,7 +80,7 @@ class ApiService {
       );
 
       final data = jsonDecode(response.body);
-      print("📩 Login Response → $data");
+      print("Login Response → $data");
 
       if (data.containsKey("error")) return data;
 
@@ -94,7 +94,7 @@ class ApiService {
 
       return {"error": "server_error"};
     } catch (e) {
-      print('🚨 Login Error: $e');
+      print('Login Error: $e');
       return {"error": "connection_error"};
     }
   }
@@ -125,7 +125,7 @@ class ApiService {
         return {"matched": data['matched'] == true};
       }
     } catch (e) {
-      print('❌ Verify Forgot Password Error: $e');
+      print('Verify Forgot Password Error: $e');
     }
     return {"matched": false};
   }
@@ -149,7 +149,7 @@ class ApiService {
 
       return {"success": response.statusCode == 200};
     } catch (e) {
-      print('❌ Change Password Error: $e');
+      print('Change Password Error: $e');
       return {"success": false};
     }
   }
@@ -181,7 +181,7 @@ class ApiService {
         return data['success'] == true;
       }
     } catch (e) {
-      print('❌ Change Password (Profile) Error: $e');
+      print('Change Password (Profile) Error: $e');
     }
     return false;
   }
@@ -212,7 +212,7 @@ class ProfileApiService {
         };
       }
     } catch (e) {
-      print('🚨 FetchProfile Error: $e');
+      print('FetchProfile Error: $e');
     }
     return null;
   }
@@ -243,7 +243,7 @@ class ProfileApiService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print('🚨 UpdateProfile Error: $e');
+      print('UpdateProfile Error: $e');
       return false;
     }
   }
@@ -268,7 +268,7 @@ class ProfileApiService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print('❌ Deactivate Error: $e');
+      print('Deactivate Error: $e');
       return false;
     }
   }
