@@ -30906,7 +30906,7 @@ if(q!=null)r.m(0,"style",q)
 return r},
 b3Z(a){var s=J.aF(a)
 return{hue:A.cX(s.h(a,"hue")),lightness:A.Mc(s.h(a,"lightness")),saturation:A.Mc(s.h(a,"saturation")),gamma:A.Mc(s.h(a,"gamma")),invert_lightness:A.jX(s.h(a,"invert_lightness")),visibility:A.cX(s.h(a,"visibility")),color:A.cX(s.h(a,"color")),weight:A.hI(s.h(a,"weight"))}},
-fG(){return"https://test-host-server-tamg.onrender.com/"},
+fG(){return"https://test-host-server-tamg.onrender.com"},
 bcN(a){switch(a){case"area":case"base":case"br":case"col":case"command":case"embed":case"hr":case"img":case"input":case"keygen":case"link":case"meta":case"param":case"source":case"track":case"wbr":return!0}return!1},
 bdQ(a,b){var s,r,q=b.a
 if(q instanceof A.f9){s=q.x
