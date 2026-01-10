@@ -46,8 +46,6 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
   // Bell animation controller
   late final AnimationController bellController;
 
-  final String apiBase = 'http://127.0.0.1:8080';
-
   bool isLoading = false;
   String? lastError;
   DateTime? lastUpdated;
@@ -86,7 +84,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
       lastError = null;
     });
 
-    final url = Uri.parse('${ApiConfig.baseUrl}/api/partner/$partnerId/dashboard');
+    final url = Uri.parse('${ApiConfig.baseUrl}$partnerId/dashboard');
 
     try {
       final response = await http.get(url);

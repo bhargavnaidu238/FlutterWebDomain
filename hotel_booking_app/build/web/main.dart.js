@@ -29000,8 +29000,8 @@ Lf:function Lf(a,b){var _=this
 _.e=_.d=!1
 _.at=_.as=_.Q=_.z=_.y=_.x=_.w=_.r=_.f=0
 _.ax=$
-_.ch=!1
-_.cx=_.CW=null
+_.ay=!1
+_.CW=_.ch=null
 _.dA$=a
 _.bd$=b
 _.c=_.a=null},
@@ -101009,7 +101009,7 @@ if(g==null)g=""
 if(g.length===0){n.I(new A.aJ8(n))
 s=1
 break}n.I(new A.aJ9(n))
-m=A.cN(A.fG()+"/api/partner/"+g+"/dashboard")
+m=A.cN(A.fG()+g+"/dashboard")
 p=4
 s=7
 return A.N(A.aLB(m),$async$mO)
@@ -101140,12 +101140,12 @@ l=j.as+j.at
 if(l>0){k=A.aL(30)
 m.push(A.lK(i,A.bN(B.V,A.a2(""+l,i,i,i,B.auu,i,i),B.t,i,B.LL,new A.bw(B.cs,i,i,k,i,i,B.J),i,i,i,B.Rn,i,i,i),i,i,i,2,2,i))}return A.h0(i,B.OG,A.bK(A.c([r,A.d8(A.b1(A.c([A.bN(i,A.bK(A.c([o,A.bK(A.c([A.TE(B.V,A.iW(B.cx,m,B.t,B.ce,i),i,n),B.asW,A.aTC(new A.vU(B.SI,B.ad,i,i),i,new A.aIZ(),j.gan9(),t.N)],p),B.q,B.m,B.n,0,i)],p),B.q,B.cF,B.n,0,i),B.t,i,i,new A.bw(i,i,i,i,q,B.vb,B.J),i,70,i,B.Ro,i,i,i),A.d8(new A.aR(B.b5,A.Dl(new A.aJ_(j)),i),1)],p),B.q,B.m,B.n),1)],p),B.q,B.m,B.n,0,i))}}
 A.aJ8.prototype={
-$0(){this.a.CW="Missing Partner_ID in partnerDetails"},
+$0(){this.a.ch="Missing Partner_ID in partnerDetails"},
 $S:0}
 A.aJ9.prototype={
 $0(){var s=this.a
-s.ch=!0
-s.CW=null},
+s.ay=!0
+s.ch=null},
 $S:0}
 A.aJa.prototype={
 $0(){var s=this.a,r=this.b,q=J.aF(r)
@@ -101158,24 +101158,24 @@ s.z=s.Xx(q.h(r,"totalRevenue"))
 s.Q=s.Xx(q.h(r,"netRevenue"))
 s.as=s.pH(q.h(r,"pendingNotifications"))
 s.at=s.pH(q.h(r,"financeNotifications"))
-s.cx=new A.eL(Date.now(),0,!1)
+s.CW=new A.eL(Date.now(),0,!1)
 if(s.as+s.at>0){r=s.ax
 r===$&&A.b()
 q=r.r
 if(!(q!=null&&q.a!=null))r.a3z(0,!0)}else{r=s.ax
 r===$&&A.b()
 q=r.r
-if(q!=null&&q.a!=null)r.f6(0)}s.ch=!1},
+if(q!=null&&q.a!=null)r.f6(0)}s.ay=!1},
 $S:0}
 A.aJb.prototype={
 $0(){var s=this.a
-s.CW="Server error: "+this.b.b
-s.ch=!1},
+s.ch="Server error: "+this.b.b
+s.ay=!1},
 $S:0}
 A.aJc.prototype={
 $0(){var s=this.a
-s.CW="Failed to fetch dashboard: "+A.n(this.b)
-s.ch=!1},
+s.ch="Failed to fetch dashboard: "+A.n(this.b)
+s.ay=!1},
 $S:0}
 A.aIK.prototype={
 $0(){var s=this.a
@@ -101290,10 +101290,10 @@ if(s<1.2)s=1.2
 l=t.p
 r=A.c([],l)
 q=this.a
-if(q.ch)r.push(B.ayL)
-p=q.CW
+if(q.ay)r.push(B.ayL)
+p=q.ch
 if(p!=null)r.push(A.a2("Error: "+p,m,m,m,B.K2,m,m))
-p=q.cx
+p=q.CW
 if(p!=null)r.push(A.a2("Last updated: "+B.b.ga5(p.a3Z().k(0).split(".")),m,m,m,B.bC,m,m))
 r.push(A.lk(B.SA,B.ayY,q.gaya(),A.fb(m,m,B.ap,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m)))
 r=A.bK(r,B.q,B.cF,B.n,0,m)
