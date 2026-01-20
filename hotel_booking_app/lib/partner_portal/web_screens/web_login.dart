@@ -64,15 +64,24 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
       // Handle based on backend status and message
       if (res.statusCode == 200 && data['status'] == 'success') {
-        // Successful login
-        partnerDetails = Map<String, String>.from(data)
-          ..removeWhere((key, value) => key == 'status' || key == 'message');
 
-        Navigator.pushReplacement(
+        // --- FIX 1: SAFE STRING CONVERSION ---
+        // This prevents "type int is not a subtype of String" errors
+        final Map<String, String> convertedDetails = {};
+        data.forEach((key, value) {
+          if (key != 'status' && key != 'message') {
+            convertedDetails[key] = value.toString();
+          }
+        });
+
+        if (!mounted) return;
+
+        // --- FIX 2: NAMED ROUTE NAVIGATION ---
+        // This updates the URL bar in the browser to '/dashboard'
+        Navigator.pushReplacementNamed(
           context,
-          MaterialPageRoute(
-            builder: (_) => WebDashboardPage(partnerDetails: partnerDetails),
-          ),
+          '/dashboard',
+          arguments: convertedDetails,
         );
       } else {
         // Display error message from backend
@@ -85,9 +94,11 @@ class _WebLoginPageState extends State<WebLoginPage> {
         SnackBar(content: Text("Error: $e")),
       );
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 

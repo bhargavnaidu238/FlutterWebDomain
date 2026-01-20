@@ -6,7 +6,7 @@ import 'partner_portal/web_screens/web_dashboard_page.dart';
 import 'partner_portal/web_screens/Domain_Landing_Page.dart';
 
 void main() {
-  // DO NOT use setPathUrlStrategy() on Render
+  // ❌ DO NOT use setPathUrlStrategy() on Render
   runApp(const MyApp());
 }
 
@@ -18,9 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: "Hotel Booking App",
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-      ),
+      theme: ThemeData(primarySwatch: Colors.indigo),
       initialRoute: '/',
       onGenerateRoute: _generateRoute,
     );
@@ -43,12 +41,12 @@ class MyApp extends StatelessWidget {
       case '/weblogin':
         return _noTransitionRoute(const WebLoginPage());
 
-      case '/register':
+      case '/registerlogin':
         return _noTransitionRoute(const WebRegisterPage());
 
       case '/dashboard':
         final args = settings.arguments as Map<String, String>?;
-        if (args == null || args.isEmpty) {
+        if (args == null) {
           return _errorScreen("Missing partnerDetails for Dashboard");
         }
         return _noTransitionRoute(
