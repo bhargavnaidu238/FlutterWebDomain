@@ -60,13 +60,28 @@ class _WebLoginPageState extends State<WebLoginPage> {
         body: 'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
       );
 
-      final data = json.decode(res.body);
+      // --- DEBUGGING: Check what the server actually sent ---
+      debugPrint("HTTP Status: ${res.statusCode}");
+      debugPrint("Raw Response: ${res.body}");
 
-      // Handle based on backend status and message
+      // 1. Check for empty response (prevents JSON end of input error)
+      if (res.body.isEmpty) {
+        throw "Server returned an empty response. Please check backend logs.";
+      }
+
+      // 2. Safely attempt to decode JSON
+      dynamic data;
+      try {
+        data = json.decode(res.body);
+      } catch (e) {
+        // If decoding fails, the server likely sent HTML (an error page)
+        throw "Invalid JSON format. Server may have crashed or sent HTML.";
+      }
+
+      // 3. Handle successful login logic
       if (res.statusCode == 200 && data['status'] == 'success') {
 
-        // --- FIX 1: SAFE STRING CONVERSION ---
-        // This prevents "type int is not a subtype of String" errors
+        // SAFE STRING CONVERSION: Ensures partner_id is always a String
         final Map<String, String> convertedDetails = {};
         data.forEach((key, value) {
           if (key != 'status' && key != 'message') {
@@ -76,20 +91,21 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
         if (!mounted) return;
 
-        // --- FIX 2: NAMED ROUTE NAVIGATION ---
-        // This updates the URL bar in the browser to '/dashboard'
+        // NAMED ROUTE: Updates URL bar and triggers main.dart logic
         Navigator.pushReplacementNamed(
           context,
           '/dashboard',
           arguments: convertedDetails,
         );
       } else {
-        // Display error message from backend
+        // Display error message sent by your backend
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data['message'] ?? "Login failed")),
         );
       }
     } catch (e) {
+      // Catches network errors, decoding errors, and custom throws above
+      debugPrint("Catch Block Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
@@ -240,7 +256,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ===================== LOGO IMAGE =====================
               Container(
                 height: 80,
                 width: 80,
@@ -267,7 +282,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 ),
               ),
               const SizedBox(height: 30),
-              // ===================== EMAIL FIELD =====================
               TextField(
                 controller: emailController,
                 decoration: InputDecoration(
@@ -288,7 +302,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 style: const TextStyle(color: Colors.white),
               ),
               const SizedBox(height: 15),
-              // ===================== PASSWORD FIELD =====================
               StatefulBuilder(
                 builder: (context, setStateSB) {
                   return TextField(
@@ -319,7 +332,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 },
               ),
               const SizedBox(height: 25),
-              // ===================== LOGIN BUTTON =====================
               isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : ElevatedButton(
@@ -339,7 +351,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 ),
               ),
               const SizedBox(height: 15),
-              // ===================== LINKS =====================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
