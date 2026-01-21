@@ -22,7 +22,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
   // ===================== LOGIN FUNCTION =====================
   Future<void> login() async {
     final email = emailController.text.trim();
-    final password = passwordController.text.trim();
+    final password = passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
