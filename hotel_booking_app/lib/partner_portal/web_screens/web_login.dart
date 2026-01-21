@@ -22,7 +22,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
   // ===================== LOGIN FUNCTION =====================
   Future<void> login() async {
     final email = emailController.text.trim();
-    final password = passwordController.text;
+    final password = passwordController.text; // preserved exactly
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -50,7 +50,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
     });
 
     try {
-      // Use the improved ApiService to handle the request and data parsing
       final result = await ApiService.loginUser(
         email: email,
         password: password,
@@ -59,14 +58,13 @@ class _WebLoginPageState extends State<WebLoginPage> {
       if (!mounted) return;
 
       if (result != null) {
-        // SUCCESS: Navigate to dashboard using the named route and pass details
+        // SUCCESS: Navigate using Named Route as defined in main.dart
         Navigator.pushReplacementNamed(
           context,
           '/dashboard',
           arguments: result,
         );
       } else {
-        // FAIL: Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Login failed. Please check your credentials.")),
         );
@@ -156,7 +154,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
             ElevatedButton(
               onPressed: () async {
                 final email = emailResetController.text.trim();
-                final newPwd = newPasswordController.text.trim();
+                final newPwd = newPasswordController.text; // REMOVED .trim() for consistency
 
                 if (email.isEmpty || newPwd.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -190,7 +188,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
     );
   }
 
-  // ===================== BUILD UI =====================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -327,7 +324,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      // Note: It's better to use named routes here too for consistency on Web
                       Navigator.pushNamed(context, '/registerlogin');
                     },
                     child: const Text("Register", style: TextStyle(color: Colors.white70)),

@@ -34,17 +34,10 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
       return;
     }
 
-    final name = nameController.text.trim();
-    final business = businessController.text.trim();
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-    final phone = phoneController.text.trim();
-    final address = addressController.text.trim();
-    final city = cityController.text.trim();
-    final state = stateController.text.trim();
-    final country = countryController.text.trim();
-    final pincode = pincodeController.text.trim();
-    final gst = gstController.text.trim();
+    // Keep email trimmed and lowercase
+    final email = emailController.text.trim().toLowerCase();
+    // DO NOT trim the password
+    final password = passwordController.text;
 
     setState(() {
       isLoading = true;
@@ -53,22 +46,25 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/registerlogin');
 
-      final body = 'partner_name=${Uri.encodeComponent(name)}'
-          '&business_name=${Uri.encodeComponent(business)}'
-          '&email=${Uri.encodeComponent(email)}'
-          '&password=${Uri.encodeComponent(password)}'
-          '&contact_number=${Uri.encodeComponent(phone)}'
-          '&address=${Uri.encodeComponent(address)}'
-          '&city=${Uri.encodeComponent(city)}'
-          '&state=${Uri.encodeComponent(state)}'
-          '&country=${Uri.encodeComponent(country)}'
-          '&pincode=${Uri.encodeComponent(pincode)}'
-          '&gst_number=${Uri.encodeComponent(gst)}';
+      // Use a Map for the body to ensure perfect encoding by the http package
+      final Map<String, String> registrationData = {
+        'partner_name': nameController.text.trim(),
+        'business_name': businessController.text.trim(),
+        'email': email,
+        'password': password,
+        'contact_number': phoneController.text.trim(),
+        'address': addressController.text.trim(),
+        'city': cityController.text.trim(),
+        'state': stateController.text.trim(),
+        'country': countryController.text.trim(),
+        'pincode': pincodeController.text.trim(),
+        'gst_number': gstController.text.trim(),
+      };
 
       final res = await http.post(
         url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: body,
+        // The http package handles Content-Type automatically when passing a Map to body
+        body: registrationData,
       );
 
       if (!mounted) return;
@@ -76,22 +72,23 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Registration failed")),
+          SnackBar(content: Text(data['message'] ?? "Registration successful")),
         );
 
         if (data['status'] == 'success') {
-          // Fixed navigation to use Named Routes to stay consistent with main.dart
           Navigator.pushReplacementNamed(context, '/weblogin');
         }
       } else {
+        // Try to parse the error message from the backend if available
+        final errorData = json.decode(res.body);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Server error: ${res.statusCode}")),
+          SnackBar(content: Text(errorData['message'] ?? "Server error: ${res.statusCode}")),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
+          SnackBar(content: Text("Network Error: $e")),
         );
       }
     } finally {
