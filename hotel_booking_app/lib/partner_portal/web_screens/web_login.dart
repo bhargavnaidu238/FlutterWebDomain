@@ -19,8 +19,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
   bool isLoading = false;
   bool showPassword = false;
 
-  Map<String, String> partnerDetails = {};
-
   // ===================== LOGIN FUNCTION =====================
   Future<void> login() async {
     final email = emailController.text.trim();
@@ -52,60 +50,29 @@ class _WebLoginPageState extends State<WebLoginPage> {
     });
 
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/weblogin');
-
-      final res = await http.post(
-        url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
+      // Use the improved ApiService to handle the request and data parsing
+      final result = await ApiService.loginUser(
+        email: email,
+        password: password,
       );
 
-      // --- DEBUGGING: Check what the server actually sent ---
-      debugPrint("HTTP Status: ${res.statusCode}");
-      debugPrint("Raw Response: ${res.body}");
+      if (!mounted) return;
 
-      // 1. Check for empty response (prevents JSON end of input error)
-      if (res.body.isEmpty) {
-        throw "Server returned an empty response. Please check backend logs.";
-      }
-
-      // 2. Safely attempt to decode JSON
-      dynamic data;
-      try {
-        data = json.decode(res.body);
-      } catch (e) {
-        // If decoding fails, the server likely sent HTML (an error page)
-        throw "Invalid JSON format. Server may have crashed or sent HTML.";
-      }
-
-      // 3. Handle successful login logic
-      if (res.statusCode == 200 && data['status'] == 'success') {
-
-        // SAFE STRING CONVERSION: Ensures partner_id is always a String
-        final Map<String, String> convertedDetails = {};
-        data.forEach((key, value) {
-          if (key != 'status' && key != 'message') {
-            convertedDetails[key] = value.toString();
-          }
-        });
-
-        if (!mounted) return;
-
-        // NAMED ROUTE: Updates URL bar and triggers main.dart logic
+      if (result != null) {
+        // SUCCESS: Navigate to dashboard using the named route and pass details
         Navigator.pushReplacementNamed(
           context,
           '/dashboard',
-          arguments: convertedDetails,
+          arguments: result,
         );
       } else {
-        // Display error message sent by your backend
+        // FAIL: Show error message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Login failed")),
+          const SnackBar(content: Text("Login failed. Please check your credentials.")),
         );
       }
     } catch (e) {
-      // Catches network errors, decoding errors, and custom throws above
-      debugPrint("Catch Block Error: $e");
+      debugPrint("Login Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
@@ -360,10 +327,8 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const WebRegisterPage()),
-                      );
+                      // Note: It's better to use named routes here too for consistency on Web
+                      Navigator.pushNamed(context, '/registerlogin');
                     },
                     child: const Text("Register", style: TextStyle(color: Colors.white70)),
                   ),

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-
 import 'partner_portal/web_screens/web_login.dart';
 import 'partner_portal/web_screens/web_register.dart';
 import 'partner_portal/web_screens/web_dashboard_page.dart';
 import 'partner_portal/web_screens/Domain_Landing_Page.dart';
 
 void main() {
-  // ❌ DO NOT use setPathUrlStrategy() on Render
   runApp(const MyApp());
 }
 
@@ -24,8 +22,10 @@ class MyApp extends StatelessWidget {
     );
   }
 
-  Route<dynamic> _noTransitionRoute(Widget page) {
+  // Helper for instant page switching (standard for Web Apps)
+  Route<dynamic> _noTransitionRoute(Widget page, RouteSettings settings) {
     return PageRouteBuilder(
+      settings: settings,
       pageBuilder: (_, __, ___) => page,
       transitionDuration: Duration.zero,
       reverseTransitionDuration: Duration.zero,
@@ -34,23 +34,28 @@ class MyApp extends StatelessWidget {
 
   Route<dynamic> _generateRoute(RouteSettings settings) {
     switch (settings.name) {
-
       case '/':
-        return _noTransitionRoute(const LandingPage());
+        return _noTransitionRoute(const LandingPage(), settings);
 
       case '/weblogin':
-        return _noTransitionRoute(const WebLoginPage());
+        return _noTransitionRoute(const WebLoginPage(), settings);
 
       case '/registerlogin':
-        return _noTransitionRoute(const WebRegisterPage());
+        return _noTransitionRoute(const WebRegisterPage(), settings);
 
       case '/dashboard':
+      // Try to cast the arguments
         final args = settings.arguments as Map<String, String>?;
+
+        // If arguments are missing, we redirect to login instead of showing a red error
         if (args == null) {
-          return _errorScreen("Missing partnerDetails for Dashboard");
+          debugPrint("Redirecting to login: No partner details found.");
+          return _noTransitionRoute(const WebLoginPage(), settings);
         }
+
         return _noTransitionRoute(
           WebDashboardPage(partnerDetails: args),
+          settings,
         );
 
       default:
@@ -64,7 +69,7 @@ class MyApp extends StatelessWidget {
         body: Center(
           child: Text(
             msg,
-            style: const TextStyle(color: Colors.red, fontSize: 20),
+            style: const TextStyle(color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold),
           ),
         ),
       ),

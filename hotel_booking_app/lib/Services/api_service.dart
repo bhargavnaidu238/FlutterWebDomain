@@ -17,7 +17,6 @@ class ApiConfig {
 
 /// ================== AUTH APIs ==================
 class ApiService {
-
   /// ================== LOGIN (WEB – FIXED) ==================
   static Future<Map<String, String>?> loginUser({
     required String email,
@@ -29,9 +28,11 @@ class ApiService {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body:
-        'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
+        body: 'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
       );
+
+      // Log status for debugging
+      debugPrint('Login Response Code: ${response.statusCode}');
 
       if (response.statusCode != 200) return null;
 
@@ -39,13 +40,21 @@ class ApiService {
 
       if (data['status'] != 'success') return null;
 
+      // Remove meta-data keys
       data.remove('status');
       data.remove('message');
+
+      // If the API only returned status/message, provide a fallback key
+      // so main.dart doesn't see a null argument.
+      if (data.isEmpty) {
+        return {'auth_status': 'verified'};
+      }
 
       return Map<String, String>.from(
         data.map((k, v) => MapEntry(k, v?.toString() ?? '')),
       );
     } catch (e) {
+      debugPrint('Login Error: $e');
       return null;
     }
   }
