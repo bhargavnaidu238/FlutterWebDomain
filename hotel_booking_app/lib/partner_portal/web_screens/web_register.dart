@@ -34,10 +34,17 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
       return;
     }
 
-    // Keep email trimmed and lowercase
-    final email = emailController.text.trim().toLowerCase();
-    // DO NOT trim the password
-    final password = passwordController.text;
+    final name = nameController.text.trim();
+    final business = businessController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+    final phone = phoneController.text.trim();
+    final address = addressController.text.trim();
+    final city = cityController.text.trim();
+    final state = stateController.text.trim();
+    final country = countryController.text.trim();
+    final pincode = pincodeController.text.trim();
+    final gst = gstController.text.trim();
 
     setState(() {
       isLoading = true;
@@ -46,57 +53,49 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/registerlogin');
 
-      // Use a Map for the body to ensure perfect encoding by the http package
-      final Map<String, String> registrationData = {
-        'partner_name': nameController.text.trim(),
-        'business_name': businessController.text.trim(),
-        'email': email,
-        'password': password,
-        'contact_number': phoneController.text.trim(),
-        'address': addressController.text.trim(),
-        'city': cityController.text.trim(),
-        'state': stateController.text.trim(),
-        'country': countryController.text.trim(),
-        'pincode': pincodeController.text.trim(),
-        'gst_number': gstController.text.trim(),
-      };
+      final body = 'partner_name=${Uri.encodeComponent(name)}'
+          '&business_name=${Uri.encodeComponent(business)}'
+          '&email=${Uri.encodeComponent(email)}'
+          '&password=${Uri.encodeComponent(password)}'
+          '&contact_number=${Uri.encodeComponent(phone)}'
+          '&address=${Uri.encodeComponent(address)}'
+          '&city=${Uri.encodeComponent(city)}'
+          '&state=${Uri.encodeComponent(state)}'
+          '&country=${Uri.encodeComponent(country)}'
+          '&pincode=${Uri.encodeComponent(pincode)}'
+          '&gst_number=${Uri.encodeComponent(gst)}';
 
       final res = await http.post(
         url,
-        // The http package handles Content-Type automatically when passing a Map to body
-        body: registrationData,
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: body,
       );
-
-      if (!mounted) return;
 
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Registration successful")),
+          SnackBar(content: Text(data['message'] ?? "Registration failed")),
         );
 
         if (data['status'] == 'success') {
-          Navigator.pushReplacementNamed(context, '/weblogin');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const WebLoginPage()),
+          );
         }
       } else {
-        // Try to parse the error message from the backend if available
-        final errorData = json.decode(res.body);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorData['message'] ?? "Server error: ${res.statusCode}")),
+          SnackBar(content: Text("Server error: ${res.statusCode}")),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Network Error: $e")),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -190,7 +189,7 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
                   ),
                   const SizedBox(height: 30),
 
-                  // ---- ALL FIELDS FULLY RESTORED ----
+                  // ---- FIELDS ----
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.maxWidth > 900
@@ -367,8 +366,11 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
 
                   TextButton(
                     onPressed: () {
-                      // Corrected to pushReplacementNamed for consistency with main.dart
-                      Navigator.pushReplacementNamed(context, '/weblogin');
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const WebLoginPage()),
+                      );
                     },
                     child: const Text(
                       "Already have an account? Login",

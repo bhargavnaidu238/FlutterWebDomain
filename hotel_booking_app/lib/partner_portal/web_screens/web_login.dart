@@ -19,10 +19,12 @@ class _WebLoginPageState extends State<WebLoginPage> {
   bool isLoading = false;
   bool showPassword = false;
 
+  Map<String, String> partnerDetails = {};
+
   // ===================== LOGIN FUNCTION =====================
   Future<void> login() async {
     final email = emailController.text.trim();
-    final password = passwordController.text; // preserved exactly
+    final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -50,36 +52,42 @@ class _WebLoginPageState extends State<WebLoginPage> {
     });
 
     try {
-      final result = await ApiService.loginUser(
-        email: email,
-        password: password,
+      final url = Uri.parse('${ApiConfig.baseUrl}/weblogin');
+
+      final res = await http.post(
+        url,
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
       );
 
-      if (!mounted) return;
+      final data = json.decode(res.body);
 
-      if (result != null) {
-        // SUCCESS: Navigate using Named Route as defined in main.dart
-        Navigator.pushReplacementNamed(
+      // Handle based on backend status and message
+      if (res.statusCode == 200 && data['status'] == 'success') {
+        // Successful login
+        partnerDetails = Map<String, String>.from(data)
+          ..removeWhere((key, value) => key == 'status' || key == 'message');
+
+        Navigator.pushReplacement(
           context,
-          '/dashboard',
-          arguments: result,
+          MaterialPageRoute(
+            builder: (_) => WebDashboardPage(partnerDetails: partnerDetails),
+          ),
         );
       } else {
+        // Display error message from backend
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Login failed. Please check your credentials.")),
+          SnackBar(content: Text(data['message'] ?? "Login failed")),
         );
       }
     } catch (e) {
-      debugPrint("Login Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -154,7 +162,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
             ElevatedButton(
               onPressed: () async {
                 final email = emailResetController.text.trim();
-                final newPwd = newPasswordController.text; // REMOVED .trim() for consistency
+                final newPwd = newPasswordController.text.trim();
 
                 if (email.isEmpty || newPwd.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -188,6 +196,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
     );
   }
 
+  // ===================== BUILD UI =====================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -220,6 +229,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // ===================== LOGO IMAGE =====================
               Container(
                 height: 80,
                 width: 80,
@@ -246,6 +256,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 ),
               ),
               const SizedBox(height: 30),
+              // ===================== EMAIL FIELD =====================
               TextField(
                 controller: emailController,
                 decoration: InputDecoration(
@@ -266,6 +277,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 style: const TextStyle(color: Colors.white),
               ),
               const SizedBox(height: 15),
+              // ===================== PASSWORD FIELD =====================
               StatefulBuilder(
                 builder: (context, setStateSB) {
                   return TextField(
@@ -296,6 +308,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 },
               ),
               const SizedBox(height: 25),
+              // ===================== LOGIN BUTTON =====================
               isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : ElevatedButton(
@@ -315,6 +328,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 ),
               ),
               const SizedBox(height: 15),
+              // ===================== LINKS =====================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -324,7 +338,10 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/registerlogin');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const WebRegisterPage()),
+                      );
                     },
                     child: const Text("Register", style: TextStyle(color: Colors.white70)),
                   ),
