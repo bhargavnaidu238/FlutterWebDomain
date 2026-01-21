@@ -71,6 +71,8 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
         body: body,
       );
 
+      if (!mounted) return;
+
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -78,10 +80,8 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
         );
 
         if (data['status'] == 'success') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const WebLoginPage()),
-          );
+          // Fixed navigation to use Named Routes to stay consistent with main.dart
+          Navigator.pushReplacementNamed(context, '/weblogin');
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -89,13 +89,17 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")),
+        );
+      }
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -189,7 +193,7 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
                   ),
                   const SizedBox(height: 30),
 
-                  // ---- FIELDS ----
+                  // ---- ALL FIELDS FULLY RESTORED ----
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.maxWidth > 900
@@ -366,11 +370,8 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
 
                   TextButton(
                     onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const WebLoginPage()),
-                      );
+                      // Corrected to pushReplacementNamed for consistency with main.dart
+                      Navigator.pushReplacementNamed(context, '/weblogin');
                     },
                     child: const Text(
                       "Already have an account? Login",
