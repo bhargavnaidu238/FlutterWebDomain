@@ -33,62 +33,28 @@ class _WebLoginPageState extends State<WebLoginPage> {
       return;
     }
 
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+    setState(() => isLoading = true);
+
+    final result = await ApiService.loginUser(
+      email: email,
+      password: password,
+    );
+
+    setState(() => isLoading = false);
+
+    if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter a valid email")),
+        const SnackBar(content: Text("Login failed. Please check your credentials.")),
       );
       return;
     }
 
-    if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password must be at least 6 characters")),
-      );
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/weblogin');
-
-      final res = await http.post(
-        url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
-      );
-
-      final data = json.decode(res.body);
-
-      // Handle based on backend status and message
-      if (res.statusCode == 200 && data['status'] == 'success') {
-        // Successful login
-        partnerDetails = Map<String, String>.from(data)
-          ..removeWhere((key, value) => key == 'status' || key == 'message');
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => WebDashboardPage(partnerDetails: partnerDetails),
-          ),
-        );
-      } else {
-        // Display error message from backend
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Login failed")),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WebDashboardPage(partnerDetails: result),
+      ),
+    );
   }
 
   // ===================== FORGOT PASSWORD =====================
