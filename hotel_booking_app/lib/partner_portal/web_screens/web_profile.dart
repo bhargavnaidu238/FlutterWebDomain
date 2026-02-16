@@ -39,8 +39,8 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
   String normalizeKey(String key) {
     switch (key) {
-      case 'registration_date':
-        return 'Registration Date';
+      case 'Registration Date':
+        return 'Registration_Date';
       case 'gst':
         return 'GST Number';
       default:
@@ -243,7 +243,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
               ]),
               buildSection("Business Info", [
                 buildFieldCard("Business Name", controllers["business_name"], icon: Icons.business),
-                buildFieldCard("GST Number", controllers["gst"], icon: Icons.receipt_long),
+                buildFieldCard("GST Number", controllers["gst_number"], icon: Icons.receipt_long),
               ]),
               buildSection("Address Info", [
                 buildFieldCard("Address", controllers["address"], icon: Icons.home),
@@ -346,7 +346,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
               const SizedBox(height: 30),
               buildSection("Business Info", [
                 buildFieldCard("Business Name", controllers["business_name"], isEditable: false, icon: Icons.business),
-                buildFieldCard("GST Number", controllers["gst"], isEditable: false, icon: Icons.receipt_long),
+                buildFieldCard("GST Number", controllers["gst_number"], isEditable: false, icon: Icons.receipt_long),
               ]),
               buildSection("Address Info", [
                 buildFieldCard("Address", controllers["address"], isEditable: false, icon: Icons.home),
