@@ -101003,7 +101003,7 @@ this.abw()},
 mN(){var s=0,r=A.G(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f
 var $async$mN=A.H(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:h=J.a9(n.a.c,"partner_id")
-g=h==null?J.a9(n.a.c,"Partner_ID"):h
+g=h==null?J.a9(n.a.c,"partner_id"):h
 if(g==null)g=""
 if(g.length===0){n.I(new A.aJ4(n))
 s=1
@@ -101061,42 +101061,42 @@ if(o>0)i.push(B.ap3)
 s=3
 return A.N(A.aY0(B.t,null,null,l,null,null,i,null,null,new A.pV(m.a+k.a-10,m.b+j.b,0,0),null,null,null,null,null,null,!1,t.N),$async$AK)
 case 3:h=c
-if(h==="pending"){g=J.a9(p.a.c,"Partner_ID")
+if(h==="pending"){g=J.a9(p.a.c,"partner_id")
 if(g==null)g=""
 f=p.c
 f.toString
 l=A.dR(new A.aII(g),null,t.z)
-A.c6(f,!1).e1(l).bv(new A.aIJ(p),t.H)}if(h==="finance"){g=J.a9(p.a.c,"Partner_ID")
+A.c6(f,!1).e1(l).bv(new A.aIJ(p),t.H)}if(h==="finance"){g=J.a9(p.a.c,"partner_id")
 if(g==null)g=""
 f=p.c
 f.toString
 l=A.dR(new A.aIK(g),null,t.z)
 A.c6(f,!1).e1(l).bv(new A.aIL(p),t.H)}case 1:return A.E(q,r)}})
 return A.F($async$AK,r)},
-mr(a){var s,r=this,q=null,p=J.a9(r.a.c,"partner_id"),o=p==null?J.a9(r.a.c,"Partner_ID"):p
-if(o==null)o=""
-if(a==="Add Hotels"){p=r.c
-p.toString
-s=A.dR(new A.aIz(o),q,t.z)
-A.c6(p,!1).e1(s)}else if(a==="Add Paying Guests"){p=r.c
-p.toString
-s=A.dR(new A.aIA(o),q,t.z)
-A.c6(p,!1).e1(s)}else if(a==="View Hotels"){p=r.c
-p.toString
-s=A.dR(new A.aIB(o),q,t.z)
-A.c6(p,!1).e1(s)}else if(a==="View PGs"){p=r.c
-p.toString
-s=A.dR(new A.aIC(o),q,t.z)
-A.c6(p,!1).e1(s)}else if(a==="Bookings"){p=r.c
-p.toString
-s=A.dR(new A.aID(o),q,t.z)
-A.c6(p,!1).e1(s).bv(new A.aIE(r),t.H)}else if(a==="Finance"){p=r.c
-p.toString
-s=A.dR(new A.aIF(o),q,t.z)
-A.c6(p,!1).e1(s)}else if(a==="About Us"){p=r.c
-p.toString
+mr(a){var s,r=this,q=null,p="partner_id",o=J.a9(r.a.c,p),n=o==null?J.a9(r.a.c,p):o
+if(n==null)n=""
+if(a==="Add Hotels"){o=r.c
+o.toString
+s=A.dR(new A.aIz(n),q,t.z)
+A.c6(o,!1).e1(s)}else if(a==="Add Paying Guests"){o=r.c
+o.toString
+s=A.dR(new A.aIA(n),q,t.z)
+A.c6(o,!1).e1(s)}else if(a==="View Hotels"){o=r.c
+o.toString
+s=A.dR(new A.aIB(n),q,t.z)
+A.c6(o,!1).e1(s)}else if(a==="View PGs"){o=r.c
+o.toString
+s=A.dR(new A.aIC(n),q,t.z)
+A.c6(o,!1).e1(s)}else if(a==="Bookings"){o=r.c
+o.toString
+s=A.dR(new A.aID(n),q,t.z)
+A.c6(o,!1).e1(s).bv(new A.aIE(r),t.H)}else if(a==="Finance"){o=r.c
+o.toString
+s=A.dR(new A.aIF(n),q,t.z)
+A.c6(o,!1).e1(s)}else if(a==="About Us"){o=r.c
+o.toString
 s=A.dR(new A.aIG(),q,t.z)
-A.c6(p,!1).e1(s)}else if(a==="Home")r.mN()},
+A.c6(o,!1).e1(s)}else if(a==="Home")r.mN()},
 ana(a){var s,r
 if(a==="profile"){s=this.c
 s.toString
@@ -101109,7 +101109,7 @@ r.toString
 s.a34(r,null)}},
 u0(a,b){var s=null,r=B.d.ac(b,2)
 return new A.aR(B.Rc,A.a2(a+" : "+r,s,s,s,B.qy,s,s),s)},
-J(a){var s,r,q,p,o,n,m,l,k,j=this,i=null,h=A.c9(a,i,t.w).w.a.a<800,g=J.a9(j.a.c,"Partner_Name")
+J(a){var s,r,q,p,o,n,m,l,k,j=this,i=null,h=A.c9(a,i,t.w).w.a.a<800,g=J.a9(j.a.c,"partner_name")
 if(g==null)g="Partner"
 s=new A.bC(i,t.re)
 if(h)r=0
@@ -101222,7 +101222,7 @@ $1(a){return B.KV},
 $S:665}
 A.aIM.prototype={
 $1(a){var s=this.a,r=J.a9(s.a.c,"email")
-if(r==null)r=J.a9(s.a.c,"Email")
+if(r==null)r=J.a9(s.a.c,"email")
 if(r==null)r=""
 return new A.uR(r,s.a.c,null)},
 $S:666}

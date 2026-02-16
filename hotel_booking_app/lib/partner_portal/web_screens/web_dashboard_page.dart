@@ -72,7 +72,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
   Future<void> fetchDashboardData() async {
     // UPDATED: Use lowercase keys to match Postgres/Backend output
     final partnerId = widget.partnerDetails['partner_id'] ??
-        widget.partnerDetails['Partner_ID'] ?? '';
+        widget.partnerDetails['partner_id'] ?? '';
 
     if (partnerId.isEmpty) {
       setState(() {
@@ -190,7 +190,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     );
 
     if (result == 'pending') {
-      final partnerId = widget.partnerDetails['Partner_ID'] ?? '';
+      final partnerId = widget.partnerDetails['partner_id'] ?? '';
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => BookingPage(partnerId: partnerId)),
@@ -198,7 +198,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     }
 
     if (result == 'finance') {
-      final partnerId = widget.partnerDetails['Partner_ID'] ?? '';
+      final partnerId = widget.partnerDetails['partner_id'] ?? '';
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => FinancePage(partnerId: partnerId)),
@@ -209,7 +209,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
   void _onMenuClick(String option) {
     // UPDATED: Support both cases for safety during transition
     final partnerId = widget.partnerDetails['partner_id'] ??
-        widget.partnerDetails['Partner_ID'] ?? '';
+        widget.partnerDetails['partner_id'] ?? '';
 
     if (option == 'Add Hotels') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: partnerId)));
@@ -238,7 +238,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
         MaterialPageRoute(
           builder: (_) => WebProfilePage(
             // UPDATED: Lowercase check
-            email: widget.partnerDetails['email'] ?? widget.partnerDetails['Email'] ?? '',
+            email: widget.partnerDetails['email'] ?? widget.partnerDetails['email'] ?? '',
             partnerDetails: widget.partnerDetails,
           ),
         ),
@@ -261,7 +261,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     bool isMobile = screenWidth < 800;
-    final partnerName = widget.partnerDetails['Partner_Name'] ?? 'Partner';
+    final partnerName = widget.partnerDetails['partner_name'] ?? 'Partner';
 
     final GlobalKey bellKey = GlobalKey(); // KEY ADDED FOR POPUP LOCATION
 
