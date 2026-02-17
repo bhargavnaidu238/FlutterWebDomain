@@ -39,7 +39,7 @@ flutter:
   assets:
     - assets/LoginTheme.png
     #- assets/excel/PartnerData.xlsx
-    - assets/LandingPageImages/LandingImage2.png
+    - assets/LandingPageImages/LandingImage.png
     - assets/LandingPageImages/Logo.png
 
 flutter_icons:
