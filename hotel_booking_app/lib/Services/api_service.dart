@@ -56,18 +56,20 @@ class ApiService {
     required String email,
     required String password,
   }) async {
+
     final raw = await loginUserRaw(email: email, password: password);
 
     if (raw == null) return null;
     if (raw['status'] != 'success') return null;
 
-    raw.remove('status');
-    raw.remove('message');
+    // ✅ IMPORTANT FIX: Extract nested data object
+    final Map<String, dynamic> userData = raw['data'];
 
     return Map<String, String>.from(
-      raw.map((k, v) => MapEntry(k, v?.toString() ?? '')),
+      userData.map((k, v) => MapEntry(k, v?.toString() ?? '')),
     );
   }
+
 
   // ============================================================
   // ====================== REGISTER =============================

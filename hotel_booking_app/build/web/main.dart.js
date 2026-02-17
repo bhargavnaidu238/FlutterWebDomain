@@ -98425,7 +98425,7 @@ A.afF.prototype={
 $0(){return A.akF(this.a,"/registerlogin",t.X)},
 $S:0}
 A.afI.prototype={
-$2(a,b){var s,r=null,q="Get Started",p="assets/LandingPageImages/LandingImage.png",o=t.p
+$2(a,b){var s,r=null,q="Get Started",p="assets/LandingPageImages/LandingImage2.png",o=t.p
 if(b.b>900){s=A.fb(r,r,B.f,r,r,r,r,r,r,r,r,r,B.u_,r,r,r,r,r,r,r)
 o=A.bK(A.c([A.d8(A.b1(A.c([B.az6,B.iU,B.azh,B.ql,A.lh(!1,A.a2(q,r,r,r,A.eb(r,r,B.ao,r,r,r,r,r,r,r,r,18,r,r,r,r,r,!0,r,r,r,r,r,r,r,r),r,r),r,r,r,r,r,r,new A.afG(a),r,s)],o),B.a0,B.m,B.n),1),B.at0,A.d8(A.aNs(p,B.rx,400),1)],o),B.q,B.m,B.n,0,r)}else{s=A.fb(r,r,B.f,r,r,r,r,r,r,r,r,r,B.u_,r,r,r,r,r,r,r)
 o=A.b1(A.c([B.azz,B.iU,B.azU,B.ql,A.lh(!1,A.a2(q,r,r,r,A.eb(r,r,B.ao,r,r,r,r,r,r,r,r,18,r,r,r,r,r,!0,r,r,r,r,r,r,r,r),r,r),r,r,r,r,r,r,new A.afH(a),r,s),B.eZ,A.aNs(p,B.rx,300)],o),B.a0,B.m,B.n)}return o},

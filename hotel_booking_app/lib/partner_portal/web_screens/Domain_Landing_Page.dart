@@ -121,7 +121,7 @@ class LandingPage extends StatelessWidget {
               const SizedBox(width: 50),
               Expanded(
                 child: Image.asset(
-                  'assets/LandingPageImages/LandingImage.png',
+                  'assets/LandingPageImages/LandingImage2.png',
                   fit: BoxFit.contain,
                   height: 400,
                 ),
@@ -154,7 +154,7 @@ class LandingPage extends StatelessWidget {
               ),
               const SizedBox(height: 40),
               Image.asset(
-                'assets/LandingPageImages/LandingImage.png',
+                'assets/LandingPageImages/LandingImage2.png',
                 fit: BoxFit.contain,
                 height: 300,
               ),
