@@ -33,60 +33,62 @@ class _WebLoginPageState extends State<WebLoginPage> {
       return;
     }
 
-    setState(() => isLoading = true);
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter a valid email")),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password must be at least 6 characters")),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
 
     try {
-      final response = await ApiService.loginUserRaw(
-        email: email,
-        password: password,
+      final url = Uri.parse('${ApiConfig.baseUrl}/weblogin');
+
+      final res = await http.post(
+        url,
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
       );
 
-      setState(() => isLoading = false);
+      final data = json.decode(res.body);
 
-      if (response == null) {
-        _showLoginFailed();
-        return;
+      // Handle based on backend status and message
+      if (res.statusCode == 200 && data['status'] == 'success') {
+        // Successful login
+        partnerDetails = Map<String, String>.from(data)
+          ..removeWhere((key, value) => key == 'status' || key == 'message');
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WebDashboardPage(partnerDetails: partnerDetails),
+          ),
+        );
+      } else {
+        // Display error message from backend
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Login failed")),
+        );
       }
-
-      // ===================== 🔥 FIX STARTS HERE =====================
-      // Backend sends: { "status": "success", "Partner_ID": "...", "Email": "..." }
-
-      if (response['status'] != 'success') {
-        _showLoginFailed();
-        return;
-      }
-
-      // Normalize keys for dashboard
-      partnerDetails = {
-        'partner_id': response['Partner_ID'] ?? '',
-        'email': response['Email'] ?? '',
-        'Partner_Name': response['Partner_Name'] ?? '',
-      };
-
-      if (partnerDetails['partner_id']!.isEmpty) {
-        _showLoginFailed();
-        return;
-      }
-      // ===================== 🔥 FIX ENDS HERE =====================
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => WebDashboardPage(partnerDetails: partnerDetails),
-        ),
-      );
     } catch (e) {
-      setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
-  }
-
-  void _showLoginFailed() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Login failed. Please check your credentials.")),
-    );
   }
 
   // ===================== FORGOT PASSWORD =====================
@@ -164,8 +166,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
                 if (email.isEmpty || newPwd.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Please fill both fields")),
-                  );
+                      const SnackBar(content: Text("Please fill both fields")));
                   return;
                 }
 
@@ -175,19 +176,16 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   final res = await http.post(
                     url,
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body:
-                    'email=${Uri.encodeComponent(email)}&newPassword=${Uri.encodeComponent(newPwd)}',
+                    body: 'email=${Uri.encodeComponent(email)}&newPassword=${Uri.encodeComponent(newPwd)}',
                   );
 
                   final data = json.decode(res.body);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(data['message'] ?? "Error")),
-                  );
+                      SnackBar(content: Text(data['message'] ?? "Error")));
                   if (data['status'] == "success") Navigator.pop(context);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Error: $e")),
-                  );
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text("Error: $e")));
                 }
               },
               child: const Text("Reset Password"),
@@ -231,7 +229,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ===================== LOGO =====================
+              // ===================== LOGO IMAGE =====================
               Container(
                 height: 80,
                 width: 80,
@@ -258,8 +256,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 ),
               ),
               const SizedBox(height: 30),
-
-              // ===================== EMAIL =====================
+              // ===================== EMAIL FIELD =====================
               TextField(
                 controller: emailController,
                 decoration: InputDecoration(
@@ -272,12 +269,15 @@ class _WebLoginPageState extends State<WebLoginPage> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white70),
+                  ),
                 ),
                 style: const TextStyle(color: Colors.white),
               ),
               const SizedBox(height: 15),
-
-              // ===================== PASSWORD =====================
+              // ===================== PASSWORD FIELD =====================
               StatefulBuilder(
                 builder: (context, setStateSB) {
                   return TextField(
@@ -288,10 +288,8 @@ class _WebLoginPageState extends State<WebLoginPage> {
                       labelStyle: const TextStyle(color: Colors.white70),
                       prefixIcon: const Icon(Icons.lock, color: Colors.white70),
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          showPassword ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.white70,
-                        ),
+                        icon: Icon(showPassword ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.white70),
                         onPressed: () {
                           setStateSB(() {
                             showPassword = !showPassword;
@@ -310,7 +308,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 },
               ),
               const SizedBox(height: 25),
-
               // ===================== LOGIN BUTTON =====================
               isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
@@ -330,28 +327,23 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
-
               const SizedBox(height: 15),
-
               // ===================== LINKS =====================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
                     onPressed: forgotPassword,
-                    child: const Text("Forgot Password?",
-                        style: TextStyle(color: Colors.white70)),
+                    child: const Text("Forgot Password?", style: TextStyle(color: Colors.white70)),
                   ),
                   TextButton(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const WebRegisterPage()),
+                        MaterialPageRoute(builder: (_) => const WebRegisterPage()),
                       );
                     },
-                    child: const Text("Register",
-                        style: TextStyle(color: Colors.white70)),
+                    child: const Text("Register", style: TextStyle(color: Colors.white70)),
                   ),
                 ],
               ),

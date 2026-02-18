@@ -45,6 +45,9 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
 
   // Bell animation controller
   late final AnimationController bellController;
+
+  final String apiBase = 'http://127.0.0.1:8080';
+
   bool isLoading = false;
   String? lastError;
   DateTime? lastUpdated;
@@ -70,14 +73,10 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
 
   // ============= Fetch Dashboard Data ==============
   Future<void> fetchDashboardData() async {
-    // UPDATED: Use lowercase keys to match Postgres/Backend output
-    final partnerId = widget.partnerDetails['partner_id'] ??
-        widget.partnerDetails['partner_id'] ?? '';
-
+    final partnerId = widget.partnerDetails['Partner_ID'] ?? '';
     if (partnerId.isEmpty) {
       setState(() {
-        isLoading = false;
-        lastError = 'Account Error: Partner ID not found. Please re-login.';
+        lastError = 'Missing Partner_ID in partnerDetails';
       });
       return;
     }
@@ -95,42 +94,40 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
       if (response.statusCode == 200) {
         final Map<String, dynamic> d = json.decode(response.body);
 
-        if (mounted) {
-          setState(() {
-            totalBookings = _toInt(d['totalBookings']);
-            pending = _toInt(d['pending']);
-            confirmed = _toInt(d['confirmed']);
-            cancelled = _toInt(d['cancelled']);
-            completed = _toInt(d['completed']);
-            totalRevenue = _toDouble(d['totalRevenue']);
-            netRevenue = _toDouble(d['netRevenue']);
-            pendingNotif = _toInt(d['pendingNotifications']);
-            financeNotif = _toInt(d['financeNotifications']);
-            lastUpdated = DateTime.now();
-            isLoading = false;
-
-            if (pendingNotif + financeNotif > 0) {
-              bellController.repeat(reverse: true);
-            } else {
-              bellController.stop();
-            }
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            lastError = 'Dashboard Load Failed (Code: ${response.statusCode})';
-            isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
         setState(() {
-          lastError = 'Connection Error: $e';
+          totalBookings = _toInt(d['totalBookings']);
+          pending = _toInt(d['pending']);
+          confirmed = _toInt(d['confirmed']);
+          cancelled = _toInt(d['cancelled']);
+          completed = _toInt(d['completed']);
+
+          totalRevenue = _toDouble(d['totalRevenue']);
+          netRevenue = _toDouble(d['netRevenue']);
+
+          pendingNotif = _toInt(d['pendingNotifications']);
+          financeNotif = _toInt(d['financeNotifications']);
+
+          lastUpdated = DateTime.now();
+
+          if (pendingNotif + financeNotif > 0) {
+            if (!bellController.isAnimating) bellController.repeat(reverse: true);
+          } else {
+            if (bellController.isAnimating) bellController.stop();
+          }
+
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          lastError = 'Server error: ${response.statusCode}';
           isLoading = false;
         });
       }
+    } catch (e) {
+      setState(() {
+        lastError = 'Failed to fetch dashboard: $e';
+        isLoading = false;
+      });
     }
   }
 
@@ -190,7 +187,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     );
 
     if (result == 'pending') {
-      final partnerId = widget.partnerDetails['partner_id'] ?? '';
+      final partnerId = widget.partnerDetails['Partner_ID'] ?? '';
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => BookingPage(partnerId: partnerId)),
@@ -198,7 +195,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     }
 
     if (result == 'finance') {
-      final partnerId = widget.partnerDetails['partner_id'] ?? '';
+      final partnerId = widget.partnerDetails['Partner_ID'] ?? '';
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => FinancePage(partnerId: partnerId)),
@@ -207,10 +204,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
   }
 
   void _onMenuClick(String option) {
-    // UPDATED: Support both cases for safety during transition
-    final partnerId = widget.partnerDetails['partner_id'] ??
-        widget.partnerDetails['partner_id'] ?? '';
-
+    final partnerId = widget.partnerDetails['Partner_ID'] ?? '';
     if (option == 'Add Hotels') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: partnerId)));
     } else if (option == 'Add Paying Guests') {
@@ -219,7 +213,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
       Navigator.push(context, MaterialPageRoute(builder: (_) => ViewHotelsPage(partnerId: partnerId)));
     } else if (option == 'View PGs') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => ViewPGsPage(partnerId: partnerId)));
-    } else if (option == 'Bookings') {
+    }else if (option == 'Bookings') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => BookingPage(partnerId: partnerId)))
           .then((_) => fetchDashboardData());
     } else if (option == 'Finance') {
@@ -228,6 +222,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
       Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutUsPage()));
     } else if (option == 'Home') {
       fetchDashboardData();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dashboard refreshed')));
     }
   }
 
@@ -237,15 +232,13 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
         context,
         MaterialPageRoute(
           builder: (_) => WebProfilePage(
-            // UPDATED: Lowercase check
-            email: widget.partnerDetails['email'] ?? widget.partnerDetails['email'] ?? '',
+            email: widget.partnerDetails['Email'] ?? '',
             partnerDetails: widget.partnerDetails,
           ),
         ),
       );
     } else if (value == 'logout') {
-      // FIXED: Use named route to clear the URL and go to login
-      Navigator.pushReplacementNamed(context, '/weblogin');
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const WebLoginPage()));
     }
   }
 
@@ -261,7 +254,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     bool isMobile = screenWidth < 800;
-    final partnerName = widget.partnerDetails['partner_name'] ?? 'Partner';
+    final partnerName = widget.partnerDetails['Partner_Name'] ?? 'Partner';
 
     final GlobalKey bellKey = GlobalKey(); // KEY ADDED FOR POPUP LOCATION
 

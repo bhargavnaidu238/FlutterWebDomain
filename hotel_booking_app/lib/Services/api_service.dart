@@ -6,75 +6,29 @@ import 'package:http/http.dart' as http;
 class ApiConfig {
   static const String _localWeb = 'http://localhost:8080';
   static const String _localAndroid = 'http://10.0.2.2:8080';
-  static const String _production =
-      'https://test-host-server-tamg.onrender.com';
+  static const String _production = 'https://api.yourdomain.com';
+
+  /// 🔐 Razorpay Key IDs (SAFE TO KEEP IN FRONTEND)
+  static const String _razorpayTestKey = 'rzp_test_RyBLHvNxl52vtv';
+  static const String _razorpayLiveKey = 'rzp_live_xxxxxxxx';
 
   static String get baseUrl {
     if (kReleaseMode) return _production;
     if (kIsWeb) return _localWeb;
     return _localAndroid;
   }
+
+  /// ✅ Used by Razorpay Flutter SDK
+  static String get razorpayKeyId {
+    if (kReleaseMode) return _razorpayLiveKey;
+    return _razorpayTestKey;
+  }
 }
 
-/// ================== API SERVICE ==================
+/// ================== AUTH APIs ==================
 class ApiService {
 
-  // ============================================================
-  // ====================== LOGIN SECTION ========================
-  // ============================================================
-
-  /// 🔥 RAW LOGIN (USED BY WEB LOGIN PAGE)
-  /// Returns full decoded JSON including status
-  static Future<Map<String, dynamic>?> loginUserRaw({
-    required String email,
-    required String password,
-  }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}/weblogin');
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body:
-        'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
-      );
-
-      debugPrint('Login RAW Code: ${response.statusCode}');
-      debugPrint('Login RAW Body: ${response.body}');
-
-      if (response.statusCode != 200) return null;
-
-      return jsonDecode(response.body);
-    } catch (e) {
-      debugPrint('Login RAW Error: $e');
-      return null;
-    }
-  }
-
-  /// SAFE LOGIN (OPTIONAL USE)
-  static Future<Map<String, String>?> loginUser({
-    required String email,
-    required String password,
-  }) async {
-
-    final raw = await loginUserRaw(email: email, password: password);
-
-    if (raw == null) return null;
-    if (raw['status'] != 'success') return null;
-
-    // ✅ IMPORTANT FIX: Extract nested data object
-    final Map<String, dynamic> userData = raw['data'];
-
-    return Map<String, String>.from(
-      userData.map((k, v) => MapEntry(k, v?.toString() ?? '')),
-    );
-  }
-
-
-  // ============================================================
-  // ====================== REGISTER =============================
-  // ============================================================
-
+  /// ================== REGISTER (WEB) ==================
   static Future<bool> registerUser({
     required String email,
     required String firstName,
@@ -104,114 +58,218 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: body,
       );
-
-      debugPrint('Register Code: ${response.statusCode}');
-      debugPrint('Register Body: ${response.body}');
-
       return response.statusCode == 200;
     } catch (e) {
-      debugPrint('Register Error: $e');
+      print('❌ Register Error: $e');
       return false;
     }
   }
 
-  // ============================================================
-  // ====================== PROFILE SECTION ======================
-  // ============================================================
-
-  static Future<Map<String, dynamic>?> getProfile({
+  /// ================== LOGIN (WEB) ==================
+  static Future<Map<String, dynamic>?> loginUser({
     required String email,
+    required String password,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}/webgetprofile');
+    final url = Uri.parse('${ApiConfig.baseUrl}/login');
+    final body = jsonEncode({'email': email, 'password': password});
 
     try {
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body:
-        'loggedInEmail=${Uri.encodeComponent(email.trim().toLowerCase())}',
+        headers: {'Content-Type': 'application/json'},
+        body: body,
       );
 
-      if (response.statusCode != 200) return null;
-
       final data = jsonDecode(response.body);
+      print("📩 Login Response → $data");
 
-      if (data['status'] != 'success') return null;
+      if (data.containsKey("error")) return data;
 
-      return data['data'];
+      if (response.statusCode == 200) {
+        return {
+          'email': data['email'] ?? email,
+          'userId': data['userId'] ?? '',
+          ...data,
+        };
+      }
+
+      return {"error": "server_error"};
     } catch (e) {
-      debugPrint('Profile Error: $e');
-      return null;
+      print('🚨 Login Error: $e');
+      return {"error": "connection_error"};
     }
   }
 
-  static Future<bool> updateProfile({
-    required Map<String, String> fields,
-  }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}/webupdateprofile');
+  /* ============================================================
+     🔐 FORGOT PASSWORD (APP ONLY)
+     ============================================================ */
 
-    final bodyString = fields.entries
-        .map((e) =>
-    "${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}")
-        .join("&");
+  static Future<Map<String, dynamic>> verifyForgotPassword({
+    required String email,
+    required String mobile,
+  }) async {
+    final url =
+    Uri.parse('${ApiConfig.baseUrl}/app/forgot-password/verify');
 
     try {
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: bodyString,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": email.trim(),
+          "mobile": mobile.trim(),
+        }),
       );
 
-      final data = jsonDecode(response.body);
-      return data['status'] == 'success';
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {"matched": data['matched'] == true};
+      }
     } catch (e) {
-      debugPrint('Update Profile Error: $e');
-      return false;
+      print('❌ Verify Forgot Password Error: $e');
+    }
+    return {"matched": false};
+  }
+
+  static Future<Map<String, dynamic>> changePassword({
+    required String email,
+    required String newPassword,
+  }) async {
+    final url =
+    Uri.parse('${ApiConfig.baseUrl}/app/forgot-password/change');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": email.trim(),
+          "newPassword": newPassword,
+        }),
+      );
+
+      return {"success": response.statusCode == 200};
+    } catch (e) {
+      print('❌ Change Password Error: $e');
+      return {"success": false};
     }
   }
 
-  static Future<bool> changePassword({
+  /* ============================================================
+     🔐 CHANGE PASSWORD (PROFILE – WITH CURRENT PASSWORD)
+     ============================================================ */
+
+  static Future<bool> changePasswordWithCurrent({
     required String email,
     required String currentPassword,
     required String newPassword,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}/webchangepassword');
+    final url = Uri.parse('${ApiConfig.baseUrl}/app/change-password');
 
     try {
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body:
-        'loggedInEmail=${Uri.encodeComponent(email.trim().toLowerCase())}'
-            '&currentPassword=${Uri.encodeComponent(currentPassword)}'
-            '&newPassword=${Uri.encodeComponent(newPassword)}',
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": email.trim(),
+          "currentPassword": currentPassword,
+          "newPassword": newPassword,
+        }),
       );
 
-      final data = jsonDecode(response.body);
-      return data['status'] == 'success';
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      }
     } catch (e) {
-      debugPrint('Change Password Error: $e');
+      print('❌ Change Password (Profile) Error: $e');
+    }
+    return false;
+  }
+}
+
+/// ================== PROFILE APIs ==================
+class ProfileApiService {
+
+  /// 🔹 Fetch Profile
+  static Future<Map<String, dynamic>?> fetchProfile({
+    required String email,
+  }) async {
+    final url = Uri.parse(
+      '${ApiConfig.baseUrl}/profile?email=${Uri.encodeComponent(email)}',
+    );
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final data = jsonDecode(response.body);
+        return {
+          "userId": data['userId']?.toString() ?? '',
+          "email": data['email'] ?? email,
+          "firstName": data['firstName'] ?? '',
+          "lastName": data['lastName'] ?? '',
+          "phone": data['phone'] ?? '',
+          "address": data['address'] ?? '',
+        };
+      }
+    } catch (e) {
+      print('🚨 FetchProfile Error: $e');
+    }
+    return null;
+  }
+
+  /// 🔹 Update Profile
+  static Future<bool> updateProfile({
+    required String email,
+    required String userId,
+    required String firstName,
+    required String lastName,
+    required String phone,
+    required String address,
+  }) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}/profile');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": email,
+          "userId": userId,
+          "firstName": firstName,
+          "lastName": lastName,
+          "phone": phone,
+          "address": address,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('🚨 UpdateProfile Error: $e');
       return false;
     }
   }
 
-  static Future<bool> deleteAccount({
+  /// 🔹 Deactivate Account
+  static Future<bool> deactivateAccount({
     required String email,
+    required String userId,
+    required String status,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}/webdeleteprofile');
+    final url = Uri.parse('${ApiConfig.baseUrl}/profile');
 
     try {
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body:
-        'loggedInEmail=${Uri.encodeComponent(email.trim().toLowerCase())}',
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": email.trim(),
+          "userId": userId.trim(),
+          "status": status.trim(),
+        }),
       );
-
-      final data = jsonDecode(response.body);
-      return data['status'] == 'success';
+      return response.statusCode == 200;
     } catch (e) {
-      debugPrint('Delete Account Error: $e');
+      print('❌ Deactivate Error: $e');
       return false;
     }
   }

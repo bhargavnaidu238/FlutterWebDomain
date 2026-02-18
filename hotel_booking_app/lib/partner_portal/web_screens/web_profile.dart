@@ -39,9 +39,9 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
   String normalizeKey(String key) {
     switch (key) {
-      case 'Registration Date':
-        return 'Registration_Date';
-      case 'gst':
+      case 'Registration_Date':
+        return 'Registration Date';
+      case 'GST_Number':
         return 'GST Number';
       default:
         return key.replaceAll("_", " ");
@@ -87,13 +87,13 @@ class _WebProfilePageState extends State<WebProfilePage> {
     try {
       Map<String, String> updatedData = {};
       for (var key in profileData.keys) {
-        if (!['email', 'user_status', 'registration_date'].contains(key)) {
+        if (!['Email', 'Status', 'Registration Date'].contains(key)) {
           updatedData[key.replaceAll(" ", "_")] = controllers[key]?.text.trim() ?? '';
         }
       }
       updatedData['loggedInEmail'] = widget.email.trim().toLowerCase();
 
-      final url = Uri.parse('${ApiConfig.baseUrl}/webupdateprofile');
+      final url = Uri.parse("http://localhost:8080/webupdateprofile");
       final bodyString = updatedData.entries
           .map((e) => "${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}")
           .join("&");
@@ -118,7 +118,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
   Future<void> changePassword() async {
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/webchangepassword');
+      final url = Uri.parse("http://localhost:8080/webchangepassword");
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -142,7 +142,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
   Future<void> deleteAccount() async {
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/webdeleteprofile');
+      final url = Uri.parse("http://localhost:8080/webdeleteprofile");
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -238,26 +238,26 @@ class _WebProfilePageState extends State<WebProfilePage> {
           child: Column(
             children: [
               buildSection("Personal Info", [
-                buildFieldCard("Partner Name", controllers["partner_name"]),
-                buildFieldCard("Email", controllers["email"], isEditable: false),
+                buildFieldCard("Partner Name", controllers["Partner Name"]),
+                buildFieldCard("Email", controllers["Email"], isEditable: false),
               ]),
               buildSection("Business Info", [
-                buildFieldCard("Business Name", controllers["business_name"], icon: Icons.business),
-                buildFieldCard("GST Number", controllers["gst_number"], icon: Icons.receipt_long),
+                buildFieldCard("Business Name", controllers["Business Name"], icon: Icons.business),
+                buildFieldCard("GST Number", controllers["GST Number"], icon: Icons.receipt_long),
               ]),
               buildSection("Address Info", [
-                buildFieldCard("Address", controllers["address"], icon: Icons.home),
-                buildFieldCard("City", controllers["city"], icon: Icons.location_city),
-                buildFieldCard("State", controllers["state"], icon: Icons.map),
-                buildFieldCard("Country", controllers["country"], icon: Icons.public),
-                buildFieldCard("Pincode", controllers["pincode"], icon: Icons.pin_drop),
+                buildFieldCard("Address", controllers["Address"], icon: Icons.home),
+                buildFieldCard("City", controllers["City"], icon: Icons.location_city),
+                buildFieldCard("State", controllers["State"], icon: Icons.map),
+                buildFieldCard("Country", controllers["Country"], icon: Icons.public),
+                buildFieldCard("Pincode", controllers["Pincode"], icon: Icons.pin_drop),
               ]),
               buildSection("Contact Info", [
-                buildFieldCard("Contact Number", controllers["contact_number"], icon: Icons.phone),
+                buildFieldCard("Contact Number", controllers["Contact Number"], icon: Icons.phone),
               ]),
               buildSection("Account Info", [
-                buildFieldCard("Status", controllers["user_status"], isEditable: false),
-                buildFieldCard("Registration Date", controllers["registration_date"], isEditable: false),
+                buildFieldCard("Status", controllers["Status"], isEditable: false),
+                buildFieldCard("Registration Date", controllers["Registration Date"], isEditable: false),
               ]),
               const SizedBox(height: 20),
               ElevatedButton.icon(
@@ -340,27 +340,27 @@ class _WebProfilePageState extends State<WebProfilePage> {
               ),
               const SizedBox(height: 10),
               Text(
-                profileData["partner_name"] ?? "",
+                profileData["Partner Name"] ?? "",
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green.shade900),
               ),
               const SizedBox(height: 30),
               buildSection("Business Info", [
-                buildFieldCard("Business Name", controllers["business_name"], isEditable: false, icon: Icons.business),
-                buildFieldCard("GST Number", controllers["gst_number"], isEditable: false, icon: Icons.receipt_long),
+                buildFieldCard("Business Name", controllers["Business Name"], isEditable: false, icon: Icons.business),
+                buildFieldCard("GST Number", controllers["GST Number"], isEditable: false, icon: Icons.receipt_long),
               ]),
               buildSection("Address Info", [
-                buildFieldCard("Address", controllers["address"], isEditable: false, icon: Icons.home),
-                buildFieldCard("City", controllers["city"], isEditable: false, icon: Icons.location_city),
-                buildFieldCard("State", controllers["state"], isEditable: false, icon: Icons.map),
-                buildFieldCard("Country", controllers["country"], isEditable: false, icon: Icons.public),
-                buildFieldCard("Pincode", controllers["pincode"], isEditable: false, icon: Icons.pin_drop),
+                buildFieldCard("Address", controllers["Address"], isEditable: false, icon: Icons.home),
+                buildFieldCard("City", controllers["City"], isEditable: false, icon: Icons.location_city),
+                buildFieldCard("State", controllers["State"], isEditable: false, icon: Icons.map),
+                buildFieldCard("Country", controllers["Country"], isEditable: false, icon: Icons.public),
+                buildFieldCard("Pincode", controllers["Pincode"], isEditable: false, icon: Icons.pin_drop),
               ]),
               buildSection("Contact Info", [
-                buildFieldCard("Contact Number", controllers["contact_number"], isEditable: false, icon: Icons.phone),
+                buildFieldCard("Contact Number", controllers["Contact Number"], isEditable: false, icon: Icons.phone),
               ]),
               buildSection("Account Info", [
-                buildFieldCard("Status", controllers["user_status"], isEditable: false),
-                buildFieldCard("Registration Date", controllers["registration_date"], isEditable: false),
+                buildFieldCard("Status", controllers["Status"], isEditable: false),
+                buildFieldCard("Registration Date", controllers["Registration Date"], isEditable: false),
               ]),
             ],
           ),
