@@ -55,7 +55,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'loggedInEmail=${Uri.encodeComponent(widget.email.trim().toLowerCase())}',
+        body: 'email=${Uri.encodeComponent(widget.email.trim().toLowerCase())}',
       );
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
@@ -91,7 +91,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
           updatedData[key.replaceAll(" ", "_")] = controllers[key]?.text.trim() ?? '';
         }
       }
-      updatedData['loggedInEmail'] = widget.email.trim().toLowerCase();
+      updatedData['email'] = widget.email.trim().toLowerCase();
 
       final url = Uri.parse('${ApiConfig.baseUrl}/webupdateprofile');
       final bodyString = updatedData.entries
@@ -123,7 +123,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body:
-        "loggedInEmail=${Uri.encodeComponent(widget.email.trim().toLowerCase())}"
+        "email=${Uri.encodeComponent(widget.email.trim().toLowerCase())}"
             "&currentPassword=${Uri.encodeComponent(currentPasswordController.text.trim())}"
             "&newPassword=${Uri.encodeComponent(newPasswordController.text.trim())}",
       );
@@ -146,7 +146,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: "loggedInEmail=${Uri.encodeComponent(widget.email.trim())}",
+        body: "email=${Uri.encodeComponent(widget.email.trim())}",
       );
       final data = jsonDecode(res.body);
       if (data['status'] == 'success') {
