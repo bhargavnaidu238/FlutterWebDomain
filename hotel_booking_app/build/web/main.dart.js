@@ -101440,8 +101440,8 @@ return new A.Lf(A.u(s,t.QX),A.u(s,s),B.I1,new A.bt(B.L,r),new A.bt(B.L,r))}}
 A.Lf.prototype={
 an(){this.aK()
 this.tM()},
-aBM(a){switch(a){case"Registration_Date":return"Registration Date"
-case"GST_Number":return"GST Number"
+aBM(a){switch(a){case"registration_date":return"Registration Date"
+case"gst_number":return"GST Number"
 default:return A.eF(a,"_"," ")}},
 tM(){var s=0,r=A.G(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g
 var $async$tM=A.H(function(a,b){if(a===1){p.push(b)
@@ -101482,7 +101482,7 @@ s=q}for(;;)switch(s){case 0:q=3
 g=t.N
 n=A.u(g,g)
 for(f=o.f,f=new A.eq(f,f.r,f.e),e=t.s,d=o.d;f.v();){m=f.d
-if(!B.b.n(A.c(["Email","Status","Registration Date"],e),m)){c=A.eF(m," ","_")
+if(!B.b.n(A.c(["email","user_status","registration_date"],e),m)){c=A.eF(m," ","_")
 b=d.h(0,m)
 b=b==null?null:B.c.az(b.a.a)
 if(b==null)b=""
@@ -101597,19 +101597,19 @@ if(a===B.I2)s=B.nY
 else if(a===B.I3)s=B.ka
 else s=a===B.I4?B.uH:B.kc
 return A.Ra(!1,r,r,r,!0,r,r,!0,r,A.fI(s,r,r,B.ae,r,r,r,r,r,r,r,r,r,r),r,r,new A.aJo(this,a),q===a,r,B.cU,r,r,r,r,A.a2(b,r,r,r,A.eb(r,r,B.ae,r,r,r,r,r,r,r,r,r,r,r,r,r,r,!0,r,r,r,r,r,r,r,r),r,r),r,r,r)},
-auj(){var s,r,q,p,o=this,n="Partner Name",m="Business Info",l="Business Name",k="GST Number",j="Address Info",i="Address",h="City",g="State",f="Country",e="Pincode",d="Contact Info",c="Contact Number",b="Account Info",a="Status",a0="Registration Date",a1=null
+auj(){var s,r,q,p,o=this,n="partner_name",m="Business Info",l="Business Name",k="business_name",j="GST Number",i="gst_number",h="Address Info",g="Contact Info",f="Contact Number",e="contact_number",d="Account Info",c="user_status",b="Registration Date",a="registration_date",a0=null
 switch(o.r.a){case 1:s=o.d
 r=t.p
-return A.i6(A.b1(A.c([o.mE("Personal Info",A.c([o.aug(n,s.h(0,n)),o.wv("Email",s.h(0,"Email"),!1)],r)),o.mE(m,A.c([o.o8(l,s.h(0,l),B.k8),o.o8(k,s.h(0,k),B.o2)],r)),o.mE(j,A.c([o.o8(i,s.h(0,i),B.k9),o.o8(h,s.h(0,h),B.nZ),o.o8(g,s.h(0,g),B.kb),o.o8(f,s.h(0,f),B.uK),o.o8(e,s.h(0,e),B.o1)],r)),o.mE(d,A.c([o.o8(c,s.h(0,c),B.hQ)],r)),o.mE(b,A.c([o.wv(a,s.h(0,a),!1),o.wv(a0,s.h(0,a0),!1)],r)),B.be,A.li(B.uU,B.ayZ,o.ga53(),A.fb(a1,a1,B.ao,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1))],r),B.q,B.m,B.n),a1,a1,a1,B.a4)
-case 2:return A.i6(new A.aR(B.b5,A.b1(A.c([o.th("Current Password",o.w,B.ka,!0,!o.y,new A.aJr(o)),o.th("New Password",o.x,B.Sf,!0,!o.z,new A.aJs(o)),B.be,A.li(B.uU,B.az8,o.gauE(),A.fb(a1,a1,B.ao,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1))],t.p),B.q,B.m,B.n),a1),a1,a1,a1,B.a4)
-case 3:return A.eJ(new A.aR(B.b5,A.b1(A.c([B.SS,B.be,B.azD,B.be,A.li(B.Sy,B.azL,o.gawV(),A.fb(a1,a1,B.cs,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1,a1))],t.p),B.q,B.d1,B.n),a1),a1,a1)
+return A.i6(A.b1(A.c([o.mE("Personal Info",A.c([o.aug("Partner Name",s.h(0,n)),o.wv("Email",s.h(0,"email"),!1)],r)),o.mE(m,A.c([o.o8(l,s.h(0,k),B.k8),o.o8(j,s.h(0,i),B.o2)],r)),o.mE(h,A.c([o.o8("Address",s.h(0,"address"),B.k9),o.o8("City",s.h(0,"city"),B.nZ),o.o8("State",s.h(0,"state"),B.kb),o.o8("Country",s.h(0,"country"),B.uK),o.o8("Pincode",s.h(0,"pincode"),B.o1)],r)),o.mE(g,A.c([o.o8(f,s.h(0,e),B.hQ)],r)),o.mE(d,A.c([o.wv("Status",s.h(0,c),!1),o.wv(b,s.h(0,a),!1)],r)),B.be,A.li(B.uU,B.ayZ,o.ga53(),A.fb(a0,a0,B.ao,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0))],r),B.q,B.m,B.n),a0,a0,a0,B.a4)
+case 2:return A.i6(new A.aR(B.b5,A.b1(A.c([o.th("Current Password",o.w,B.ka,!0,!o.y,new A.aJr(o)),o.th("New Password",o.x,B.Sf,!0,!o.z,new A.aJs(o)),B.be,A.li(B.uU,B.az8,o.gauE(),A.fb(a0,a0,B.ao,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0))],t.p),B.q,B.m,B.n),a0),a0,a0,a0,B.a4)
+case 3:return A.eJ(new A.aR(B.b5,A.b1(A.c([B.SS,B.be,B.azD,B.be,A.li(B.Sy,B.azL,o.gawV(),A.fb(a0,a0,B.cs,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0,a0))],t.p),B.q,B.d1,B.n),a0),a0,a0)
 case 0:default:s=A.c([B.tw,B.cU],t.t_)
-s=A.bN(a1,B.NY,B.t,a1,a1,new A.bw(a1,a1,a1,a1,A.c([new A.be(0,B.I,B.hz,B.l3,12)],t.E),new A.iK(B.mo,B.rg,B.cg,s,a1,a1),a1,B.fa),a1,a1,a1,B.Ru,a1,a1,a1)
+s=A.bN(a0,B.NY,B.t,a0,a0,new A.bw(a0,a0,a0,a0,A.c([new A.be(0,B.I,B.hz,B.l3,12)],t.E),new A.iK(B.mo,B.rg,B.cg,s,a0,a0),a0,B.fa),a0,a0,a0,B.Ru,a0,a0,a0)
 r=o.f.h(0,n)
 if(r==null)r=""
 q=o.d
 p=t.p
-return A.i6(A.b1(A.c([B.df,s,B.dE,A.a2(r,a1,a1,a1,A.eb(a1,a1,B.ae,a1,a1,a1,a1,a1,a1,a1,a1,22,a1,a1,B.ac,a1,a1,!0,a1,a1,a1,a1,a1,a1,a1,a1),a1,a1),B.df,o.mE(m,A.c([o.o9(l,q.h(0,l),B.k8,!1),o.o9(k,q.h(0,k),B.o2,!1)],p)),o.mE(j,A.c([o.o9(i,q.h(0,i),B.k9,!1),o.o9(h,q.h(0,h),B.nZ,!1),o.o9(g,q.h(0,g),B.kb,!1),o.o9(f,q.h(0,f),B.uK,!1),o.o9(e,q.h(0,e),B.o1,!1)],p)),o.mE(d,A.c([o.o9(c,q.h(0,c),B.hQ,!1)],p)),o.mE(b,A.c([o.wv(a,q.h(0,a),!1),o.wv(a0,q.h(0,a0),!1)],p))],p),B.q,B.m,B.n),a1,a1,a1,B.a4)}},
+return A.i6(A.b1(A.c([B.df,s,B.dE,A.a2(r,a0,a0,a0,A.eb(a0,a0,B.ae,a0,a0,a0,a0,a0,a0,a0,a0,22,a0,a0,B.ac,a0,a0,!0,a0,a0,a0,a0,a0,a0,a0,a0),a0,a0),B.df,o.mE(m,A.c([o.o9(l,q.h(0,k),B.k8,!1),o.o9(j,q.h(0,i),B.o2,!1)],p)),o.mE(h,A.c([o.o9("Address",q.h(0,"address"),B.k9,!1),o.o9("City",q.h(0,"city"),B.nZ,!1),o.o9("State",q.h(0,"state"),B.kb,!1),o.o9("Country",q.h(0,"country"),B.uK,!1),o.o9("Pincode",q.h(0,"pincode"),B.o1,!1)],p)),o.mE(g,A.c([o.o9(f,q.h(0,e),B.hQ,!1)],p)),o.mE(d,A.c([o.wv("Status",q.h(0,c),!1),o.wv(b,q.h(0,a),!1)],p))],p),B.q,B.m,B.n),a0,a0,a0,B.a4)}},
 mE(a,b){var s=null,r=A.c([A.a2(a,s,s,s,A.eb(s,s,B.ae,s,s,s,s,s,s,s,s,20,s,s,B.ac,s,s,!0,s,s,s,s,s,s,s,s),s,s),B.dE],t.p)
 B.b.Y(r,b)
 r.push(B.be)
