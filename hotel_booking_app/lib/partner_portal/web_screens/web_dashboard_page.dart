@@ -46,7 +46,8 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
   // Bell animation controller
   late final AnimationController bellController;
 
-  final String apiBase = 'http://127.0.0.1:8080';
+  //final String apiBase = 'http://127.0.0.1:8080';
+  final String apiBase = 'https://test-host-server-tamg.onrender.com';
 
   bool isLoading = false;
   String? lastError;
@@ -73,7 +74,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
 
   // ============= Fetch Dashboard Data ==============
   Future<void> fetchDashboardData() async {
-    final partnerId = widget.partnerDetails['Partner_ID'] ?? '';
+    final partnerId = widget.partnerDetails['partner_id'] ?? '';
     if (partnerId.isEmpty) {
       setState(() {
         lastError = 'Missing Partner_ID in partnerDetails';
@@ -187,7 +188,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     );
 
     if (result == 'pending') {
-      final partnerId = widget.partnerDetails['Partner_ID'] ?? '';
+      final partnerId = widget.partnerDetails['partner_id'] ?? '';
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => BookingPage(partnerId: partnerId)),
@@ -195,7 +196,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     }
 
     if (result == 'finance') {
-      final partnerId = widget.partnerDetails['Partner_ID'] ?? '';
+      final partnerId = widget.partnerDetails['partner_id'] ?? '';
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => FinancePage(partnerId: partnerId)),
@@ -204,7 +205,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
   }
 
   void _onMenuClick(String option) {
-    final partnerId = widget.partnerDetails['Partner_ID'] ?? '';
+    final partnerId = widget.partnerDetails['partner_id'] ?? '';
     if (option == 'Add Hotels') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: partnerId)));
     } else if (option == 'Add Paying Guests') {
@@ -232,7 +233,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
         context,
         MaterialPageRoute(
           builder: (_) => WebProfilePage(
-            email: widget.partnerDetails['Email'] ?? '',
+            email: widget.partnerDetails['email'] ?? '',
             partnerDetails: widget.partnerDetails,
           ),
         ),
@@ -254,7 +255,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     bool isMobile = screenWidth < 800;
-    final partnerName = widget.partnerDetails['Partner_Name'] ?? 'Partner';
+    final partnerName = widget.partnerDetails['partner_name'] ?? 'Partner';
 
     final GlobalKey bellKey = GlobalKey(); // KEY ADDED FOR POPUP LOCATION
 

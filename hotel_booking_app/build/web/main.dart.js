@@ -98385,10 +98385,10 @@ A.afD.prototype={
 $0(){return A.akD(this.a,"/registerlogin",t.X)},
 $S:0}
 A.afG.prototype={
-$2(a,b){var s,r=null,q="Get Started",p="assets/LandingPageImages/LandingImage2.png",o=t.p
+$2(a,b){var s,r=null,q="Get Started",p=t.p
 if(b.b>900){s=A.fb(r,r,B.f,r,r,r,r,r,r,r,r,r,B.u_,r,r,r,r,r,r,r)
-o=A.bK(A.c([A.d8(A.b1(A.c([B.aza,B.iU,B.azl,B.ql,A.lh(!1,A.a2(q,r,r,r,A.eb(r,r,B.ao,r,r,r,r,r,r,r,r,18,r,r,r,r,r,!0,r,r,r,r,r,r,r,r),r,r),r,r,r,r,r,r,new A.afE(a),r,s)],o),B.a0,B.m,B.n),1),B.at_,A.d8(A.aNs(p,B.rx,400),1)],o),B.q,B.m,B.n,0,r)}else{s=A.fb(r,r,B.f,r,r,r,r,r,r,r,r,r,B.u_,r,r,r,r,r,r,r)
-o=A.b1(A.c([B.azE,B.iU,B.azY,B.ql,A.lh(!1,A.a2(q,r,r,r,A.eb(r,r,B.ao,r,r,r,r,r,r,r,r,18,r,r,r,r,r,!0,r,r,r,r,r,r,r,r),r,r),r,r,r,r,r,r,new A.afF(a),r,s),B.eZ,A.aNs(p,B.rx,300)],o),B.a0,B.m,B.n)}return o},
+p=A.bK(A.c([A.d8(A.b1(A.c([B.aza,B.iU,B.azl,B.ql,A.lh(!1,A.a2(q,r,r,r,A.eb(r,r,B.ao,r,r,r,r,r,r,r,r,18,r,r,r,r,r,!0,r,r,r,r,r,r,r,r),r,r),r,r,r,r,r,r,new A.afE(a),r,s)],p),B.a0,B.m,B.n),1),B.at_,A.d8(A.aNs("assets/LandingPageImages/LandingImage.png",B.rx,400),1)],p),B.q,B.m,B.n,0,r)}else{s=A.fb(r,r,B.f,r,r,r,r,r,r,r,r,r,B.u_,r,r,r,r,r,r,r)
+p=A.b1(A.c([B.azE,B.iU,B.azY,B.ql,A.lh(!1,A.a2(q,r,r,r,A.eb(r,r,B.ao,r,r,r,r,r,r,r,r,18,r,r,r,r,r,!0,r,r,r,r,r,r,r,r),r,r),r,r,r,r,r,r,new A.afF(a),r,s),B.eZ,A.aNs("assets/LandingPageImages/LandingImage2.png",B.rx,300)],p),B.a0,B.m,B.n)}return p},
 $S:633}
 A.afE.prototype={
 $0(){return A.akD(this.a,"/registerlogin",t.X)},
@@ -100962,7 +100962,7 @@ s.l()
 this.abv()},
 mN(){var s=0,r=A.G(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f
 var $async$mN=A.H(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:g=J.ab(n.a.c,"Partner_ID")
+s=p}for(;;)switch(s){case 0:g=J.ab(n.a.c,"partner_id")
 if(g==null)g=""
 if(g.length===0){n.I(new A.aJ3(n))
 s=1
@@ -101020,19 +101020,19 @@ if(o>0)i.push(B.ap2)
 s=3
 return A.N(A.aY0(B.t,null,null,l,null,null,i,null,null,new A.pV(m.a+k.a-10,m.b+j.b,0,0),null,null,null,null,null,null,!1,t.N),$async$AK)
 case 3:h=c
-if(h==="pending"){g=J.ab(p.a.c,"Partner_ID")
+if(h==="pending"){g=J.ab(p.a.c,"partner_id")
 if(g==null)g=""
 f=p.c
 f.toString
 l=A.dH(new A.aIG(g),null,t.z)
-A.c6(f,!1).e1(l).bv(new A.aIH(p),t.H)}if(h==="finance"){g=J.ab(p.a.c,"Partner_ID")
+A.c6(f,!1).e1(l).bv(new A.aIH(p),t.H)}if(h==="finance"){g=J.ab(p.a.c,"partner_id")
 if(g==null)g=""
 f=p.c
 f.toString
 l=A.dH(new A.aII(g),null,t.z)
 A.c6(f,!1).e1(l).bv(new A.aIJ(p),t.H)}case 1:return A.E(q,r)}})
 return A.F($async$AK,r)},
-mr(a){var s,r,q=this,p=null,o=J.ab(q.a.c,"Partner_ID")
+mr(a){var s,r,q=this,p=null,o=J.ab(q.a.c,"partner_id")
 if(o==null)o=""
 if(a==="Add Hotels"){s=q.c
 s.toString
@@ -101066,7 +101066,7 @@ s.toString
 A.tF(s,A.dH(new A.aIL(),null,t.z))}},
 u0(a,b){var s=null,r=B.d.ac(b,2)
 return new A.aR(B.Rb,A.a2(a+" : "+r,s,s,s,B.qx,s,s),s)},
-J(a){var s,r,q,p,o,n,m,l,k,j=this,i=null,h=A.c9(a,i,t.w).w.a.a<800,g=J.ab(j.a.c,"Partner_Name")
+J(a){var s,r,q,p,o,n,m,l,k,j=this,i=null,h=A.c9(a,i,t.w).w.a.a<800,g=J.ab(j.a.c,"partner_name")
 if(g==null)g="Partner"
 s=new A.bC(i,t.re)
 if(h)r=0
@@ -101176,7 +101176,7 @@ A.aIE.prototype={
 $1(a){return B.KV},
 $S:665}
 A.aIK.prototype={
-$1(a){var s=this.a,r=J.ab(s.a.c,"Email")
+$1(a){var s=this.a,r=J.ab(s.a.c,"email")
 if(r==null)r=""
 return new A.uS(r,s.a.c,null)},
 $S:666}

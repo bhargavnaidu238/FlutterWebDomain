@@ -121,7 +121,7 @@ class LandingPage extends StatelessWidget {
               const SizedBox(width: 50),
               Expanded(
                 child: Image.asset(
-                  'assets/LandingPageImages/LandingImage2.png',
+                  'assets/LandingPageImages/LandingImage.png',
                   fit: BoxFit.contain,
                   height: 400,
                 ),
