@@ -93,7 +93,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
       }
       updatedData['loggedInEmail'] = widget.email.trim().toLowerCase();
 
-      final url = Uri.parse("http://localhost:8080/webupdateprofile");
+      final url = Uri.parse('${ApiConfig.baseUrl}/webupdateprofile');
       final bodyString = updatedData.entries
           .map((e) => "${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}")
           .join("&");
@@ -118,7 +118,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
   Future<void> changePassword() async {
     try {
-      final url = Uri.parse("http://localhost:8080/webchangepassword");
+      final url = Uri.parse('${ApiConfig.baseUrl}/webchangepassword');
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -142,7 +142,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
   Future<void> deleteAccount() async {
     try {
-      final url = Uri.parse("http://localhost:8080/webdeleteprofile");
+      final url = Uri.parse('${ApiConfig.baseUrl}/webdeleteprofile');
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
