@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -10,11 +11,7 @@ class WebProfilePage extends StatefulWidget {
   final String email;
   final Map<String, String> partnerDetails;
 
-  const WebProfilePage({
-    required this.email,
-    required this.partnerDetails,
-    Key? key,
-  }) : super(key: key);
+  const WebProfilePage({required this.email, required this.partnerDetails, Key? key}) : super(key: key);
 
   @override
   State<WebProfilePage> createState() => _WebProfilePageState();
@@ -26,9 +23,11 @@ class _WebProfilePageState extends State<WebProfilePage> {
   Map<String, String> profileData = {};
   ProfileMenuOption selectedOption = ProfileMenuOption.viewProfile;
 
+  // Change password controllers
   TextEditingController currentPasswordController = TextEditingController();
   TextEditingController newPasswordController = TextEditingController();
 
+  // Password visibility toggles
   bool showCurrentPassword = false;
   bool showNewPassword = false;
 
@@ -37,9 +36,18 @@ class _WebProfilePageState extends State<WebProfilePage> {
     super.initState();
     fetchProfile();
   }
-
-  // ================= FETCH PROFILE =================
-
+/*
+  String normalizeKey(String key) {
+    switch (key) {
+      case 'registration_date':
+        return 'Registration Date';
+      case 'gst_number':
+        return 'GST Number';
+      default:
+        return key.replaceAll("_", " ");
+    }
+  }
+*/
   Future<void> fetchProfile() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/webgetprofile');
@@ -47,29 +55,26 @@ class _WebProfilePageState extends State<WebProfilePage> {
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body:
-        'email=${Uri.encodeComponent(widget.email.trim().toLowerCase())}',
+        body: 'email=${Uri.encodeComponent(widget.email.trim().toLowerCase())}',
       );
-
-      final decoded = jsonDecode(res.body);
-
-      if (res.statusCode == 200 && decoded['status'] == 'success') {
-        final Map<String, dynamic> data = decoded['data'];
-
-        setState(() {
-          profileData =
-              data.map((k, v) => MapEntry(k.toLowerCase(), v?.toString() ?? ''));
-
-          controllers.clear();
-          for (var key in profileData.keys) {
-            controllers[key] =
-                TextEditingController(text: profileData[key] ?? '');
-          }
-
-          isLoading = false;
-        });
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        if (decoded['status'] == 'success') {
+          final Map<String, dynamic> data = decoded['data'];
+          setState(() {
+            profileData = data.map((k, v) => MapEntry(k.toLowerCase(), v?.toString() ?? ''));
+            controllers.clear();
+            for (var key in profileData.keys) {
+              controllers[key] = TextEditingController(text: profileData[key] ?? '');
+            }
+            isLoading = false;
+          });
+        } else {
+          showSnack(decoded['message'] ?? 'Error fetching profile');
+          setState(() => isLoading = false);
+        }
       } else {
-        showSnack(decoded['message'] ?? 'Error fetching profile');
+        showSnack("Failed to fetch profile: ${res.statusCode}");
         setState(() => isLoading = false);
       }
     } catch (e) {
@@ -78,26 +83,19 @@ class _WebProfilePageState extends State<WebProfilePage> {
     }
   }
 
-  // ================= UPDATE PROFILE =================
-
   Future<void> saveProfile() async {
     try {
       Map<String, String> updatedData = {};
-
       for (var key in profileData.keys) {
-        if (!['email', 'user_status', 'registration_date', 'partner_id']
-            .contains(key)) {
+        if (!['email', 'user_status', 'registration_date', 'partner_id'].contains(key)) {
           updatedData[key] = controllers[key]?.text.trim() ?? '';
         }
       }
-
       updatedData['email'] = widget.email.trim().toLowerCase();
 
       final url = Uri.parse('${ApiConfig.baseUrl}/webupdateprofile');
-
       final bodyString = updatedData.entries
-          .map((e) =>
-      "${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}")
+          .map((e) => "${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}")
           .join("&");
 
       final res = await http.post(
@@ -107,10 +105,9 @@ class _WebProfilePageState extends State<WebProfilePage> {
       );
 
       final data = jsonDecode(res.body);
-
       if (data['status'] == 'success') {
         showSnack("Profile updated successfully");
-        fetchProfile();
+        fetchProfile(); // Refresh data
       } else {
         showSnack(data['message'] ?? "Update failed");
       }
@@ -119,12 +116,9 @@ class _WebProfilePageState extends State<WebProfilePage> {
     }
   }
 
-  // ================= CHANGE PASSWORD =================
-
   Future<void> changePassword() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/webchangepassword');
-
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -133,9 +127,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
             "&currentPassword=${Uri.encodeComponent(currentPasswordController.text.trim())}"
             "&newPassword=${Uri.encodeComponent(newPasswordController.text.trim())}",
       );
-
       final data = jsonDecode(res.body);
-
       if (data['status'] == 'success') {
         showSnack("Password updated successfully");
         currentPasswordController.clear();
@@ -148,29 +140,24 @@ class _WebProfilePageState extends State<WebProfilePage> {
     }
   }
 
-  // ================= DELETE ACCOUNT =================
-
   Future<void> deleteAccount() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/webdeleteprofile');
-
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body:
-        "email=${Uri.encodeComponent(widget.email.trim().toLowerCase())}",
+        body: "email=${Uri.encodeComponent(widget.email.trim().toLowerCase())}",
       );
-
       final data = jsonDecode(res.body);
-
       if (data['status'] == 'success') {
-        showSnack("Account deactivated successfully");
+        showSnack("Account deleted (status set to Inactive)");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
               builder: (_) =>
                   WebDashboardPage(partnerDetails: widget.partnerDetails)),
         );
+        fetchProfile();
       } else {
         showSnack(data['message'] ?? "Delete failed");
       }
@@ -180,19 +167,14 @@ class _WebProfilePageState extends State<WebProfilePage> {
   }
 
   void showSnack(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  // ================= UI (UNCHANGED DESIGN) =================
-
   Widget buildFieldCard(String label, TextEditingController? controller,
-      {bool isEditable = true,
-        IconData? icon,
-        bool obscureText = false,
-        VoidCallback? toggleVisibility}) {
+      {bool isEditable = true, IconData? icon, bool obscureText = false, VoidCallback? toggleVisibility}) {
     return Card(
       elevation: 3,
+      shadowColor: Colors.greenAccent.shade200,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
@@ -203,111 +185,224 @@ class _WebProfilePageState extends State<WebProfilePage> {
             if (icon != null) const SizedBox(width: 12),
             Expanded(
               child: TextField(
-                controller: controller,
+                controller: controller ?? TextEditingController(),
                 readOnly: !isEditable,
                 obscureText: obscureText,
                 decoration: InputDecoration(
                   labelText: label,
+                  labelStyle: TextStyle(
+                      color: isEditable ? Colors.green.shade900 : Colors.grey),
                   border: InputBorder.none,
                   suffixIcon: toggleVisibility != null
                       ? IconButton(
-                    icon: Icon(obscureText
-                        ? Icons.visibility_off
-                        : Icons.visibility),
+                    icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
                     onPressed: toggleVisibility,
                   )
                       : null,
                 ),
+                style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: isEditable ? Colors.black87 : Colors.grey.shade700),
               ),
             ),
+            if (isEditable && toggleVisibility == null)
+              Icon(Icons.edit, color: Colors.green.shade700, size: 20),
           ],
         ),
       ),
     );
   }
 
+  Widget buildMenuOption(ProfileMenuOption option, String title) {
+    bool selected = selectedOption == option;
+    return ListTile(
+      selected: selected,
+      selectedTileColor: Colors.green.shade100,
+      leading: Icon(
+        option == ProfileMenuOption.editProfile
+            ? Icons.edit
+            : option == ProfileMenuOption.changePassword
+            ? Icons.lock
+            : option == ProfileMenuOption.deleteAccount
+            ? Icons.delete
+            : Icons.person,
+        color: Colors.green.shade900,
+      ),
+      title: Text(title, style: TextStyle(color: Colors.green.shade900)),
+      onTap: () {
+        setState(() {
+          selectedOption = option;
+        });
+      },
+    );
+  }
+
   Widget buildRightPanel() {
     switch (selectedOption) {
       case ProfileMenuOption.editProfile:
-        return Column(
-          children: [
-            ...profileData.keys.map((key) => buildFieldCard(
-                key.replaceAll("_", " "),
-                controllers[key],
-                isEditable: ![
-                  'email',
-                  'user_status',
-                  'registration_date',
-                  'partner_id'
-                ].contains(key))),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: saveProfile,
-              child: const Text("Save Changes"),
-            ),
-          ],
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              buildSection("Personal Info", [
+                buildFieldCard("Partner Name", controllers["partner_name"]),
+                buildFieldCard("Email", controllers["email"], isEditable: false),
+              ]),
+              buildSection("Business Info", [
+                buildFieldCard("Business Name", controllers["business_name"], icon: Icons.business),
+                buildFieldCard("GST Number", controllers["gst_number"], icon: Icons.receipt_long),
+              ]),
+              buildSection("Address Info", [
+                buildFieldCard("Address", controllers["address"], icon: Icons.home),
+                buildFieldCard("City", controllers["city"], icon: Icons.location_city),
+                buildFieldCard("State", controllers["state"], icon: Icons.map),
+                buildFieldCard("Country", controllers["country"], icon: Icons.public),
+                buildFieldCard("Pincode", controllers["pincode"], icon: Icons.pin_drop),
+              ]),
+              buildSection("Contact Info", [
+                buildFieldCard("Contact Number", controllers["contact_number"], icon: Icons.phone),
+              ]),
+              buildSection("Account Info", [
+                buildFieldCard("Status", controllers["user_status"], isEditable: false),
+                buildFieldCard("Registration Date", controllers["registration_date"], isEditable: false),
+              ]),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.save),
+                label: const Text("Save Changes"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
+                onPressed: saveProfile,
+              ),
+            ],
+          ),
         );
 
       case ProfileMenuOption.changePassword:
-        return Column(
-          children: [
-            buildFieldCard("Current Password", currentPasswordController,
-                obscureText: !showCurrentPassword, toggleVisibility: () {
-                  setState(() => showCurrentPassword = !showCurrentPassword);
-                }),
-            buildFieldCard("New Password", newPasswordController,
-                obscureText: !showNewPassword, toggleVisibility: () {
-                  setState(() => showNewPassword = !showNewPassword);
-                }),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: changePassword,
-              child: const Text("Update Password"),
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                buildFieldCard("Current Password", currentPasswordController, isEditable: true, icon: Icons.lock,
+                    obscureText: !showCurrentPassword, toggleVisibility: () {
+                      setState(() => showCurrentPassword = !showCurrentPassword);
+                    }),
+                buildFieldCard("New Password", newPasswordController, isEditable: true, icon: Icons.lock_outline,
+                    obscureText: !showNewPassword, toggleVisibility: () {
+                      setState(() => showNewPassword = !showNewPassword);
+                    }),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.save),
+                  label: const Text("Update Password"),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
+                  onPressed: changePassword,
+                ),
+              ],
             ),
-          ],
+          ),
         );
 
       case ProfileMenuOption.deleteAccount:
-        return Column(
-          children: [
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: deleteAccount,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text("Delete Account"),
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.warning, color: Colors.red, size: 80),
+                const SizedBox(height: 20),
+                const Text("Are you sure you want to delete your account?",
+                    style: TextStyle(fontSize: 18), textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.delete),
+                  label: const Text("Delete Account"),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: deleteAccount,
+                ),
+              ],
             ),
-          ],
+          ),
         );
 
       case ProfileMenuOption.viewProfile:
       default:
-        return Column(
-          children: profileData.keys
-              .map((key) =>
-              buildFieldCard(key.replaceAll("_", " "), controllers[key],
-                  isEditable: false))
-              .toList(),
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 30),
+              Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: [Colors.green.shade300, Colors.green.shade100]),
+                  boxShadow: [BoxShadow(color: Colors.green.shade200, blurRadius: 12, offset: const Offset(0, 5))],
+                ),
+                child: const CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person, size: 50, color: Colors.green),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                profileData["partner_name"] ?? "",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green.shade900),
+              ),
+              const SizedBox(height: 30),
+              buildSection("Business Info", [
+                buildFieldCard("Business Name", controllers["business_name"], isEditable: false, icon: Icons.business),
+                buildFieldCard("GST Number", controllers["gst_number"], isEditable: false, icon: Icons.receipt_long),
+              ]),
+              buildSection("Address Info", [
+                buildFieldCard("Address", controllers["address"], isEditable: false, icon: Icons.home),
+                buildFieldCard("City", controllers["city"], isEditable: false, icon: Icons.location_city),
+                buildFieldCard("State", controllers["state"], isEditable: false, icon: Icons.map),
+                buildFieldCard("Country", controllers["country"], isEditable: false, icon: Icons.public),
+                buildFieldCard("Pincode", controllers["pincode"], isEditable: false, icon: Icons.pin_drop),
+              ]),
+              buildSection("Contact Info", [
+                buildFieldCard("Contact Number", controllers["contact_number"], isEditable: false, icon: Icons.phone),
+              ]),
+              buildSection("Account Info", [
+                buildFieldCard("Status", controllers["user_status"], isEditable: false),
+                buildFieldCard("Registration Date", controllers["registration_date"], isEditable: false),
+              ]),
+            ],
+          ),
         );
     }
+  }
+
+  Widget buildSection(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: TextStyle(
+                fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green.shade900)),
+        const SizedBox(height: 10),
+        ...children,
+        const SizedBox(height: 20),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("My Profile"),
         backgroundColor: Colors.green.shade700,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                  builder: (_) =>
-                      WebDashboardPage(partnerDetails: widget.partnerDetails)),
+              MaterialPageRoute(builder: (_) => WebDashboardPage(partnerDetails: widget.partnerDetails)),
             );
           },
         ),
+        title: const Text("My Profile"),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -318,31 +413,16 @@ class _WebProfilePageState extends State<WebProfilePage> {
             color: Colors.green.shade50,
             child: ListView(
               children: [
-                ListTile(
-                  title: const Text("View Profile"),
-                  onTap: () => setState(() =>
-                  selectedOption = ProfileMenuOption.viewProfile),
-                ),
-                ListTile(
-                  title: const Text("Edit Profile"),
-                  onTap: () => setState(() =>
-                  selectedOption = ProfileMenuOption.editProfile),
-                ),
-                ListTile(
-                  title: const Text("Change Password"),
-                  onTap: () => setState(() => selectedOption =
-                      ProfileMenuOption.changePassword),
-                ),
-                ListTile(
-                  title: const Text("Delete Account"),
-                  onTap: () => setState(() =>
-                  selectedOption = ProfileMenuOption.deleteAccount),
-                ),
+                const SizedBox(height: 20),
+                buildMenuOption(ProfileMenuOption.viewProfile, "View Profile"),
+                buildMenuOption(ProfileMenuOption.editProfile, "Edit Profile"),
+                buildMenuOption(ProfileMenuOption.changePassword, "Change Password"),
+                buildMenuOption(ProfileMenuOption.deleteAccount, "Delete Account"),
               ],
             ),
           ),
           Expanded(
-            child: Padding(
+            child: Container(
               padding: const EdgeInsets.all(20),
               child: buildRightPanel(),
             ),
