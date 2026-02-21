@@ -8,7 +8,7 @@ import 'package:hotel_booking_app/services/api_service.dart';
 
 class UploadImagesPage extends StatefulWidget {
   final String partnerId;
-  final String hotelId; // TEMP-HOTEL-ID until final save
+  final String hotelId;
 
   const UploadImagesPage({Key? key, required this.partnerId, required this.hotelId}) : super(key: key);
 
@@ -34,7 +34,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   };
 
   final Map<String, List<String>> uploadedUrls = {};
-  final Map<String, List<_LocalImage>> localImages = {}; // Previews before upload
+  final Map<String, List<_LocalImage>> localImages = {};
 
   final int maxFileSizeBytes = 10 * 1024 * 1024; // 10MB
 

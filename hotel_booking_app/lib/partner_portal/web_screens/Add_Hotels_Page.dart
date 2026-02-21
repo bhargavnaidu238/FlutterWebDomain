@@ -5,14 +5,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
-
-// Project specific imports
 import 'package:hotel_booking_app/services/api_service.dart';
 import 'View_Hotels_Page.dart';
 
 class AddHotelsPage extends StatefulWidget {
   final String partnerId;
-  final Map<String, dynamic>? hotelData; // Data passed from View Hotels Page for Editing
+  final Map<String, dynamic>? hotelData;
 
   const AddHotelsPage({required this.partnerId, Key? key, this.hotelData}) : super(key: key);
 
@@ -77,13 +75,11 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     localImages["Facade"] = [];
     localImages["Lobby/Entrance"] = [];
 
-    // Check if we are in EDIT mode
     if (widget.hotelData != null) {
       _populateExistingData();
     }
   }
 
-  // --- ISSUE 2 FIXED: AUTO POPULATION ---
   void _populateExistingData() {
     final data = widget.hotelData!;
 
@@ -102,7 +98,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     selectedHotelType = data['Hotel_Type'];
     selectedCustomization = data['Customization'];
 
-    // Parse Location
     String? loc = data['Hotel_Location'];
     if (loc != null && loc.contains(',')) {
       List<String> parts = loc.split(',');
@@ -111,7 +106,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       locationController.text = "Lat: $latitude, Lng: $longitude";
     }
 
-    // Parse Amenities
     List<String> savedAmenities = data['Amenities']?.toString().split(',') ?? [];
     for (var a in savedAmenities) {
       String trimmed = a.trim();
@@ -121,7 +115,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       }
     }
 
-    // Parse Policies
     List<String> savedPolicies = data['Policies']?.toString().split(',') ?? [];
     for (var p in savedPolicies) {
       String trimmed = p.trim();
@@ -131,7 +124,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       }
     }
 
-    // Parse Rooms and Prices
     List<String> savedRooms = data['Room_Type']?.toString().split(',') ?? [];
     List<String> savedPrices = data['Room_Price']?.toString().split(',') ?? [];
     for (int i = 0; i < savedRooms.length; i++) {
@@ -145,7 +137,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     setState(() {});
   }
 
-  // --- ISSUE 1 FIXED: UPDATING MAPS ON ADDING NEW ---
   void _addNewAmenity() {
     String val = newAmenityCtrl.text.trim();
     if (val.isNotEmpty) {
@@ -183,7 +174,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     }
   }
 
-  // --- IMAGE & CATEGORY LOGIC ---
   List<String> get dynamicCategories {
     List<String> cats = ["Facade", "Lobby/Entrance"];
     roomSelected.forEach((key, selected) { if (selected) cats.add(key); });
@@ -208,7 +198,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     }
   }
 
-  // --- SAVE HOTEL ---
   Future<void> saveHotel() async {
     if (!_formKey.currentState!.validate()) {
       _showSnack("All fields are mandatory except Rating");

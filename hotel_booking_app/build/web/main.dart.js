@@ -97665,7 +97665,7 @@ $1(a){var s=null
 return A.h_(s,s,A.eI(A.a2(this.a,s,s,s,B.avo,s,s),s,s))},
 $S:614}
 A.r6.prototype={
-ah(){var s,r=t.N,q=t.QX,p=t.s,o=A.c(["Gents","Ladies","Co-Live"],p),n=A.c(["PG_Name","Address","City","State","Country","Pincode","Total_Single_Sharing_Rooms","Total_Double_Sharing_Rooms","Total_Three_Sharing_Rooms","Total_Four_Sharing_Rooms","Total_Five_Sharing_Rooms","Description","PG_Contact","About_This_PG"],p),m=A.c(["Single Sharing","Double Sharing","Three Sharing","Four Sharing","Five Sharing"],p),l=t.y,k=A.P(["Single Sharing",!1,"Double Sharing",!1,"Three Sharing",!1,"Four Sharing",!1,"Five Sharing",!1],r,l),j=$.aj(),i=A.c(["AC","TV","Fridge","Washing Machine","Free WIFI","Power Backup","Attached Bathroom","Elevator"," Geyser","Parking"],p)
+ah(){var s,r=t.N,q=t.QX,p=t.s,o=A.c(["Gents","Ladies","Co-Live"],p),n=A.c(["pg_name","address","city","state","country","pincode","total_single_sharing_rooms","total_double_sharing_rooms","total_three_sharing_rooms","total_four_sharing_rooms","total_five_sharing_rooms","description","pg_contact","about_this_pg"],p),m=A.c(["Single Sharing","Double Sharing","Three Sharing","Four Sharing","Five Sharing"],p),l=t.y,k=A.P(["Single Sharing",!1,"Double Sharing",!1,"Three Sharing",!1,"Four Sharing",!1,"Five Sharing",!1],r,l),j=$.aj(),i=A.c(["AC","TV","Fridge","Washing Machine","Free WIFI","Power Backup","Attached Bathroom","Elevator","Geyser","Parking"],p)
 l=A.P(["Couple Friendly",!1,"Alcohol Allowed",!1,"Guest Should Display Govt ID's",!1,"Non-Refundable",!1,"Refundable",!1],r,l)
 p=A.c(["Facade","Lobby/Entrance","Single Sharing","Double Sharing","Three Sharing","Four Sharing","Five Sharing"],p)
 s=A.P(["Facade",10,"Lobby/Entrance",10,"Single Sharing",10,"Double Sharing",10,"Three Sharing",10,"Four Sharing",10,"Five Sharing",10],r,t.S)
@@ -97681,7 +97681,7 @@ m.go=s
 m.id=A.bQ(B.ek,s,l)
 for(s=m.y,r=m.e,q=0;q<14;++q){p=s[q]
 r.m(0,p,new A.bt(B.L,$.aj()))}s=$.aj()
-r.m(0,"Amenities",new A.bt(B.L,s))
+r.m(0,"amenities",new A.bt(B.L,s))
 for(r=m.z,o=m.as,q=0;q<5;++q){n=r[q]
 o.m(0,n,new A.bt(B.L,s))}for(s=m.cx,r=m.cy,o=t.GJ,q=0;q<7;++q)r.m(0,s[q],A.c([],o))
 m.a.toString},
@@ -97706,7 +97706,7 @@ s=q.go
 s===$&&A.b()
 s.l()
 q.aaL()},
-KB(a){var s,r=null,q=B.b.n(A.c(["Total_Single_Sharing_Rooms","Total_Double_Sharing_Rooms","Total_Three_Sharing_Rooms","Total_Four_Sharing_Rooms","Total_Five_Sharing_Rooms","Pincode"],t.s),a),p=a==="PG_Contact",o=this.e.h(0,a),n=!q,m=!n||p?B.e3:B.lN
+KB(a){var s,r=null,q=B.b.n(A.c(["total_single_sharing_rooms","total_double_sharing_rooms","total_three_sharing_rooms","total_four_sharing_rooms","total_five_sharing_rooms","pincode"],t.s),a),p=a==="pg_contact",o=this.e.h(0,a),n=!q,m=!n||p?B.e3:B.lN
 n=!n||p
 s=t.VS
 n=n?A.c([$.a5K()],s):A.c([],s)
@@ -97718,7 +97718,7 @@ l=A.ih(B.bn,l,0,8)
 s=m.i("cu<1,aR>")
 n=A.Z(new A.cu(new A.at(n,new A.avt(r),m.i("at<1>")),new A.avu(r),s),s.i("q.E"))
 return A.bN(q,A.b1(A.c([B.K8,B.aI,l,B.a3,A.b1(n,B.q,B.m,B.n)],t.p),B.a0,B.m,B.n),B.t,q,q,new A.bw(B.f,q,o,p,q,q,q,B.J),q,q,q,B.bs,q,q,q)},
-Kv(a){var s,r="Amenities",q=null,p=this.e,o=p.h(0,r),n=o==null?q:o.a.a
+Kv(a){var s,r="amenities",q=null,p=this.e,o=p.h(0,r),n=o==null?q:o.a.a
 if(n==null)n=""
 o=this.ax
 s=A.X(o).i("R<1,oy>")
@@ -97742,15 +97742,15 @@ case 2:o=b
 if(o!=null)q.I(new A.avQ(q,o))
 return A.E(null,r)}})
 return A.F($async$n9,r)},
-Kz(){var s,r,q,p=this,o=null,n=A.aL(16),m=A.jc(B.aU,1),l=p.e,k=l.h(0,"PG_Name")
+Kz(){var s,r,q,p=this,o=null,n=A.aL(16),m=A.jc(B.aU,1),l=p.e,k=l.h(0,"pg_name")
 k=k==null?o:k.a.a.length===0
-s=A.a2(k!==!1?"PG Name":l.h(0,"PG_Name").a.a,o,o,o,B.K3,o,o)
-k=l.h(0,"City")
+s=A.a2(k!==!1?"PG Name":l.h(0,"pg_name").a.a,o,o,o,B.K3,o,o)
+k=l.h(0,"city")
 k=k==null?o:k.a.a.length===0
 if(k!==!1)l="City, State"
-else{k=l.h(0,"City")
+else{k=l.h(0,"city")
 k=k==null?o:k.a.a
-l=l.h(0,"State")
+l=l.h(0,"state")
 l=l==null?o:l.a.a
 l=A.n(k)+", "+A.n(l)}l=A.a2(l,o,o,o,B.bC,o,o)
 k=p.w
@@ -97864,7 +97864,7 @@ p=5
 c=m.a
 c=c.c
 b=m.e
-a0=b.h(0,"PG_Name")
+a0=b.h(0,"pg_name")
 a0=a0==null?null:B.c.az(a0.a.a)
 if(a0==null)a0=""
 a3=m.w
@@ -97872,50 +97872,50 @@ if(a3==null)a3=""
 a5=J.MI(l,",")
 a6=l
 a6=new A.R(a6,new A.aw0(m),A.X(a6).i("R<1,o>")).b8(0,",")
-a7=b.h(0,"Address")
+a7=b.h(0,"address")
 a7=a7==null?null:B.c.az(a7.a.a)
 if(a7==null)a7=""
-a8=b.h(0,"City")
+a8=b.h(0,"city")
 a8=a8==null?null:B.c.az(a8.a.a)
 if(a8==null)a8=""
-a9=b.h(0,"State")
+a9=b.h(0,"state")
 a9=a9==null?null:B.c.az(a9.a.a)
 if(a9==null)a9=""
-b0=b.h(0,"Country")
+b0=b.h(0,"country")
 b0=b0==null?null:B.c.az(b0.a.a)
 if(b0==null)b0=""
-b1=b.h(0,"Pincode")
+b1=b.h(0,"pincode")
 b1=b1==null?null:B.c.az(b1.a.a)
 if(b1==null)b1=""
-b2=b.h(0,"Total_Single_Sharing_Rooms")
+b2=b.h(0,"total_single_sharing_rooms")
 b2=b2==null?null:B.c.az(b2.a.a)
 if(b2==null)b2=""
-b3=b.h(0,"Total_Double_Sharing_Rooms")
+b3=b.h(0,"total_double_sharing_rooms")
 b3=b3==null?null:B.c.az(b3.a.a)
 if(b3==null)b3=""
-b4=b.h(0,"Total_Three_Sharing_Rooms")
+b4=b.h(0,"total_three_sharing_rooms")
 b4=b4==null?null:B.c.az(b4.a.a)
 if(b4==null)b4=""
-b5=b.h(0,"Total_Four_Sharing_Rooms")
+b5=b.h(0,"total_four_sharing_rooms")
 b5=b5==null?null:B.c.az(b5.a.a)
 if(b5==null)b5=""
-b6=b.h(0,"Total_Five_Sharing_Rooms")
+b6=b.h(0,"total_five_sharing_rooms")
 b6=b6==null?null:B.c.az(b6.a.a)
 if(b6==null)b6=""
 b7=B.c.az(m.at.a.a)
 if(b7.length===0){b7=b.h(0,"Total_Double_Sharing_Rooms")
 b7=b7==null?null:B.c.az(b7.a.a)
-if(b7==null)b7=""}b8=b.h(0,"Amenities")
+if(b7==null)b7=""}b8=b.h(0,"amenities")
 b8=b8==null?null:B.c.az(b8.a.a)
 if(b8==null)b8=""
-b9=b.h(0,"Description")
+b9=b.h(0,"description")
 b9=b9==null?null:B.c.az(b9.a.a)
 if(b9==null)b9=""
 c0=m.ay
 c1=A.p(c0).i("d6<1,2>")
 c1=new A.cu(new A.at(new A.d6(c0,c1),new A.aw1(),c1.i("at<q.E>")),new A.aw2(),c1.i("cu<q.E,o>")).b8(0,",")
 c0=B.c.az(m.CW.a.a)
-b=b.h(0,"PG_Contact")
+b=b.h(0,"pg_contact")
 b=b==null?null:B.c.az(b.a.a)
 if(b==null)b=""
 c2=B.c.az(m.ch.a.a)
@@ -98068,7 +98068,7 @@ A.auL.prototype={
 $0(){var s=this,r=new A.R(A.c(s.b.split(","),t.s),new A.auH(),t.a4).v7(0,new A.auI()),q=A.Z(r,r.$ti.i("q.E"))
 if(s.c){r=s.d
 if(!B.b.n(q,r))q.push(r)}else B.b.jp(q,new A.auJ(s.d))
-r=s.a.e.h(0,"Amenities")
+r=s.a.e.h(0,"amenities")
 if(r!=null)r.sb3(0,B.b.b8(q,","))},
 $S:0}
 A.auH.prototype={
@@ -99615,7 +99615,7 @@ A.a65.prototype={
 $0(){},
 $S:0}
 A.oj.prototype={
-ah(){var s,r=t.N,q=t.QX,p=t.s,o=A.c(["Gents","Ladies","Co-Live"],p),n=A.c(["PG_Name","Address","City","State","Country","Pincode","Total_Single_Sharing_Rooms","Total_Double_Sharing_Rooms","Total_Three_Sharing_Rooms","Total_Four_Sharing_Rooms","Total_Five_Sharing_Rooms","Description","PG_Contact","About_This_PG"],p),m=A.c(["Single Sharing","Double Sharing","Three Sharing","Four Sharing","Five Sharing"],p),l=t.y,k=A.P(["Single Sharing",!1,"Double Sharing",!1,"Three Sharing",!1,"Four Sharing",!1,"Five Sharing",!1],r,l),j=$.aj(),i=A.c(["AC","TV","Fridge","Washing Machine","Free WIFI","Power Backup","Attached Bathroom","Elevator"," Geyser","Parking"],p)
+ah(){var s,r=t.N,q=t.QX,p=t.s,o=A.c(["Gents","Ladies","Co-Live"],p),n=A.c(["pg_name","address","city","state","country","pincode","total_single_sharing_rooms","total_double_sharing_rooms","total_three_sharing_rooms","total_four_sharing_rooms","total_five_sharing_rooms","description","pg_contact","about_this_pg"],p),m=A.c(["Single Sharing","Double Sharing","Three Sharing","Four Sharing","Five Sharing"],p),l=t.y,k=A.P(["Single Sharing",!1,"Double Sharing",!1,"Three Sharing",!1,"Four Sharing",!1,"Five Sharing",!1],r,l),j=$.aj(),i=A.c(["AC","TV","Fridge","Washing Machine","Free WIFI","Power Backup","Attached Bathroom","Elevator","Geyser","Parking"],p)
 l=A.P(["Couple Friendly",!1,"Alcohol Allowed",!1,"Guest Should Display Govt ID's",!1,"Non-Refundable",!1,"Refundable",!1],r,l)
 p=A.c(["Facade","Lobby/Entrance","Single Sharing","Double Sharing","Three Sharing","Four Sharing","Five Sharing"],p)
 s=A.P(["Facade",10,"Lobby/Entrance",10,"Single Sharing",10,"Double Sharing",10,"Three Sharing",10,"Four Sharing",10,"Five Sharing",10],r,t.S)
@@ -99624,7 +99624,7 @@ A.PT.prototype={
 J(a){var s=this,r=null,q=s.d,p=q!=null?1:0.6,o=A.c([new A.be(0,B.I,A.a8(31,B.r.p()>>>16&255,B.r.p()>>>8&255,B.r.p()&255),B.db,6)],t.E)
 return A.xc(A.bN(r,A.fX(!1,B.U,!0,r,A.kk(!1,B.hd,!0,new A.aR(s.r,A.eI(s.c,r,r),r),r,!0,r,r,r,r,r,r,r,r,r,q,r,r,r,r,r,r,r),B.t,B.E,0,r,r,r,r,r,B.d9),B.t,r,r,new A.bw(r,r,r,B.hd,o,B.ve,r,B.J),r,s.f,r,r,r,r,s.e),p)}}
 A.H1.prototype={
-an(){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a=this,a0=null,a1="Amenities",a2="PG_Location"
+an(){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a=this,a0=null,a1="amenities",a2="pg_location"
 a.aK()
 s=A.by(a0,B.bV,0,a0,1,a0,a)
 a.go=s
@@ -99639,10 +99639,10 @@ if(o!=null){for(k=J.aF(o),q=0;q<14;++q){i=s[q]
 j=r.h(0,i)
 if(j!=null){h=k.h(o,i)
 if(h==null)h=""
-j.h0(0,j.a.pX(B.aJ,B.bO,h))}}a.w=k.h(o,"PG_Type")
-s=k.h(o,"Room_Type")
+j.h0(0,j.a.pX(B.aJ,B.bO,h))}}a.w=k.h(o,"pg_type")
+s=k.h(o,"room_type")
 g=J.l0(s==null?"":s,",")
-s=k.h(o,"Room_Price")
+s=k.h(o,"room_price")
 f=J.l0(s==null?"":s,",")
 for(s=J.aF(g),j=J.aF(f),h=a.Q,e=0;e<s.gA(g);++e){l=J.a60(s.h(g,e))
 if(B.b.n(n,l)){h.m(0,l,!0)
@@ -99651,11 +99651,11 @@ if(d!=null){c=J.a60(j.h(f,e))
 d.h0(0,d.a.pX(B.aJ,B.bO,c))}}}}s=r.h(0,a1)
 if(s!=null){r=k.h(o,a1)
 s.sb3(0,r==null?"":r)}for(s=a.ay,r=new A.eq(s,s.r,s.e);r.v();){n=r.d
-m=k.h(o,"Policies")
-s.m(0,n,J.k1(J.l0(m==null?"":m,","),n))}s=k.h(o,"About_This_Property")
+m=k.h(o,"policies")
+s.m(0,n,J.k1(J.l0(m==null?"":m,","),n))}s=k.h(o,"about_this_property")
 if(s==null)s=""
 a.ch.sb3(0,s)
-s=k.h(o,"Rating")
+s=k.h(o,"rating")
 a.CW.sb3(0,J.bg(s==null?"0.0":s))
 s=k.h(o,a2)
 if(J.k1(s==null?"":s,",")){s=k.h(o,a2)
@@ -99691,7 +99691,7 @@ s=q.go
 s===$&&A.b()
 s.l()
 q.aaM()},
-KB(a){var s,r=null,q=B.b.n(A.c(["Total_Single_Sharing_Rooms","Total_Double_Sharing_Rooms","Total_Three_Sharing_Rooms","Total_Four_Sharing_Rooms","Total_Five_Sharing_Rooms","Pincode"],t.s),a),p=a==="PG_Contact",o=this.e.h(0,a),n=!q,m=!n||p?B.e3:B.lN
+KB(a){var s,r=null,q=B.b.n(A.c(["total_single_sharing_rooms","total_double_sharing_rooms","total_three_sharing_rooms","total_four_sharing_rooms","total_five_sharing_rooms","pincode"],t.s),a),p=a==="pg_contact",o=this.e.h(0,a),n=!q,m=!n||p?B.e3:B.lN
 n=!n||p
 s=t.VS
 n=n?A.c([$.a5K()],s):A.c([],s)
@@ -99703,7 +99703,7 @@ l=A.ih(B.bn,l,0,8)
 s=m.i("cu<1,aR>")
 n=A.Z(new A.cu(new A.at(n,new A.avq(r),m.i("at<1>")),new A.avr(r),s),s.i("q.E"))
 return A.bN(q,A.b1(A.c([B.K8,B.aI,l,B.a3,A.b1(n,B.q,B.m,B.n)],t.p),B.a0,B.m,B.n),B.t,q,q,new A.bw(B.f,q,o,p,q,q,q,B.J),q,q,q,B.bs,q,q,q)},
-Kv(a){var s,r="Amenities",q=null,p=this.e,o=p.h(0,r),n=o==null?q:o.a.a
+Kv(a){var s,r="amenities",q=null,p=this.e,o=p.h(0,r),n=o==null?q:o.a.a
 if(n==null)n=""
 o=this.ax
 s=A.X(o).i("R<1,oy>")
@@ -99727,15 +99727,15 @@ case 2:o=b
 if(o!=null)q.I(new A.avO(q,o))
 return A.E(null,r)}})
 return A.F($async$n9,r)},
-Kz(){var s,r,q,p=this,o=null,n=A.aL(16),m=A.jc(B.aU,1),l=p.e,k=l.h(0,"PG_Name")
+Kz(){var s,r,q,p=this,o=null,n=A.aL(16),m=A.jc(B.aU,1),l=p.e,k=l.h(0,"pg_name")
 k=k==null?o:k.a.a.length===0
-s=A.a2(k!==!1?"PG Name":l.h(0,"PG_Name").a.a,o,o,o,B.K3,o,o)
-k=l.h(0,"City")
+s=A.a2(k!==!1?"PG Name":l.h(0,"pg_name").a.a,o,o,o,B.K3,o,o)
+k=l.h(0,"city")
 k=k==null?o:k.a.a.length===0
 if(k!==!1)l="City, State"
-else{k=l.h(0,"City")
+else{k=l.h(0,"city")
 k=k==null?o:k.a.a
-l=l.h(0,"State")
+l=l.h(0,"state")
 l=l==null?o:l.a.a
 l=A.n(k)+", "+A.n(l)}l=A.a2(l,o,o,o,B.bC,o,o)
 k=p.w
@@ -99847,11 +99847,11 @@ case 3:if(d2!==!0){s=1
 break}m.I(new A.avX(m))
 p=5
 c=m.a.d
-c=c==null?null:J.ab(c,"PG_ID")
+c=c==null?null:J.ab(c,"pg_id")
 if(c==null)c=""
 b=m.a.c
 a0=m.e
-a3=a0.h(0,"PG_Name")
+a3=a0.h(0,"pg_name")
 a3=a3==null?null:B.c.az(a3.a.a)
 if(a3==null)a3=""
 a5=m.w
@@ -99859,50 +99859,50 @@ if(a5==null)a5=""
 a6=J.MI(l,",")
 a7=l
 a7=new A.R(a7,new A.aw7(m),A.X(a7).i("R<1,o>")).b8(0,",")
-a8=a0.h(0,"Address")
+a8=a0.h(0,"address")
 a8=a8==null?null:B.c.az(a8.a.a)
 if(a8==null)a8=""
-a9=a0.h(0,"City")
+a9=a0.h(0,"city")
 a9=a9==null?null:B.c.az(a9.a.a)
 if(a9==null)a9=""
-b0=a0.h(0,"State")
+b0=a0.h(0,"state")
 b0=b0==null?null:B.c.az(b0.a.a)
 if(b0==null)b0=""
-b1=a0.h(0,"Country")
+b1=a0.h(0,"country")
 b1=b1==null?null:B.c.az(b1.a.a)
 if(b1==null)b1=""
-b2=a0.h(0,"Pincode")
+b2=a0.h(0,"pincode")
 b2=b2==null?null:B.c.az(b2.a.a)
 if(b2==null)b2=""
-b3=a0.h(0,"Total_Single_Sharing_Rooms")
+b3=a0.h(0,"total_single_sharing_rooms")
 b3=b3==null?null:B.c.az(b3.a.a)
 if(b3==null)b3=""
-b4=a0.h(0,"Total_Double_Sharing_Rooms")
+b4=a0.h(0,"total_double_sharing_rooms")
 b4=b4==null?null:B.c.az(b4.a.a)
 if(b4==null)b4=""
-b5=a0.h(0,"Total_Three_Sharing_Rooms")
+b5=a0.h(0,"total_three_sharing_rooms")
 b5=b5==null?null:B.c.az(b5.a.a)
 if(b5==null)b5=""
-b6=a0.h(0,"Total_Four_Sharing_Rooms")
+b6=a0.h(0,"total_four_sharing_rooms")
 b6=b6==null?null:B.c.az(b6.a.a)
 if(b6==null)b6=""
-b7=a0.h(0,"Total_Five_Sharing_Rooms")
+b7=a0.h(0,"total_five_sharing_rooms")
 b7=b7==null?null:B.c.az(b7.a.a)
 if(b7==null)b7=""
 b8=B.c.az(m.at.a.a)
 if(b8.length===0){b8=a0.h(0,"Total_Double_Sharing_Rooms")
 b8=b8==null?null:B.c.az(b8.a.a)
-if(b8==null)b8=""}b9=a0.h(0,"Amenities")
+if(b8==null)b8=""}b9=a0.h(0,"amenities")
 b9=b9==null?null:B.c.az(b9.a.a)
 if(b9==null)b9=""
-c0=a0.h(0,"Description")
+c0=a0.h(0,"description")
 c0=c0==null?null:B.c.az(c0.a.a)
 if(c0==null)c0=""
 c1=m.ay
 c2=A.p(c1).i("d6<1,2>")
 c2=new A.cu(new A.at(new A.d6(c1,c2),new A.aw9(),c2.i("at<q.E>")),new A.awa(),c2.i("cu<q.E,o>")).b8(0,",")
 c1=B.c.az(m.CW.a.a)
-a0=a0.h(0,"PG_Contact")
+a0=a0.h(0,"pg_contact")
 a0=a0==null?null:B.c.az(a0.a.a)
 if(a0==null)a0=""
 c3=B.c.az(m.ch.a.a)
@@ -100055,7 +100055,7 @@ A.auK.prototype={
 $0(){var s=this,r=new A.R(A.c(s.b.split(","),t.s),new A.auE(),t.a4).v7(0,new A.auF()),q=A.Z(r,r.$ti.i("q.E"))
 if(s.c){r=s.d
 if(!B.b.n(q,r))q.push(r)}else B.b.jp(q,new A.auG(s.d))
-r=s.a.e.h(0,"Amenities")
+r=s.a.e.h(0,"amenities")
 if(r!=null)r.sb3(0,B.b.b8(q,","))},
 $S:0}
 A.auE.prototype={

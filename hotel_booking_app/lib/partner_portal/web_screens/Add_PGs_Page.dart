@@ -52,11 +52,8 @@ class GradientButton extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            // Use two valid green endpoints so gradient compiles cleanly.
             colors: [
-              // Primary requested color (approx): Colors.greenAccent.shade700
               Color(0xFF64DD17),
-              // Slightly deeper green for visual depth
               Color(0xFF2E7D32),
             ],
           ),
@@ -95,20 +92,20 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   final List<String> pgTypes = ['Gents', 'Ladies', 'Co-Live'];
 
   final List<String> fields = [
-    "PG_Name",
-    "Address",
-    "City",
-    "State",
-    "Country",
-    "Pincode",
-    "Total_Single_Sharing_Rooms",
-    "Total_Double_Sharing_Rooms",
-    "Total_Three_Sharing_Rooms",
-    "Total_Four_Sharing_Rooms",
-    "Total_Five_Sharing_Rooms",
-    "Description",
-    "PG_Contact",
-    "About_This_PG"
+    "pg_name",
+    "address",
+    "city",
+    "state",
+    "country",
+    "pincode",
+    "total_single_sharing_rooms",
+    "total_double_sharing_rooms",
+    "total_three_sharing_rooms",
+    "total_four_sharing_rooms",
+    "total_five_sharing_rooms",
+    "description",
+    "pg_contact",
+    "about_this_pg"
   ];
 
   final List<String> roomTypeOptions = ['Single Sharing', 'Double Sharing', 'Three Sharing', 'Four Sharing', 'Five Sharing'];
@@ -131,7 +128,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     'Power Backup',
     'Attached Bathroom',
     'Elevator',
-    ' Geyser',
+    'Geyser',
     'Parking'
   ];
 
@@ -185,7 +182,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     for (var field in fields) {
       controllers[field] = TextEditingController();
     }
-    controllers['Amenities'] = TextEditingController();
+    controllers['amenities'] = TextEditingController();
 
     for (var rt in roomTypeOptions) {
       roomPriceControllers[rt] = TextEditingController();
@@ -200,10 +197,10 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
       for (var f in fields) {
         controllers[f]?.text = data[f] ?? '';
       }
-      selectedPGType = data['PG_Type'];
+      selectedPGType = data['pg_type'];
 
-      final roomTypes = (data['Room_Type'] ?? '').split(',');
-      final roomPrices = (data['Room_Price'] ?? '').split(',');
+      final roomTypes = (data['room_type'] ?? '').split(',');
+      final roomPrices = (data['room_price'] ?? '').split(',');
 
       for (int i = 0; i < roomTypes.length; i++) {
         final rt = roomTypes[i].trim();
@@ -213,17 +210,17 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         }
       }
 
-      controllers['Amenities']?.text = data['Amenities'] ?? '';
+      controllers['amenities']?.text = data['amenities'] ?? '';
 
       for (var k in policies.keys) {
-        policies[k] = (data['Policies'] ?? '').split(',').contains(k);
+        policies[k] = (data['policies'] ?? '').split(',').contains(k);
       }
 
-      aboutController.text = data['About_This_Property'] ?? '';
-      ratingController.text = (data['Rating'] ?? '0.0').toString();
+      aboutController.text = data['about_this_property'] ?? '';
+      ratingController.text = (data['rating'] ?? '0.0').toString();
 
-      if ((data['PG_Location'] ?? '').contains(',')) {
-        final parts = data['PG_Location']!.split(',');
+      if ((data['pg_location'] ?? '').contains(',')) {
+        final parts = data['pg_location']!.split(',');
         latitude = double.tryParse(parts[0]);
         longitude = double.tryParse(parts[1]);
 
@@ -248,9 +245,9 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   }
 
   Widget buildTextField(String field) {
-    bool isNumber = ["Total_Single_Sharing_Rooms", "Total_Double_Sharing_Rooms", "Total_Three_Sharing_Rooms",
-      "Total_Four_Sharing_Rooms", "Total_Five_Sharing_Rooms", "Pincode"].contains(field);
-    bool isPhone = field == "PG_Contact";
+    bool isNumber = ["total_single_sharing_rooms", "total_double_sharing_rooms", "total_three_sharing_rooms",
+      "total_four_sharing_rooms", "total_five_sharing_rooms", "pincode"].contains(field);
+    bool isPhone = field == "pg_contact";
 
     return TextFormField(
       controller: controllers[field],
@@ -346,7 +343,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   }
 
   Widget buildAmenitiesInput(double width) {
-    final amenitiesText = controllers['Amenities']?.text ?? '';
+    final amenitiesText = controllers['amenities']?.text ?? '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,7 +370,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
                     current.removeWhere((c) => c == a);
                   }
 
-                  controllers['Amenities']?.text = current.join(',');
+                  controllers['amenities']?.text = current.join(',');
                 });
               },
               selectedColor: Colors.greenAccent.shade700,
@@ -384,7 +381,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         ),
         const SizedBox(height: 8),
         TextFormField(
-          controller: controllers['Amenities'],
+          controller: controllers['amenities'],
           decoration: InputDecoration(
             labelText: "Other Amenities (comma separated)",
             filled: true,
@@ -487,12 +484,12 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            controllers["PG_Name"]?.text.isEmpty ?? true ? "PG Name" : controllers["PG_Name"]!.text,
+            controllers["pg_name"]?.text.isEmpty ?? true ? "PG Name" : controllers["pg_name"]!.text,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
           ),
           const SizedBox(height: 8),
           Text(
-            (controllers["City"]?.text.isEmpty ?? true) ? "City, State" : "${controllers["City"]?.text}, ${controllers["State"]?.text}",
+            (controllers["city"]?.text.isEmpty ?? true) ? "City, State" : "${controllers["city"]?.text}, ${controllers["state"]?.text}",
             style: const TextStyle(color: Colors.black54),
           ),
           const SizedBox(height: 8),
@@ -780,30 +777,30 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
 
     try {
       final Map<String, dynamic> body = {
-        'pg_id': widget.pgData?['PG_ID'] ?? '',
+        'pg_id': widget.pgData?['pg_id'] ?? '',
         'partner_id': widget.partnerId,
-        'pg_name': controllers["PG_Name"]?.text.trim() ?? '',
+        'pg_name': controllers["pg_name"]?.text.trim() ?? '',
         'pg_type': selectedPGType ?? '',
         'room_type': selectedRoomTypes.join(','),
         'room_price': selectedRoomTypes.map((rt) => roomPriceControllers[rt]?.text.trim() ?? '').join(','),
-        'address': controllers["Address"]?.text.trim() ?? '',
-        'city': controllers["City"]?.text.trim() ?? '',
-        'state': controllers["State"]?.text.trim() ?? '',
-        'country': controllers["Country"]?.text.trim() ?? '',
-        'pincode': controllers["Pincode"]?.text.trim() ?? '',
-        'total_single_sharing_rooms': controllers["Total_Single_Sharing_Rooms"]?.text.trim() ?? '',
-        'total_double_sharing_rooms': controllers["Total_Double_Sharing_Rooms"]?.text.trim() ?? '',
-        'total_three_sharing_rooms': controllers["Total_Three_Sharing_Rooms"]?.text.trim() ?? '',
-        'total_four_sharing_rooms': controllers["Total_Four_Sharing_Rooms"]?.text.trim() ?? '',
-        'total_five_sharing_rooms': controllers["Total_Five_Sharing_Rooms"]?.text.trim() ?? '',
+        'address': controllers["address"]?.text.trim() ?? '',
+        'city': controllers["city"]?.text.trim() ?? '',
+        'state': controllers["state"]?.text.trim() ?? '',
+        'country': controllers["country"]?.text.trim() ?? '',
+        'pincode': controllers["pincode"]?.text.trim() ?? '',
+        'total_single_sharing_rooms': controllers["total_single_sharing_rooms"]?.text.trim() ?? '',
+        'total_double_sharing_rooms': controllers["total_double_sharing_rooms"]?.text.trim() ?? '',
+        'total_three_sharing_rooms': controllers["total_three_sharing_rooms"]?.text.trim() ?? '',
+        'total_four_sharing_rooms': controllers["total_four_sharing_rooms"]?.text.trim() ?? '',
+        'total_five_sharing_rooms': controllers["total_five_sharing_rooms"]?.text.trim() ?? '',
         'available_rooms': availableRoomsController.text.trim().isEmpty
             ? controllers["Total_Double_Sharing_Rooms"]?.text.trim() ?? ''
             : availableRoomsController.text.trim(),
-        'amenities': controllers['Amenities']?.text.trim() ?? '',
-        'description': controllers["Description"]?.text.trim() ?? '',
+        'amenities': controllers['amenities']?.text.trim() ?? '',
+        'description': controllers["description"]?.text.trim() ?? '',
         'policies': policies.entries.where((e) => e.value).map((e) => e.key).join(','),
         'rating': ratingController.text.trim(),
-        'pg_contact': controllers["PG_Contact"]?.text.trim() ?? '',
+        'pg_contact': controllers["pg_contact"]?.text.trim() ?? '',
         'about_this_property': aboutController.text.trim(),
         'pg_location': "${latitude ?? ''},${longitude ?? ''}",
         'status': "Active",

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:http/http.dart' as http;
 import 'web_profile.dart';
-import 'web_login.dart';
 import 'add_hotels_page.dart';
 import 'Add_PGs_Page.dart';
 import 'View_Hotels_Page.dart';
