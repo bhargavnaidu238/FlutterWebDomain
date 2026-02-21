@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -8,8 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as p;
-import 'View_Hotels_Page.dart';
+import 'View_PGs_Page.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 
 class AddPGSPage extends StatefulWidget {
@@ -216,11 +214,11 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         policies[k] = (data['policies'] ?? '').split(',').contains(k);
       }
 
-      aboutController.text = data['about_this_property'] ?? '';
+      aboutController.text = data['about_this_pg'] ?? '';
       ratingController.text = (data['rating'] ?? '0.0').toString();
 
-      if ((data['pg_location'] ?? '').contains(',')) {
-        final parts = data['pg_location']!.split(',');
+      if ((data['hotel_location'] ?? '').contains(',')) {
+        final parts = data['hotel_location']!.split(',');
         latitude = double.tryParse(parts[0]);
         longitude = double.tryParse(parts[1]);
 
@@ -256,7 +254,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
       decoration: InputDecoration(
         labelText: field.replaceAll("_", " "),
         filled: true,
-        // remove glassy effect -> use solid white fill
         fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
@@ -794,15 +791,15 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         'total_four_sharing_rooms': controllers["total_four_sharing_rooms"]?.text.trim() ?? '',
         'total_five_sharing_rooms': controllers["total_five_sharing_rooms"]?.text.trim() ?? '',
         'available_rooms': availableRoomsController.text.trim().isEmpty
-            ? controllers["Total_Double_Sharing_Rooms"]?.text.trim() ?? ''
+            ? controllers["total_double_sharing_rooms"]?.text.trim() ?? ''
             : availableRoomsController.text.trim(),
         'amenities': controllers['amenities']?.text.trim() ?? '',
         'description': controllers["description"]?.text.trim() ?? '',
         'policies': policies.entries.where((e) => e.value).map((e) => e.key).join(','),
         'rating': ratingController.text.trim(),
         'pg_contact': controllers["pg_contact"]?.text.trim() ?? '',
-        'about_this_property': aboutController.text.trim(),
-        'pg_location': "${latitude ?? ''},${longitude ?? ''}",
+        'about_this_pg': aboutController.text.trim(),
+        'hotel_location': "${latitude ?? ''},${longitude ?? ''}",
         'status': "Active",
       };
 
@@ -816,7 +813,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
       }
 
       if (base64Images.isNotEmpty) {
-        body['images'] = jsonEncode(base64Images); // backend must parse this
+        body['images'] = jsonEncode(base64Images);
       }
 
       final res = await http.post(
@@ -832,7 +829,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
           setState(() => showSuccess = true);
           await Future.delayed(const Duration(milliseconds: 700));
           if (!mounted) return;
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ViewHotelsPage(partnerId: widget.partnerId)));
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ViewPGsPage(partnerId: widget.partnerId)));
         } else {
           final msg = decoded['message'] ?? res.body;
           _showSnack("Save failed: $msg");
@@ -869,7 +866,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
           ),
         ],
       ),
-      // Page background as requested
       backgroundColor: Colors.greenAccent.shade100,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -890,7 +886,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
                   key: _formKey,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     const SizedBox(height: 4),
-                    // Title row removed icon/back as we now have AppBar. Keep heading for larger UI.
                     const Padding(
                       padding: EdgeInsets.only(bottom: 12.0),
                       child: Text("Add PGs",
@@ -985,7 +980,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  // Use GradientButton for "Add Hotel" with same callback
                                   SizedBox(
                                     height: 56,
                                     child: GradientButton(
