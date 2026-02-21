@@ -238,8 +238,14 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
           ),
         ),
       );
-    } else if (value == 'logout') {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const WebLoginPage()));
+    }
+    else if (value == 'logout') {
+      ApiService.logout();
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/weblogin',
+            (route) => false,
+      );
     }
   }
 

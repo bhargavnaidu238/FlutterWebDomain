@@ -3,6 +3,7 @@ import 'partner_portal/web_screens/web_login.dart';
 import 'partner_portal/web_screens/web_register.dart';
 import 'partner_portal/web_screens/web_dashboard_page.dart';
 import 'partner_portal/web_screens/Domain_Landing_Page.dart';
+import 'services/api_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,16 +14,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
       title: "Hotel Booking App",
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.indigo),
-      initialRoute: '/',
+
+      // ✅ AUTO CHECK LOGIN ON APP START
+      initialRoute: ApiService.isLoggedIn() ? '/dashboard' : '/',
+
       onGenerateRoute: _generateRoute,
     );
   }
 
-  // Helper for instant page switching (standard for Web Apps)
+  // ================== NO TRANSITION ROUTE ==================
   Route<dynamic> _noTransitionRoute(Widget page, RouteSettings settings) {
     return PageRouteBuilder(
       settings: settings,
@@ -32,25 +37,56 @@ class MyApp extends StatelessWidget {
     );
   }
 
+  // ================== ROUTE GENERATOR ==================
   Route<dynamic> _generateRoute(RouteSettings settings) {
+
+    final bool loggedIn = ApiService.isLoggedIn();
+
     switch (settings.name) {
+
+    // ================= LANDING PAGE =================
       case '/':
         return _noTransitionRoute(const LandingPage(), settings);
 
+    // ================= LOGIN PAGE =================
       case '/weblogin':
         return _noTransitionRoute(const WebLoginPage(), settings);
 
+    // ================= REGISTER PAGE =================
       case '/registerlogin':
         return _noTransitionRoute(const WebRegisterPage(), settings);
 
+    // ================= DASHBOARD (PROTECTED) =================
       case '/dashboard':
-      // Try to cast the arguments
+
+      // 🔐 BLOCK ACCESS IF NOT LOGGED IN
+        if (!loggedIn) {
+          debugPrint("Blocked unauthorized dashboard access.");
+          return _noTransitionRoute(const WebLoginPage(), settings);
+        }
+
         final args = settings.arguments as Map<String, String>?;
 
-        // If arguments are missing, we redirect to login instead of showing a red error
+        // If arguments missing but user logged in,
+        // retrieve stored values from localStorage
         if (args == null) {
-          debugPrint("Redirecting to login: No partner details found.");
-          return _noTransitionRoute(const WebLoginPage(), settings);
+
+          final email = ApiService.getEmail();
+          final userId = ApiService.getUserId();
+
+          if (email == null || userId == null) {
+            return _noTransitionRoute(const WebLoginPage(), settings);
+          }
+
+          return _noTransitionRoute(
+            WebDashboardPage(
+              partnerDetails: {
+                "email": email,
+                "userId": userId,
+              },
+            ),
+            settings,
+          );
         }
 
         return _noTransitionRoute(
@@ -58,18 +94,24 @@ class MyApp extends StatelessWidget {
           settings,
         );
 
+    // ================= DEFAULT =================
       default:
         return _errorScreen("Route not found: ${settings.name}");
     }
   }
 
+  // ================= ERROR SCREEN =================
   MaterialPageRoute _errorScreen(String msg) {
     return MaterialPageRoute(
       builder: (_) => Scaffold(
         body: Center(
           child: Text(
             msg,
-            style: const TextStyle(color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.red,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),

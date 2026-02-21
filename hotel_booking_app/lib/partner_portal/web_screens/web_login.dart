@@ -57,25 +57,40 @@ class _WebLoginPageState extends State<WebLoginPage> {
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
+        body:
+        'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
       );
 
       final data = json.decode(res.body);
 
-      // Handle based on backend status and message
+      // ===================== SUCCESS LOGIN =====================
       if (res.statusCode == 200 && data['status'] == 'success') {
-        // Successful login
-        partnerDetails = Map<String, String>.from(data)
-          ..removeWhere((key, value) => key == 'status' || key == 'message');
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => WebDashboardPage(partnerDetails: partnerDetails),
-          ),
+        partnerDetails = Map<String, String>.from(data)
+          ..removeWhere((key, value) =>
+          key == 'status' || key == 'message');
+
+        // ✅ ================= NEW CHANGE =================
+        // Save login session in localStorage (Fix for refresh logout issue)
+        ApiService.saveAuthData(
+          token: data['token'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+          email: email,
+          userId: partnerDetails['userId'] ?? '',
         );
+        // ✅ ================= END CHANGE =================
+
+        // ✅ ================= NEW CHANGE =================
+        // Use named route + remove all previous routes
+        // This fixes browser back navigation issue
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/dashboard',
+              (route) => false,
+          arguments: partnerDetails,
+        );
+        // ✅ ================= END CHANGE =================
+
       } else {
-        // Display error message from backend
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data['message'] ?? "Login failed")),
         );
@@ -93,8 +108,10 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
   // ===================== FORGOT PASSWORD =====================
   Future<void> forgotPassword() async {
-    final TextEditingController emailResetController = TextEditingController();
-    final TextEditingController newPasswordController = TextEditingController();
+    final TextEditingController emailResetController =
+    TextEditingController();
+    final TextEditingController newPasswordController =
+    TextEditingController();
     bool showNewPassword = false;
 
     await showDialog(
@@ -102,7 +119,8 @@ class _WebLoginPageState extends State<WebLoginPage> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.green[900]?.withOpacity(0.9),
-          title: const Text("Reset Password", style: TextStyle(color: Colors.white)),
+          title: const Text("Reset Password",
+              style: TextStyle(color: Colors.white)),
           content: SingleChildScrollView(
             child: Column(
               children: [
@@ -110,7 +128,8 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   controller: emailResetController,
                   decoration: InputDecoration(
                     labelText: "Registered Email",
-                    labelStyle: const TextStyle(color: Colors.white70),
+                    labelStyle:
+                    const TextStyle(color: Colors.white70),
                     filled: true,
                     fillColor: Colors.white10,
                     border: OutlineInputBorder(
@@ -128,26 +147,32 @@ class _WebLoginPageState extends State<WebLoginPage> {
                       obscureText: !showNewPassword,
                       decoration: InputDecoration(
                         labelText: "New Password",
-                        labelStyle: const TextStyle(color: Colors.white70),
+                        labelStyle:
+                        const TextStyle(color: Colors.white70),
                         filled: true,
                         fillColor: Colors.white10,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius:
+                          BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            showNewPassword ? Icons.visibility_off : Icons.visibility,
+                            showNewPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: Colors.white70,
                           ),
                           onPressed: () {
                             setStateSB(() {
-                              showNewPassword = !showNewPassword;
+                              showNewPassword =
+                              !showNewPassword;
                             });
                           },
                         ),
                       ),
-                      style: const TextStyle(color: Colors.white),
+                      style:
+                      const TextStyle(color: Colors.white),
                     );
                   },
                 ),
@@ -157,35 +182,53 @@ class _WebLoginPageState extends State<WebLoginPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
+              child: const Text("Cancel",
+                  style:
+                  TextStyle(color: Colors.white70)),
             ),
             ElevatedButton(
               onPressed: () async {
-                final email = emailResetController.text.trim();
-                final newPwd = newPasswordController.text.trim();
+                final email =
+                emailResetController.text.trim();
+                final newPwd =
+                newPasswordController.text.trim();
 
                 if (email.isEmpty || newPwd.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Please fill both fields")));
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(const SnackBar(
+                      content:
+                      Text("Please fill both fields")));
                   return;
                 }
 
                 try {
-                  final url = Uri.parse('${ApiConfig.baseUrl}/forgotpassword');
+                  final url = Uri.parse(
+                      '${ApiConfig.baseUrl}/forgotpassword');
 
                   final res = await http.post(
                     url,
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: 'email=${Uri.encodeComponent(email)}&newPassword=${Uri.encodeComponent(newPwd)}',
+                    headers: {
+                      'Content-Type':
+                      'application/x-www-form-urlencoded'
+                    },
+                    body:
+                    'email=${Uri.encodeComponent(email)}&newPassword=${Uri.encodeComponent(newPwd)}',
                   );
 
                   final data = json.decode(res.body);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(data['message'] ?? "Error")));
-                  if (data['status'] == "success") Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(
+                      content:
+                      Text(data['message'] ??
+                          "Error")));
+
+                  if (data['status'] == "success")
+                    Navigator.pop(context);
                 } catch (e) {
                   ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text("Error: $e")));
+                      .showSnackBar(
+                      SnackBar(content: Text("Error: $e")));
                 }
               },
               child: const Text("Reset Password"),
@@ -215,7 +258,9 @@ class _WebLoginPageState extends State<WebLoginPage> {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+            border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5),
             boxShadow: [
               BoxShadow(
                 color: Colors.green.withOpacity(0.3),
@@ -229,7 +274,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ===================== LOGO IMAGE =====================
               Container(
                 height: 80,
                 width: 80,
@@ -252,32 +296,38 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  shadows: [Shadow(color: Colors.black45, blurRadius: 8)],
+                  shadows: [
+                    Shadow(
+                        color: Colors.black45,
+                        blurRadius: 8)
+                  ],
                 ),
               ),
               const SizedBox(height: 30),
-              // ===================== EMAIL FIELD =====================
+
+              // EMAIL FIELD
               TextField(
                 controller: emailController,
                 decoration: InputDecoration(
                   labelText: "Email",
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(Icons.email, color: Colors.white70),
+                  labelStyle:
+                  const TextStyle(color: Colors.white70),
+                  prefixIcon: const Icon(Icons.email,
+                      color: Colors.white70),
                   filled: true,
                   fillColor: Colors.white10,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius:
+                    BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white70),
-                  ),
                 ),
-                style: const TextStyle(color: Colors.white),
+                style:
+                const TextStyle(color: Colors.white),
               ),
               const SizedBox(height: 15),
-              // ===================== PASSWORD FIELD =====================
+
+              // PASSWORD FIELD
               StatefulBuilder(
                 builder: (context, setStateSB) {
                   return TextField(
@@ -285,10 +335,15 @@ class _WebLoginPageState extends State<WebLoginPage> {
                     obscureText: !showPassword,
                     decoration: InputDecoration(
                       labelText: "Password",
-                      labelStyle: const TextStyle(color: Colors.white70),
-                      prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                      labelStyle:
+                      const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(Icons.lock,
+                          color: Colors.white70),
                       suffixIcon: IconButton(
-                        icon: Icon(showPassword ? Icons.visibility_off : Icons.visibility,
+                        icon: Icon(
+                            showPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: Colors.white70),
                         onPressed: () {
                           setStateSB(() {
@@ -299,51 +354,70 @@ class _WebLoginPageState extends State<WebLoginPage> {
                       filled: true,
                       fillColor: Colors.white10,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius:
+                        BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    style: const TextStyle(color: Colors.white),
+                    style:
+                    const TextStyle(color: Colors.white),
                   );
                 },
               ),
               const SizedBox(height: 25),
-              // ===================== LOGIN BUTTON =====================
+
+              // LOGIN BUTTON
               isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
+                  ? const CircularProgressIndicator(
+                  color: Colors.white)
                   : ElevatedButton(
                 onPressed: login,
                 style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
-                  backgroundColor: const Color(0xFF00C853),
+                  minimumSize:
+                  const Size(double.infinity, 48),
+                  backgroundColor:
+                  const Color(0xFF00C853),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius:
+                    BorderRadius.circular(12),
                   ),
                   elevation: 8,
                 ),
                 child: const Text(
                   "Login",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                      FontWeight.bold),
                 ),
               ),
+
               const SizedBox(height: 15),
-              // ===================== LINKS =====================
+
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
                     onPressed: forgotPassword,
-                    child: const Text("Forgot Password?", style: TextStyle(color: Colors.white70)),
+                    child: const Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                            color: Colors.white70)),
                   ),
                   TextButton(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const WebRegisterPage()),
+                        MaterialPageRoute(
+                            builder: (_) =>
+                            const WebRegisterPage()),
                       );
                     },
-                    child: const Text("Register", style: TextStyle(color: Colors.white70)),
+                    child: const Text("Register",
+                        style: TextStyle(
+                            color: Colors.white70)),
                   ),
                 ],
               ),
