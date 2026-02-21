@@ -73,18 +73,18 @@ class _FinancePageState extends State<FinancePage> {
           financeData = Map<String, dynamic>.from(data ?? {});
           // Populate controllers & local dropdowns with safe defaults
           accountHolderController.text =
-              financeData['Account_Holder_Name']?.toString() ?? '';
-          bankNameController.text = financeData['Bank_Name']?.toString() ?? '';
+              financeData['account_holder_name']?.toString() ?? '';
+          bankNameController.text = financeData['bank_name']?.toString() ?? '';
           accountNumberController.text =
-              financeData['Account_Number']?.toString() ?? '';
-          ifscController.text = financeData['IFSC_SWIFT']?.toString() ?? '';
-          panController.text = financeData['PAN_Tax_ID']?.toString() ?? '';
+              financeData['account_number']?.toString() ?? '';
+          ifscController.text = financeData['ifsc_swift']?.toString() ?? '';
+          panController.text = financeData['pan_tax_id']?.toString() ?? '';
           selectedAccountType =
-              financeData['Account_Type']?.toString() ?? selectedAccountType;
+              financeData['account_type']?.toString() ?? selectedAccountType;
           selectedPayoutType =
-              financeData['Payout_Type']?.toString() ?? selectedPayoutType;
-          autoPayout = (financeData['Auto_Payout'] == true ||
-              financeData['Auto_Payout']?.toString() == '1');
+              financeData['payout_type']?.toString() ?? selectedPayoutType;
+          autoPayout = (financeData['auto_payout'] == true ||
+              financeData['auto_payout']?.toString() == '1');
           filteredBookings = _applyBookingFilters(
               List<Map<String, dynamic>>.from(financeData['Bookings'] ?? []));
         });
@@ -318,14 +318,14 @@ class _FinancePageState extends State<FinancePage> {
   Future<void> updateBankDetails() async {
     final body = {
       'partner_id': widget.partnerId,
-      'Account_Holder_Name': accountHolderController.text.trim(),
-      'Bank_Name': bankNameController.text.trim(),
-      'Account_Number': accountNumberController.text.trim(),
-      'IFSC_SWIFT': ifscController.text.trim(),
-      'PAN_Tax_ID': panController.text.trim(),
-      'Account_Type': selectedAccountType,
-      'Payout_Type': selectedPayoutType,
-      'Auto_Payout': autoPayout ? '1' : '0',
+      'account_holder_name': accountHolderController.text.trim(),
+      'bank_name': bankNameController.text.trim(),
+      'account_number': accountNumberController.text.trim(),
+      'ifsc_swift': ifscController.text.trim(),
+      'pan_tax_id': panController.text.trim(),
+      'account_type': selectedAccountType,
+      'payout_type': selectedPayoutType,
+      'auto_payout': autoPayout ? '1' : '0',
     };
     try {
       final res = await http.post(
@@ -349,7 +349,7 @@ class _FinancePageState extends State<FinancePage> {
   // ---------- Request Payout ----------
   Future<void> requestPayout() async {
     double pending = _parseDouble(
-        financeData['Pending_Payout'] ?? financeData['PendingPayout'] ?? 0);
+        financeData['pending_payout'] ?? financeData['PendingPayout'] ?? 0);
 
     // ❗ Block empty request
     if (payoutAmountController.text
@@ -481,7 +481,7 @@ class _FinancePageState extends State<FinancePage> {
                 label: Text(key, style: const TextStyle(color: Colors.white))))
             .toList(),
         rows: filteredBookings.map((b) {
-          final status = (b['Booking_Status'] ?? b['Status'] ?? '').toString();
+          final status = (b['booking_status'] ?? b['Status'] ?? '').toString();
           return DataRow(
             color: MaterialStateProperty.resolveWith<Color?>((states) {
               final s = status.toLowerCase();
@@ -622,16 +622,16 @@ class _FinancePageState extends State<FinancePage> {
   @override
   Widget build(BuildContext context) {
     final pending = _parseDouble(
-        financeData['Pending_Payout'] ?? financeData['PendingPayout'] ?? 0);
+        financeData['pending_payout'] ?? financeData['PendingPayout'] ?? 0);
     final totalRevenue = _parseDouble(
-        financeData['Total_Revenue'] ?? financeData['TotalRevenue'] ?? 0);
+        financeData['total_revenue'] ?? financeData['TotalRevenue'] ?? 0);
     final netRevenue = _parseDouble(
-        financeData['Net_Revenue'] ?? financeData['NetRevenue'] ?? 0);
+        financeData['net_revenue'] ?? financeData['NetRevenue'] ?? 0);
     final paidPayout = _parseDouble(
-        financeData['Paid_Payout'] ?? financeData['PaidPayout'] ?? 0);
-    final commission = _parseDouble(financeData['Commission_Percentage'] ??
+        financeData['paid_payout'] ?? financeData['PaidPayout'] ?? 0);
+    final commission = _parseDouble(financeData['commission_percentage'] ??
         financeData['CommissionPercentage'] ?? 0);
-    final lastPayoutDateRaw = financeData['Last_Payout_Date'] ??
+    final lastPayoutDateRaw = financeData['last_payout_date'] ??
         financeData['LastPayoutDate'];
     String lastPayoutDate = '';
     try {
