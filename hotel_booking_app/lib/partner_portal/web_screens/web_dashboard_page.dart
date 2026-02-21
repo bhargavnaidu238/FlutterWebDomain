@@ -262,7 +262,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     bool isMobile = screenWidth < 800;
     final partnerName = widget.partnerDetails['partner_name'] ?? 'Partner';
 
-    final GlobalKey bellKey = GlobalKey(); // KEY ADDED FOR POPUP LOCATION
+    final GlobalKey bellKey = GlobalKey();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),

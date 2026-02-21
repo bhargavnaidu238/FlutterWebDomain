@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'web_dashboard_page.dart';
 import 'web_register.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 
@@ -70,26 +69,18 @@ class _WebLoginPageState extends State<WebLoginPage> {
           ..removeWhere((key, value) =>
           key == 'status' || key == 'message');
 
-        // ✅ ================= NEW CHANGE =================
-        // Save login session in localStorage (Fix for refresh logout issue)
         ApiService.saveAuthData(
           token: data['token'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
           email: email,
           userId: partnerDetails['userId'] ?? '',
         );
-        // ✅ ================= END CHANGE =================
 
-        // ✅ ================= NEW CHANGE =================
-        // Use named route + remove all previous routes
-        // This fixes browser back navigation issue
         Navigator.pushNamedAndRemoveUntil(
           context,
           '/dashboard',
               (route) => false,
           arguments: partnerDetails,
         );
-        // ✅ ================= END CHANGE =================
-
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data['message'] ?? "Login failed")),

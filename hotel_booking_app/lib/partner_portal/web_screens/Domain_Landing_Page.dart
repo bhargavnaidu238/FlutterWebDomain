@@ -30,7 +30,7 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  // Header / NavBar
+  // Header and NavBar
   Widget _header(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),

@@ -107,7 +107,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
       final data = jsonDecode(res.body);
       if (data['status'] == 'success') {
         showSnack("Profile updated successfully");
-        fetchProfile(); // Refresh data
+        fetchProfile();
       } else {
         showSnack(data['message'] ?? "Update failed");
       }

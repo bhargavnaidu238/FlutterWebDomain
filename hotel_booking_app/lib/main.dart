@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.indigo),
 
-      // ✅ AUTO CHECK LOGIN ON APP START
+      //AUTO CHECK LOGIN ON APP START
       initialRoute: ApiService.isLoggedIn() ? '/dashboard' : '/',
 
       onGenerateRoute: _generateRoute,
@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
     // ================= DASHBOARD (PROTECTED) =================
       case '/dashboard':
 
-      // 🔐 BLOCK ACCESS IF NOT LOGGED IN
+      // BLOCK ACCESS IF NOT LOGGED IN
         if (!loggedIn) {
           debugPrint("Blocked unauthorized dashboard access.");
           return _noTransitionRoute(const WebLoginPage(), settings);

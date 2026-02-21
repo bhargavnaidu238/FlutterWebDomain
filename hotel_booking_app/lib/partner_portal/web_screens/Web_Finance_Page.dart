@@ -21,7 +21,7 @@ class _FinancePageState extends State<FinancePage> {
   List<Map<String, dynamic>> transactions = [];
   List<Map<String, dynamic>> filteredBookings = [];
   String selectedBookingFilter = "All";
-  String bookingDateRange = "All"; // All, 30, 90
+  String bookingDateRange = "All";
 
   // Pagination for transactions
   int txPage = 1;
@@ -90,7 +90,6 @@ class _FinancePageState extends State<FinancePage> {
         });
       }
     } catch (e) {
-      //debugPrint("Error fetching finance data: $e");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error fetching finance data: $e")));
     } finally {
       setState(() => isLoading = false);
@@ -131,8 +130,8 @@ class _FinancePageState extends State<FinancePage> {
         });
       }
     } catch (e) {
-      //debugPrint("❌ fetchTransactions ERROR: $e");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ fetchTransactions ERROR: $e")));
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("fetchTransactions ERROR: $e")));
     }
   }
 

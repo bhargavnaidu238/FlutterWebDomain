@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:html' as html; // For Web localStorage
+import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 class ApiConfig {
   static const String _localWeb = 'http://localhost:8080';
   static const String _localAndroid = 'http://10.0.2.2:8080';
-  static const String _altLocal = 'http://127.0.0.1:8000'; // merged from second file
+  static const String _altLocal = 'http://127.0.0.1:8000';
   static const String _production =
       'https://test-host-server-tamg.onrender.com';
 
