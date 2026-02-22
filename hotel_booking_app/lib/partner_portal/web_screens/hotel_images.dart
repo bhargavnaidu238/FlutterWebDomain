@@ -5,18 +5,27 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:hotel_booking_app/services/api_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UploadImagesPage extends StatefulWidget {
   final String partnerId;
   final String hotelId;
 
-  const UploadImagesPage({Key? key, required this.partnerId, required this.hotelId}) : super(key: key);
+  const UploadImagesPage({
+    Key? key,
+    required this.partnerId,
+    required this.hotelId,
+  }) : super(key: key);
 
   @override
   _UploadImagesPageState createState() => _UploadImagesPageState();
 }
 
 class _UploadImagesPageState extends State<UploadImagesPage> {
+  bool isProduction = bool.fromEnvironment('dart.vm.product');
+
+  final supabase = Supabase.instance.client;
+
   final List<String> categories = [
     "Facade",
     "Lobby/Entrance",
@@ -36,7 +45,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   final Map<String, List<String>> uploadedUrls = {};
   final Map<String, List<_LocalImage>> localImages = {};
 
-  final int maxFileSizeBytes = 10 * 1024 * 1024; // 10MB
+  final int maxFileSizeBytes = 10 * 1024 * 1024;
 
   bool _isUploading = false;
 
@@ -78,11 +87,15 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
       }
 
       if (pf.bytes != null) {
-        localImages[category]!.add(_LocalImage(name: pf.name, bytes: pf.bytes!, path: pf.path));
+        localImages[category]!.add(
+          _LocalImage(name: pf.name, bytes: pf.bytes!, path: pf.path),
+        );
       } else if (pf.path != null) {
         final file = File(pf.path!);
         final bytes = await file.readAsBytes();
-        localImages[category]!.add(_LocalImage(name: pf.name, bytes: bytes, path: pf.path));
+        localImages[category]!.add(
+          _LocalImage(name: pf.name, bytes: bytes, path: pf.path),
+        );
       }
     }
 
@@ -96,40 +109,78 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
     setState(() => _isUploading = true);
 
     try {
-      final uri = Uri.parse("${ApiConfig.baseUrl}/${widget.partnerId}/${widget.hotelId}");
-      final req = http.MultipartRequest('POST', uri);
-
       final batch = List<_LocalImage>.from(localImages[category]!);
 
-      for (final img in batch) {
-        http.MultipartFile mf;
+      if (!isProduction) {
+        // ================= LOCAL BACKEND UPLOAD =================
 
-        if (img.path != null) {
-          final file = File(img.path!);
-          mf = await http.MultipartFile.fromPath('files', img.path!, filename: img.name);
+        final uri =
+        Uri.parse("${ApiConfig.baseUrl}/${widget.partnerId}/${widget.hotelId}");
+        final req = http.MultipartRequest('POST', uri);
+
+        for (final img in batch) {
+          http.MultipartFile mf;
+
+          if (img.path != null) {
+            mf = await http.MultipartFile.fromPath(
+              'files',
+              img.path!,
+              filename: img.name,
+            );
+          } else {
+            mf = http.MultipartFile.fromBytes(
+              'files',
+              img.bytes!,
+              filename: img.name,
+            );
+          }
+
+          req.files.add(mf);
+        }
+
+        req.fields['category'] = category;
+
+        final streamed = await req.send();
+        final resp = await http.Response.fromStream(streamed);
+
+        if (resp.statusCode == 200) {
+          final decoded = json.decode(resp.body);
+          if (decoded['urls'] != null) {
+            uploadedUrls[category]!
+                .addAll(List<String>.from(decoded['urls']));
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Uploaded ${batch.length} images for $category')),
+          );
         } else {
-          mf = http.MultipartFile.fromBytes('files', img.bytes!, filename: img.name);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Upload failed (${resp.statusCode})')),
+          );
+        }
+      } else {
+        // ================= SUPABASE PRODUCTION UPLOAD =================
+
+        List<String> newUrls = [];
+
+        for (final img in batch) {
+          final fileName =
+              "${widget.partnerId}/${widget.hotelId}/$category/${DateTime.now().millisecondsSinceEpoch}_${img.name}";
+
+          await supabase.storage
+              .from('FleminGolmages')
+              .uploadBinary(fileName, img.bytes!);
+
+          final publicUrl = supabase.storage
+              .from('FleminGolmages')
+              .getPublicUrl(fileName);
+
+          newUrls.add(publicUrl);
         }
 
-        req.files.add(mf);
-      }
+        uploadedUrls[category]!.addAll(newUrls);
 
-      req.fields['category'] = category;
-
-      final streamed = await req.send();
-      final resp = await http.Response.fromStream(streamed);
-
-      if (resp.statusCode == 200) {
-        final decoded = json.decode(resp.body);
-        if (decoded['urls'] != null) {
-          uploadedUrls[category]!.addAll(List<String>.from(decoded['urls']));
-        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Uploaded ${batch.length} images for $category')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed (${resp.statusCode})')),
         );
       }
 
@@ -161,7 +212,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
-            onPressed: () => Navigator.pop(context, getAllCommaSeparated()),
+            onPressed: () =>
+                Navigator.pop(context, getAllCommaSeparated()),
           )
         ],
       ),
@@ -174,7 +226,6 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-
             Expanded(
               child: ListView.separated(
                 itemCount: categories.length,
@@ -182,10 +233,11 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                 itemBuilder: (_, i) => _buildCategoryCard(categories[i]),
               ),
             ),
-
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
-              onPressed: () => Navigator.pop(context, getAllCommaSeparated()),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700),
+              onPressed: () =>
+                  Navigator.pop(context, getAllCommaSeparated()),
               child: const Text("Done"),
             )
           ],
@@ -205,10 +257,9 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    cat,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+                  child: Text(cat,
+                      style:
+                      const TextStyle(color: Colors.white, fontSize: 16)),
                 ),
                 Text(
                   "Uploaded: ${uploadedUrls[cat]!.length}",
@@ -216,14 +267,16 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton(
-                  onPressed: _isUploading ? null : () => _pickAndUpload(cat),
+                  onPressed:
+                  _isUploading ? null : () => _pickAndUpload(cat),
                   child: const Text("Pick & Upload"),
                 )
               ],
             ),
-
-            if (localImages[cat]!.isNotEmpty) _buildLocalPreview(cat),
-            if (uploadedUrls[cat]!.isNotEmpty) _buildUploadedPreview(cat),
+            if (localImages[cat]!.isNotEmpty)
+              _buildLocalPreview(cat),
+            if (uploadedUrls[cat]!.isNotEmpty)
+              _buildUploadedPreview(cat),
           ],
         ),
       ),
@@ -236,7 +289,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        const Text('Selected (not uploaded yet):', style: TextStyle(color: Colors.white70, fontSize: 12)),
+        const Text('Selected (not uploaded yet):',
+            style: TextStyle(color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 6),
         SizedBox(
           height: 90,
@@ -256,7 +310,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: Image.memory(list[i].bytes!, fit: BoxFit.cover),
+                      child: Image.memory(list[i].bytes!,
+                          fit: BoxFit.cover),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -265,7 +320,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                     child: Text(
                       list[i].name,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, color: Colors.white70),
+                      style: const TextStyle(
+                          fontSize: 11, color: Colors.white70),
                     ),
                   )
                 ],
@@ -283,7 +339,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        const Text('Uploaded:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+        const Text('Uploaded:',
+            style: TextStyle(color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 6),
         SizedBox(
           height: 90,
@@ -294,7 +351,12 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
               padding: const EdgeInsets.only(right: 8),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: Image.network(list[i], fit: BoxFit.cover, width: 90, height: 70),
+                child: Image.network(
+                  list[i],
+                  fit: BoxFit.cover,
+                  width: 90,
+                  height: 70,
+                ),
               ),
             ),
           ),
@@ -309,5 +371,9 @@ class _LocalImage {
   final Uint8List? bytes;
   final String? path;
 
-  _LocalImage({required this.name, required this.bytes, required this.path});
+  _LocalImage({
+    required this.name,
+    required this.bytes,
+    required this.path,
+  });
 }

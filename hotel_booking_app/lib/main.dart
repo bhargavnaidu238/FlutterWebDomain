@@ -1,12 +1,47 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'partner_portal/web_screens/web_login.dart';
 import 'partner_portal/web_screens/web_register.dart';
 import 'partner_portal/web_screens/web_dashboard_page.dart';
 import 'partner_portal/web_screens/Domain_Landing_Page.dart';
 import 'services/api_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await _initializeSupabaseFromBackend();
+
   runApp(const MyApp());
+}
+
+// ================= FETCH SUPABASE CONFIG FROM BACKEND =================
+Future<void> _initializeSupabaseFromBackend() async {
+  try {
+    final response = await http.get(
+      Uri.parse("${ApiConfig.baseUrl}/config/supabase"),
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+
+      final String url = decoded['url'];
+      final String anonKey = decoded['anonKey'];
+
+      await Supabase.initialize(
+        url: url,
+        anonKey: anonKey,
+      );
+
+      debugPrint("Supabase initialized successfully.");
+    } else {
+      debugPrint("Failed to fetch Supabase config.");
+    }
+  } catch (e) {
+    debugPrint("Supabase initialization error: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -14,13 +49,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: "Hotel Booking App",
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.indigo),
 
-      //AUTO CHECK LOGIN ON APP START
+      // ================= AUTO CHECK LOGIN ON APP START =================
       initialRoute: ApiService.isLoggedIn() ? '/dashboard' : '/',
 
       onGenerateRoute: _generateRoute,
@@ -39,7 +73,6 @@ class MyApp extends StatelessWidget {
 
   // ================== ROUTE GENERATOR ==================
   Route<dynamic> _generateRoute(RouteSettings settings) {
-
     final bool loggedIn = ApiService.isLoggedIn();
 
     switch (settings.name) {
@@ -59,7 +92,6 @@ class MyApp extends StatelessWidget {
     // ================= DASHBOARD (PROTECTED) =================
       case '/dashboard':
 
-      // BLOCK ACCESS IF NOT LOGGED IN
         if (!loggedIn) {
           debugPrint("Blocked unauthorized dashboard access.");
           return _noTransitionRoute(const WebLoginPage(), settings);
@@ -67,10 +99,7 @@ class MyApp extends StatelessWidget {
 
         final args = settings.arguments as Map<String, String>?;
 
-        // If arguments missing but user logged in,
-        // retrieve stored values from localStorage
         if (args == null) {
-
           final email = ApiService.getEmail();
           final userId = ApiService.getUserId();
 
