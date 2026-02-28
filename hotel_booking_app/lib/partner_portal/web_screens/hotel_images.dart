@@ -110,79 +110,29 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
     try {
       final batch = List<_LocalImage>.from(localImages[category]!);
+      List<String> newUrls = [];
 
-      if (!isProduction) {
-        // ================= LOCAL BACKEND UPLOAD =================
+      for (final img in batch) {
+        final fileName =
+            "${widget.partnerId}/${widget.hotelId}/$category/${DateTime.now().millisecondsSinceEpoch}_${img.name}";
 
-        final uri =
-        Uri.parse("${ApiConfig.baseUrl}/${widget.partnerId}/${widget.hotelId}");
-        final req = http.MultipartRequest('POST', uri);
+        await supabase.storage
+            .from('FleminGolmages')
+            .uploadBinary(fileName, img.bytes!,
+            fileOptions: const FileOptions(upsert: true));
 
-        for (final img in batch) {
-          http.MultipartFile mf;
+        final publicUrl = supabase.storage
+            .from('FleminGolmages')
+            .getPublicUrl(fileName);
 
-          if (img.path != null) {
-            mf = await http.MultipartFile.fromPath(
-              'files',
-              img.path!,
-              filename: img.name,
-            );
-          } else {
-            mf = http.MultipartFile.fromBytes(
-              'files',
-              img.bytes!,
-              filename: img.name,
-            );
-          }
-
-          req.files.add(mf);
-        }
-
-        req.fields['category'] = category;
-
-        final streamed = await req.send();
-        final resp = await http.Response.fromStream(streamed);
-
-        if (resp.statusCode == 200) {
-          final decoded = json.decode(resp.body);
-          if (decoded['urls'] != null) {
-            uploadedUrls[category]!
-                .addAll(List<String>.from(decoded['urls']));
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Uploaded ${batch.length} images for $category')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Upload failed (${resp.statusCode})')),
-          );
-        }
-      } else {
-        // ================= SUPABASE PRODUCTION UPLOAD =================
-
-        List<String> newUrls = [];
-
-        for (final img in batch) {
-          final fileName =
-              "${widget.partnerId}/${widget.hotelId}/$category/${DateTime.now().millisecondsSinceEpoch}_${img.name}";
-
-          await supabase.storage
-              .from('FleminGolmages')
-              .uploadBinary(fileName, img.bytes!);
-
-          final publicUrl = supabase.storage
-              .from('FleminGolmages')
-              .getPublicUrl(fileName);
-
-          newUrls.add(publicUrl);
-        }
-
-        uploadedUrls[category]!.addAll(newUrls);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Uploaded ${batch.length} images for $category')),
-        );
+        newUrls.add(publicUrl);
       }
+
+      uploadedUrls[category]!.addAll(newUrls);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Uploaded ${batch.length} images for $category')),
+      );
 
       localImages[category]!.clear();
       setState(() {});
