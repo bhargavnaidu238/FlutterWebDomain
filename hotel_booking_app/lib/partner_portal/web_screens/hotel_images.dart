@@ -115,8 +115,11 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
         await supabase.storage
             .from('FleminGolmages')
-            .uploadBinary(fileName, img.bytes!,
-            fileOptions: const FileOptions(upsert: true));
+            .uploadBinary(
+          fileName,
+          img.bytes!,
+          fileOptions: const FileOptions(upsert: true),
+        );
 
         final publicUrl = supabase.storage
             .from('FleminGolmages')
