@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -19,8 +18,6 @@ class UploadImagesPage extends StatefulWidget {
 }
 
 class _UploadImagesPageState extends State<UploadImagesPage> {
-  bool isProduction = bool.fromEnvironment('dart.vm.product');
-
   final supabase = Supabase.instance.client;
 
   final List<String> categories = [
@@ -43,7 +40,6 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   final Map<String, List<_LocalImage>> localImages = {};
 
   final int maxFileSizeBytes = 10 * 1024 * 1024;
-
   bool _isUploading = false;
 
   @override
@@ -57,6 +53,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
   Future<void> _pickAndUpload(String category) async {
     int remaining = limits[category]! - uploadedUrls[category]!.length;
+
     if (remaining <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Limit reached for $category')),
@@ -85,13 +82,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
       if (pf.bytes != null) {
         localImages[category]!.add(
-          _LocalImage(name: pf.name, bytes: pf.bytes!, path: pf.path),
-        );
-      } else if (pf.path != null) {
-        final file = File(pf.path!);
-        final bytes = await file.readAsBytes();
-        localImages[category]!.add(
-          _LocalImage(name: pf.name, bytes: bytes, path: pf.path),
+          _LocalImage(name: pf.name, bytes: pf.bytes!),
         );
       }
     }
@@ -110,8 +101,10 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
       List<String> newUrls = [];
 
       for (final img in batch) {
+        final extension = img.name.split('.').last;
+
         final fileName =
-            "${widget.partnerId}/${widget.hotelId}/$category/${DateTime.now().millisecondsSinceEpoch}_${img.name}";
+            "${widget.partnerId}/${widget.hotelId}/$category/${DateTime.now().millisecondsSinceEpoch}.$extension";
 
         await supabase.storage
             .from('FleminGolmages')
@@ -198,132 +191,51 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
   Widget _buildCategoryCard(String cat) {
     return Card(
-      color: Colors.white.withOpacity(0.05),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(cat,
-                      style:
-                      const TextStyle(color: Colors.white, fontSize: 16)),
-                ),
-                Text(
-                  "Uploaded: ${uploadedUrls[cat]!.length}",
-                  style: const TextStyle(color: Colors.white70),
-                ),
+                Expanded(child: Text(cat)),
+                Text("Uploaded: ${uploadedUrls[cat]!.length}"),
                 const SizedBox(width: 12),
                 ElevatedButton(
-                  onPressed:
-                  _isUploading ? null : () => _pickAndUpload(cat),
+                  onPressed: _isUploading ? null : () => _pickAndUpload(cat),
                   child: const Text("Pick & Upload"),
                 )
               ],
             ),
-            if (localImages[cat]!.isNotEmpty)
-              _buildLocalPreview(cat),
             if (uploadedUrls[cat]!.isNotEmpty)
-              _buildUploadedPreview(cat),
+              SizedBox(
+                height: 90,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: uploadedUrls[cat]!.length,
+                  itemBuilder: (_, i) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Image.network(
+                      uploadedUrls[cat]![i],
+                      width: 90,
+                      height: 70,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              )
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildLocalPreview(String cat) {
-    final list = localImages[cat]!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 8),
-        const Text('Selected (not uploaded yet):',
-            style: TextStyle(color: Colors.white70, fontSize: 12)),
-        const SizedBox(height: 6),
-        SizedBox(
-          height: 90,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: list.length,
-            itemBuilder: (_, i) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Column(
-                children: [
-                  Container(
-                    width: 90,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: Colors.black26,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.memory(list[i].bytes!,
-                          fit: BoxFit.cover),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 90,
-                    child: Text(
-                      list[i].name,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 11, color: Colors.white70),
-                    ),
-                  )
-                ],
-              ),
-            ),
-          ),
-        )
-      ],
-    );
-  }
-
-  Widget _buildUploadedPreview(String cat) {
-    final list = uploadedUrls[cat]!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 8),
-        const Text('Uploaded:',
-            style: TextStyle(color: Colors.white70, fontSize: 12)),
-        const SizedBox(height: 6),
-        SizedBox(
-          height: 90,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: list.length,
-            itemBuilder: (_, i) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: Image.network(
-                  list[i],
-                  fit: BoxFit.cover,
-                  width: 90,
-                  height: 70,
-                ),
-              ),
-            ),
-          ),
-        )
-      ],
     );
   }
 }
 
 class _LocalImage {
   final String name;
-  final Uint8List? bytes;
-  final String? path;
+  final Uint8List bytes;
 
   _LocalImage({
     required this.name,
     required this.bytes,
-    required this.path,
   });
 }

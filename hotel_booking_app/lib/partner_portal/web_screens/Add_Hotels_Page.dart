@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 import 'View_Hotels_Page.dart';
+import 'hotel_images.dart';
 
 class AddHotelsPage extends StatefulWidget {
   final String partnerId;
@@ -239,6 +240,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         'status': "Active",
       };
 
+      /*
       Map<String, List<String>> imageMap = {};
       localImages.forEach((cat, bytesList) {
         if (bytesList.isNotEmpty) {
@@ -246,7 +248,24 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         }
       });
       if (imageMap.isNotEmpty) body['images'] = jsonEncode(imageMap);
+      */
+      final imageResult = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => UploadImagesPage(
+            partnerId: widget.partnerId,
+            hotelId: widget.hotelData?['Hotel_ID']?.toString() ?? '',
+          ),
+        ),
+      );
 
+      if (imageResult != null && imageResult is Map<String, String>) {
+        final allUrls = imageResult.values
+            .where((v) => v.isNotEmpty)
+            .join(',');
+
+        body['hotel_images'] = allUrls;
+      }
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/webaddhotels'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
