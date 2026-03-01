@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:hotel_booking_app/services/api_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UploadImagesPage extends StatefulWidget {
@@ -18,6 +22,9 @@ class UploadImagesPage extends StatefulWidget {
 }
 
 class _UploadImagesPageState extends State<UploadImagesPage> {
+  // Use a dedicated flag for production check
+  bool isProduction = bool.fromEnvironment('dart.vm.product');
+
   final supabase = Supabase.instance.client;
 
   final List<String> categories = [
@@ -40,6 +47,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   final Map<String, List<_LocalImage>> localImages = {};
 
   final int maxFileSizeBytes = 10 * 1024 * 1024;
+
   bool _isUploading = false;
 
   @override
@@ -53,7 +61,6 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
   Future<void> _pickAndUpload(String category) async {
     int remaining = limits[category]! - uploadedUrls[category]!.length;
-
     if (remaining <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Limit reached for $category')),
@@ -82,7 +89,13 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
       if (pf.bytes != null) {
         localImages[category]!.add(
-          _LocalImage(name: pf.name, bytes: pf.bytes!),
+          _LocalImage(name: pf.name, bytes: pf.bytes!, path: pf.path),
+        );
+      } else if (pf.path != null) {
+        final file = File(pf.path!);
+        final bytes = await file.readAsBytes();
+        localImages[category]!.add(
+          _LocalImage(name: pf.name, bytes: bytes, path: pf.path),
         );
       }
     }
@@ -98,34 +111,65 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
     try {
       final batch = List<_LocalImage>.from(localImages[category]!);
-      List<String> newUrls = [];
 
-      for (final img in batch) {
-        final extension = img.name.split('.').last;
+      if (!isProduction) {
+        // ================= LOCAL BACKEND UPLOAD =================
+        final uri = Uri.parse("${ApiConfig.baseUrl}/${widget.partnerId}/${widget.hotelId}");
+        final req = http.MultipartRequest('POST', uri);
 
-        final fileName =
-            "${widget.partnerId}/${widget.hotelId}/$category/${DateTime.now().millisecondsSinceEpoch}.$extension";
+        for (final img in batch) {
+          http.MultipartFile mf;
+          if (img.path != null) {
+            mf = await http.MultipartFile.fromPath('files', img.path!, filename: img.name);
+          } else {
+            mf = http.MultipartFile.fromBytes('files', img.bytes!, filename: img.name);
+          }
+          req.files.add(mf);
+        }
 
-        await supabase.storage
-            .from('FleminGolmages')
-            .uploadBinary(
-          fileName,
-          img.bytes!,
-          fileOptions: const FileOptions(upsert: true),
+        req.fields['category'] = category;
+        final streamed = await req.send();
+        final resp = await http.Response.fromStream(streamed);
+
+        if (resp.statusCode == 200) {
+          final decoded = json.decode(resp.body);
+          if (decoded['urls'] != null) {
+            uploadedUrls[category]!.addAll(List<String>.from(decoded['urls']));
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Uploaded ${batch.length} images for $category')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Upload failed (${resp.statusCode})')),
+          );
+        }
+      } else {
+        // ================= SUPABASE PRODUCTION UPLOAD =================
+        List<String> newUrls = [];
+        // Updated bucket name to 'hotels'
+        const String bucketName = 'hotels';
+
+        for (final img in batch) {
+          final fileName = "${widget.partnerId}/${widget.hotelId}/$category/${DateTime.now().millisecondsSinceEpoch}_${img.name}";
+
+          await supabase.storage
+              .from(bucketName)
+              .uploadBinary(fileName, img.bytes!);
+
+          final publicUrl = supabase.storage
+              .from(bucketName)
+              .getPublicUrl(fileName);
+
+          newUrls.add(publicUrl);
+        }
+
+        uploadedUrls[category]!.addAll(newUrls);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Uploaded ${batch.length} images for $category')),
         );
-
-        final publicUrl = supabase.storage
-            .from('FleminGolmages')
-            .getPublicUrl(fileName);
-
-        newUrls.add(publicUrl);
       }
-
-      uploadedUrls[category]!.addAll(newUrls);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Uploaded ${batch.length} images for $category')),
-      );
 
       localImages[category]!.clear();
       setState(() {});
@@ -149,14 +193,14 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF121212), // Maintain original dark theme
       appBar: AppBar(
         title: const Text("Upload Hotel Images"),
         backgroundColor: Colors.green.shade800,
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
-            onPressed: () =>
-                Navigator.pop(context, getAllCommaSeparated()),
+            onPressed: () => Navigator.pop(context, getAllCommaSeparated()),
           )
         ],
       ),
@@ -166,7 +210,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
           children: [
             const Text(
               "Upload images per category (<= 10MB each)",
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
             ),
             const SizedBox(height: 12),
             Expanded(
@@ -176,12 +220,11 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                 itemBuilder: (_, i) => _buildCategoryCard(categories[i]),
               ),
             ),
+            const SizedBox(height: 10),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700),
-              onPressed: () =>
-                  Navigator.pop(context, getAllCommaSeparated()),
-              child: const Text("Done"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
+              onPressed: () => Navigator.pop(context, getAllCommaSeparated()),
+              child: const Text("Done", style: TextStyle(color: Colors.white)),
             )
           ],
         ),
@@ -191,14 +234,21 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
   Widget _buildCategoryCard(String cat) {
     return Card(
+      color: Colors.white.withOpacity(0.05),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Expanded(child: Text(cat)),
-                Text("Uploaded: ${uploadedUrls[cat]!.length}"),
+                Expanded(
+                  child: Text(cat, style: const TextStyle(color: Colors.white, fontSize: 16)),
+                ),
+                Text(
+                  "Uploaded: ${uploadedUrls[cat]!.length}",
+                  style: const TextStyle(color: Colors.white70),
+                ),
                 const SizedBox(width: 12),
                 ElevatedButton(
                   onPressed: _isUploading ? null : () => _pickAndUpload(cat),
@@ -206,36 +256,102 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                 )
               ],
             ),
-            if (uploadedUrls[cat]!.isNotEmpty)
-              SizedBox(
-                height: 90,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: uploadedUrls[cat]!.length,
-                  itemBuilder: (_, i) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Image.network(
-                      uploadedUrls[cat]![i],
-                      width: 90,
-                      height: 70,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              )
+            if (localImages[cat]!.isNotEmpty) _buildLocalPreview(cat),
+            if (uploadedUrls[cat]!.isNotEmpty) _buildUploadedPreview(cat),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLocalPreview(String cat) {
+    final list = localImages[cat]!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        const Text('Selected (not uploaded yet):', style: TextStyle(color: Colors.white70, fontSize: 12)),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 90,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: list.length,
+            itemBuilder: (_, i) => Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Column(
+                children: [
+                  Container(
+                    width: 90,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      color: Colors.black26,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.memory(list[i].bytes!, fit: BoxFit.cover),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: 90,
+                    child: Text(
+                      list[i].name,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Colors.white70),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildUploadedPreview(String cat) {
+    final list = uploadedUrls[cat]!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        const Text('Uploaded:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 90,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: list.length,
+            itemBuilder: (_, i) => Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.network(
+                  list[i],
+                  fit: BoxFit.cover,
+                  width: 90,
+                  height: 70,
+                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
+                ),
+              ),
+            ),
+          ),
+        )
+      ],
     );
   }
 }
 
 class _LocalImage {
   final String name;
-  final Uint8List bytes;
+  final Uint8List? bytes;
+  final String? path;
 
   _LocalImage({
     required this.name,
     required this.bytes,
+    required this.path,
   });
 }
