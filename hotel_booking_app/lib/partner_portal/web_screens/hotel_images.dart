@@ -22,7 +22,6 @@ class UploadImagesPage extends StatefulWidget {
 }
 
 class _UploadImagesPageState extends State<UploadImagesPage> {
-  // Use a dedicated flag for production check
   bool isProduction = bool.fromEnvironment('dart.vm.product');
 
   final supabase = Supabase.instance.client;
@@ -46,7 +45,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   final Map<String, List<String>> uploadedUrls = {};
   final Map<String, List<_LocalImage>> localImages = {};
 
-  // ✅ REDUCED LIMIT: 3MB per file to prevent Java Heap Space errors
+  // ✅ PREVENTS SERVER CRASH: Files over 3MB are filtered out before upload
   final int maxFileSizeBytes = 3 * 1024 * 1024;
 
   bool _isUploading = false;
@@ -81,10 +80,9 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
     final selected = result.files.take(remaining).toList();
 
     for (final pf in selected) {
-      // ✅ SIZE CHECK: Stop large files before they crash the server
       if (pf.size > maxFileSizeBytes) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${pf.name} is too large (>3MB). Skipped for server safety.')),
+          SnackBar(content: Text('${pf.name} is too large (>3MB). Skipped.')),
         );
         continue;
       }
@@ -93,16 +91,11 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
         localImages[category]!.add(
           _LocalImage(name: pf.name, bytes: pf.bytes!, path: pf.path),
         );
-      } else if (pf.path != null) {
-        final file = File(pf.path!);
-        final bytes = await file.readAsBytes();
-        localImages[category]!.add(
-          _LocalImage(name: pf.name, bytes: bytes, path: pf.path),
-        );
       }
     }
 
     setState(() {});
+    // Trigger upload immediately after picking
     if (localImages[category]!.isNotEmpty) {
       await _uploadBatch(category);
     }
@@ -115,6 +108,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
     try {
       final batch = List<_LocalImage>.from(localImages[category]!);
+      List<String> newUrls = [];
 
       if (!isProduction) {
         // ================= LOCAL BACKEND UPLOAD =================
@@ -122,68 +116,50 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
         final req = http.MultipartRequest('POST', uri);
 
         for (final img in batch) {
-          http.MultipartFile mf;
-          if (img.path != null) {
-            mf = await http.MultipartFile.fromPath('files', img.path!, filename: img.name);
-          } else {
-            mf = http.MultipartFile.fromBytes('files', img.bytes!, filename: img.name);
-          }
-          req.files.add(mf);
+          req.files.add(http.MultipartFile.fromBytes('files', img.bytes!, filename: img.name));
         }
-
         req.fields['category'] = category;
+
         final streamed = await req.send();
         final resp = await http.Response.fromStream(streamed);
 
         if (resp.statusCode == 200) {
           final decoded = json.decode(resp.body);
           if (decoded['urls'] != null) {
-            uploadedUrls[category]!.addAll(List<String>.from(decoded['urls']));
+            newUrls.addAll(List<String>.from(decoded['urls']));
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Uploaded ${batch.length} images for $category')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Upload failed (${resp.statusCode})')),
-          );
         }
       } else {
         // ================= SUPABASE PRODUCTION UPLOAD =================
-        List<String> newUrls = [];
-        // ✅ UPDATED: Consistent bucket name
         const String bucketName = 'hotels';
 
         for (final img in batch) {
           final fileName = "${widget.partnerId}/${widget.hotelId}/$category/${DateTime.now().millisecondsSinceEpoch}_${img.name}";
 
-          await supabase.storage
-              .from(bucketName)
-              .uploadBinary(fileName, img.bytes!);
+          // Upload binary directly to Supabase Storage
+          await supabase.storage.from(bucketName).uploadBinary(fileName, img.bytes!);
 
-          final publicUrl = supabase.storage
-              .from(bucketName)
-              .getPublicUrl(fileName);
-
+          // Generate the Public URL
+          final publicUrl = supabase.storage.from(bucketName).getPublicUrl(fileName);
           newUrls.add(publicUrl);
         }
-
-        uploadedUrls[category]!.addAll(newUrls);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Uploaded ${batch.length} images for $category')),
-        );
       }
 
-      localImages[category]!.clear();
-      setState(() {});
+      setState(() {
+        uploadedUrls[category]!.addAll(newUrls);
+        localImages[category]!.clear(); // Clear local bytes once uploaded to save RAM
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Successfully uploaded ${batch.length} images for $category')),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Upload error: $e')),
       );
+    } finally {
+      setState(() => _isUploading = false);
     }
-
-    setState(() => _isUploading = false);
   }
 
   Map<String, String> getAllCommaSeparated() {
@@ -202,11 +178,10 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
         title: const Text("Upload Hotel Images"),
         backgroundColor: Colors.green.shade800,
         actions: [
-          // ✅ LOADING FEEDBACK: Prevents multiple clicks
           if (_isUploading)
             const Center(child: Padding(padding: EdgeInsets.only(right: 16), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))),
           IconButton(
-            icon: const Icon(Icons.save),
+            icon: const Icon(Icons.check_circle),
             onPressed: _isUploading ? null : () => Navigator.pop(context, getAllCommaSeparated()),
           )
         ],
@@ -216,7 +191,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
         child: Column(
           children: [
             const Text(
-              "Upload images per category (Max 3MB per file for server safety)",
+              "Images upload as you pick them. Max 3MB per file.",
               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
             ),
             const SizedBox(height: 12),
@@ -229,9 +204,9 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
             ),
             const SizedBox(height: 10),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)),
               onPressed: _isUploading ? null : () => Navigator.pop(context, getAllCommaSeparated()),
-              child: _isUploading ? const Text("Uploading...") : const Text("Done", style: TextStyle(color: Colors.white)),
+              child: const Text("DONE / SAVE ALL", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             )
           ],
         ),
@@ -249,13 +224,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(cat, style: const TextStyle(color: Colors.white, fontSize: 16)),
-                ),
-                Text(
-                  "Uploaded: ${uploadedUrls[cat]!.length}",
-                  style: const TextStyle(color: Colors.white70),
-                ),
+                Expanded(child: Text(cat, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))),
+                Text("${uploadedUrls[cat]!.length} Uploaded", style: const TextStyle(color: Colors.white70)),
                 const SizedBox(width: 12),
                 ElevatedButton(
                   onPressed: _isUploading ? null : () => _pickAndUpload(cat),
@@ -277,39 +247,20 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        const Text('Selected (not uploaded yet):', style: TextStyle(color: Colors.white70, fontSize: 12)),
+        const Text('Uploading...', style: TextStyle(color: Colors.orange, fontSize: 12)),
         const SizedBox(height: 6),
         SizedBox(
-          height: 90,
+          height: 80,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: list.length,
-            itemBuilder: (_, i) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Column(
-                children: [
-                  Container(
-                    width: 90,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: Colors.black26,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.memory(list[i].bytes!, fit: BoxFit.cover),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 90,
-                    child: Text(
-                      list[i].name,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, color: Colors.white70),
-                    ),
-                  )
-                ],
+            itemBuilder: (_, i) => Opacity(
+              opacity: 0.5,
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                width: 80,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), color: Colors.black26),
+                child: ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.memory(list[i].bytes!, fit: BoxFit.cover)),
               ),
             ),
           ),
@@ -323,23 +274,23 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 8),
-        const Text('Uploaded:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+        const SizedBox(height: 12),
+        const Text('Uploaded Preview:', style: TextStyle(color: Colors.green, fontSize: 12)),
         const SizedBox(height: 6),
         SizedBox(
-          height: 90,
+          height: 80,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: list.length,
-            itemBuilder: (_, i) => Padding(
-              padding: const EdgeInsets.only(right: 8),
+            itemBuilder: (_, i) => Container(
+              margin: const EdgeInsets.only(right: 8),
+              width: 80,
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.green.shade900)),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: Image.network(
                   list[i],
                   fit: BoxFit.cover,
-                  width: 90,
-                  height: 70,
                   errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
                 ),
               ),
@@ -355,10 +306,5 @@ class _LocalImage {
   final String name;
   final Uint8List? bytes;
   final String? path;
-
-  _LocalImage({
-    required this.name,
-    required this.bytes,
-    required this.path,
-  });
+  _LocalImage({required this.name, required this.bytes, required this.path});
 }
