@@ -63,7 +63,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
   }
 
   void _initData() {
-    // Note: Database keys are lowercase. Mapping controllers accordingly.
     List<String> fields = ["hotel_name", "address", "city", "state", "country", "pincode", "total_rooms", "description", "hotel_contact"];
     for (var f in fields) {
       controllers[f] = TextEditingController();
@@ -235,23 +234,30 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         'about_this_property': aboutController.text,
         'hotel_location': "$latitude,$longitude",
         'status': "Active",
-        // Keep existing image URLs if no new images are picked
+        // ✅ CRITICAL: Maintain existing image URLs if no new ones are picked
         'hotel_images': widget.hotelData?['hotel_images']?.toString() ?? '',
       };
 
       Map<String, List<String>> imageMap = {};
+      bool hasNewImages = false;
       localImages.forEach((cat, bytesList) {
         if (bytesList.isNotEmpty) {
+          hasNewImages = true;
+          // Base64 encode the bytes without headers for the Java backend
           imageMap[cat] = bytesList.map((b) => base64Encode(b)).toList();
         }
       });
-      if (imageMap.isNotEmpty) body['images'] = jsonEncode(imageMap);
+
+      // ✅ CRITICAL: Stringify the imageMap just like Postman does
+      if (hasNewImages) {
+        body['images'] = jsonEncode(imageMap);
+      }
 
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/webaddhotels'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body,
-      ).timeout(const Duration(seconds: 60));
+      ).timeout(const Duration(seconds: 60)); // Long timeout for image processing
 
       final result = jsonDecode(response.body);
       if (response.statusCode == 200 && result['status'] == 'success') {
@@ -349,6 +355,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
               ),
             ),
           ),
+          // ✅ FIX: Added a loading overlay to prevent the "blank screen" hang
           if (isSaving)
             Container(
               color: Colors.black54,

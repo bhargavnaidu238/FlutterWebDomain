@@ -29311,7 +29311,8 @@ axh:function axh(){},
 axi:function axi(){},
 axj:function axj(){},
 axk:function axk(){},
-axl:function axl(a){this.a=a},
+axl:function axl(a,b){this.a=a
+this.b=b},
 axb:function axb(){},
 axm:function axm(a){this.a=a},
 axn:function axn(){},
@@ -102407,67 +102408,69 @@ case 3:o=c
 if(o!=null)p.J(new A.awy(p,a,o))
 case 1:return A.w(q,r)}})
 return A.x($async$BJ,r)},
-fN(){var s=0,r=A.y(t.H),q,p=2,o=[],n=[],m=this,l,k,j,i,h,g,f,e,d,c,b,a,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,c0,c1,c2
-var $async$fN=A.z(function(c3,c4){if(c3===1){o.push(c4)
+fN(){var s=0,r=A.y(t.H),q,p=2,o=[],n=[],m=this,l,k,j,i,h,g,f,e,d,c,b,a,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,c0,c1,c2,c3
+var $async$fN=A.z(function(c4,c5){if(c4===1){o.push(c5)
 s=p}for(;;)switch(s){case 0:if(!m.d.gT().rq()){m.c.R(t.q).f.b5(A.bU(null,null,null,null,null,B.p,null,A.a2("All fields are mandatory except Rating",null,null,null,null,null,null),null,B.B,null,null,null,null,null,null,null,null,null,null))
 s=1
 break}if(m.cx==null){m.c.R(t.q).f.b5(A.bU(null,null,null,null,null,B.p,null,A.a2("Please select location on map",null,null,null,null,null,null),null,B.B,null,null,null,null,null,null,null,null,null,null))
 s=1
 break}m.J(new A.axc(m))
 p=4
-e=m.dx
-d=A.p(e).i("da<1,2>")
-c=d.i("cB<q.E,m>")
-b=A.Y(new A.cB(new A.aw(new A.da(e,d),new A.axd(),d.i("aw<q.E>")),new A.axe(),c),c.i("q.E"))
-l=b
-e=l
-d=A.W(e).i("R<1,m>")
-a=A.Y(new A.R(e,new A.axg(m),d),d.i("a6.E"))
-k=a
-e=m.a.d
-if(e==null)e=null
-else{e=J.a3(e,"hotel_id")
-e=e==null?null:J.b5(e)}if(e==null)e=""
-d=m.a.c
-c=m.e
-a0=c.h(0,"hotel_name").a.a
-a1=m.ch
-if(a1==null)a1="Hotel"
-a2=m.CW
-if(a2==null)a2="No"
-a3=J.aD(l)===0?"Standard":J.NC(l,",")
-a4=J.aD(k)===0?"0":J.NC(k,",")
-a5=c.h(0,"address").a.a
-a6=c.h(0,"city").a.a
-a7=c.h(0,"state").a.a
-a8=c.h(0,"country").a.a
-a9=c.h(0,"pincode").a.a
-b0=c.h(0,"total_rooms").a.a
-b1=c.h(0,"total_rooms").a.a
-b2=m.fx
-b3=A.p(b2).i("da<1,2>")
-b3=new A.cB(new A.aw(new A.da(b2,b3),new A.axh(),b3.i("aw<q.E>")),new A.axi(),b3.i("cB<q.E,m>")).b9(0,",")
-b2=c.h(0,"description").a.a
-b4=m.go
-b5=A.p(b4).i("da<1,2>")
-b5=new A.cB(new A.aw(new A.da(b4,b5),new A.axj(),b5.i("aw<q.E>")),new A.axk(),b5.i("cB<q.E,m>")).b9(0,",")
-b4=m.ax.a.a
-c=c.h(0,"hotel_contact").a.a
-b6=m.at.a.a
-b7=m.cx
-b8=m.cy
-b9=m.a.d
-if(b9==null)b9=null
-else{b9=J.a3(b9,"hotel_images")
-b9=b9==null?null:J.b5(b9)}if(b9==null)b9=""
-c0=t.N
-j=A.P(["hotel_id",e,"partner_id",d,"hotel_name",a0,"hotel_type",a1,"customization",a2,"room_type",a3,"room_price",a4,"address",a5,"city",a6,"state",a7,"country",a8,"pincode",a9,"total_rooms",b0,"available_rooms",b1,"amenities",b3,"description",b2,"policies",b5,"rating",b4,"hotel_contact",c,"about_this_property",b6,"hotel_location",A.k(b7)+","+A.k(b8),"status","Active","hotel_images",b9],c0,c0)
-i=A.r(c0,t.yp)
-m.id.a9(0,new A.axl(i))
-if(i.a!==0)J.eo(j,"images",B.a3.xN(i,null))
+e={}
+d=m.dx
+c=A.p(d).i("da<1,2>")
+b=c.i("cB<q.E,m>")
+a=A.Y(new A.cB(new A.aw(new A.da(d,c),new A.axd(),c.i("aw<q.E>")),new A.axe(),b),b.i("q.E"))
+l=a
+d=l
+c=A.W(d).i("R<1,m>")
+a0=A.Y(new A.R(d,new A.axg(m),c),c.i("a6.E"))
+k=a0
+d=m.a.d
+if(d==null)d=null
+else{d=J.a3(d,"hotel_id")
+d=d==null?null:J.b5(d)}if(d==null)d=""
+c=m.a.c
+b=m.e
+a1=b.h(0,"hotel_name").a.a
+a2=m.ch
+if(a2==null)a2="Hotel"
+a3=m.CW
+if(a3==null)a3="No"
+a4=J.aD(l)===0?"Standard":J.NC(l,",")
+a5=J.aD(k)===0?"0":J.NC(k,",")
+a6=b.h(0,"address").a.a
+a7=b.h(0,"city").a.a
+a8=b.h(0,"state").a.a
+a9=b.h(0,"country").a.a
+b0=b.h(0,"pincode").a.a
+b1=b.h(0,"total_rooms").a.a
+b2=b.h(0,"total_rooms").a.a
+b3=m.fx
+b4=A.p(b3).i("da<1,2>")
+b4=new A.cB(new A.aw(new A.da(b3,b4),new A.axh(),b4.i("aw<q.E>")),new A.axi(),b4.i("cB<q.E,m>")).b9(0,",")
+b3=b.h(0,"description").a.a
+b5=m.go
+b6=A.p(b5).i("da<1,2>")
+b6=new A.cB(new A.aw(new A.da(b5,b6),new A.axj(),b6.i("aw<q.E>")),new A.axk(),b6.i("cB<q.E,m>")).b9(0,",")
+b5=m.ax.a.a
+b=b.h(0,"hotel_contact").a.a
+b7=m.at.a.a
+b8=m.cx
+b9=m.cy
+c0=m.a.d
+if(c0==null)c0=null
+else{c0=J.a3(c0,"hotel_images")
+c0=c0==null?null:J.b5(c0)}if(c0==null)c0=""
+c1=t.N
+j=A.P(["hotel_id",d,"partner_id",c,"hotel_name",a1,"hotel_type",a2,"customization",a3,"room_type",a4,"room_price",a5,"address",a6,"city",a7,"state",a8,"country",a9,"pincode",b0,"total_rooms",b1,"available_rooms",b2,"amenities",b4,"description",b3,"policies",b6,"rating",b5,"hotel_contact",b,"about_this_property",b7,"hotel_location",A.k(b8)+","+A.k(b9),"status","Active","hotel_images",c0],c1,c1)
+i=A.r(c1,t.yp)
+e.a=!1
+m.id.a9(0,new A.axl(e,i))
+if(e.a)J.eo(j,"images",B.a3.xN(i,null))
 s=7
-return A.A(A.fz(A.ce(A.eR()+"/webaddhotels",0,null),j,null,A.P(["Content-Type","application/x-www-form-urlencoded"],c0,c0)).FS(0,B.RD),$async$fN)
-case 7:h=c4
+return A.A(A.fz(A.ce(A.eR()+"/webaddhotels",0,null),j,null,A.P(["Content-Type","application/x-www-form-urlencoded"],c1,c1)).FS(0,B.RD),$async$fN)
+case 7:h=c5
 e=h
 g=B.a3.jY(0,A.dT(A.dS(e.e)).bd(0,e.w),null)
 e=h.b===200&&J.f(J.a3(g,"status"),"success")
@@ -102481,8 +102484,8 @@ m.c.R(d).f.b5(A.bU(null,null,null,null,null,B.p,null,A.a2("Error: "+e,null,null,
 s=5
 break
 case 4:p=3
-c2=o.pop()
-f=A.ac(c2)
+c3=o.pop()
+f=A.ac(c3)
 e=A.k(f)
 m.c.R(t.q).f.b5(A.bU(null,null,null,null,null,B.p,null,A.a2("Connection Error: "+e,null,null,null,null,null,null),null,B.B,null,null,null,null,null,null,null,null,null,null))
 n.push(6)
@@ -102639,9 +102642,10 @@ $1(a){return a.a},
 $S:78}
 A.axl.prototype={
 $2(a,b){var s=J.ao(b)
-if(s.gc8(b)){s=s.dF(b,new A.axb(),t.N)
+if(s.gc8(b)){this.a.a=!0
+s=s.dF(b,new A.axb(),t.N)
 s=A.Y(s,s.$ti.i("a6.E"))
-this.a.m(0,a,s)}},
+this.b.m(0,a,s)}},
 $S:672}
 A.axb.prototype={
 $1(a){return B.jp.gmZ().dm(a)},

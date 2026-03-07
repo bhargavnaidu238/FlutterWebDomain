@@ -147,7 +147,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
       } else {
         // ================= SUPABASE PRODUCTION UPLOAD =================
         List<String> newUrls = [];
-        // Updated bucket name to 'hotels'
+        // ✅ FIX: Updated bucket name to 'hotels' as confirmed in recent backend setup
         const String bucketName = 'hotels';
 
         for (final img in batch) {
