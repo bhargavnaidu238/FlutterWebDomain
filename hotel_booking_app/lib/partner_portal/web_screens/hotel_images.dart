@@ -46,7 +46,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   final Map<String, List<String>> uploadedUrls = {};
   final Map<String, List<_LocalImage>> localImages = {};
 
-  final int maxFileSizeBytes = 10 * 1024 * 1024;
+  // ✅ REDUCED LIMIT: 3MB per file to prevent Java Heap Space errors
+  final int maxFileSizeBytes = 3 * 1024 * 1024;
 
   bool _isUploading = false;
 
@@ -80,9 +81,10 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
     final selected = result.files.take(remaining).toList();
 
     for (final pf in selected) {
+      // ✅ SIZE CHECK: Stop large files before they crash the server
       if (pf.size > maxFileSizeBytes) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${pf.name} is > 10MB and skipped')),
+          SnackBar(content: Text('${pf.name} is too large (>3MB). Skipped for server safety.')),
         );
         continue;
       }
@@ -101,7 +103,9 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
     }
 
     setState(() {});
-    await _uploadBatch(category);
+    if (localImages[category]!.isNotEmpty) {
+      await _uploadBatch(category);
+    }
   }
 
   Future<void> _uploadBatch(String category) async {
@@ -147,7 +151,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
       } else {
         // ================= SUPABASE PRODUCTION UPLOAD =================
         List<String> newUrls = [];
-        // ✅ FIX: Updated bucket name to 'hotels' as confirmed in recent backend setup
+        // ✅ UPDATED: Consistent bucket name
         const String bucketName = 'hotels';
 
         for (final img in batch) {
@@ -193,14 +197,17 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212), // Maintain original dark theme
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         title: const Text("Upload Hotel Images"),
         backgroundColor: Colors.green.shade800,
         actions: [
+          // ✅ LOADING FEEDBACK: Prevents multiple clicks
+          if (_isUploading)
+            const Center(child: Padding(padding: EdgeInsets.only(right: 16), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))),
           IconButton(
             icon: const Icon(Icons.save),
-            onPressed: () => Navigator.pop(context, getAllCommaSeparated()),
+            onPressed: _isUploading ? null : () => Navigator.pop(context, getAllCommaSeparated()),
           )
         ],
       ),
@@ -209,7 +216,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
         child: Column(
           children: [
             const Text(
-              "Upload images per category (<= 10MB each)",
+              "Upload images per category (Max 3MB per file for server safety)",
               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
             ),
             const SizedBox(height: 12),
@@ -223,8 +230,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
             const SizedBox(height: 10),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
-              onPressed: () => Navigator.pop(context, getAllCommaSeparated()),
-              child: const Text("Done", style: TextStyle(color: Colors.white)),
+              onPressed: _isUploading ? null : () => Navigator.pop(context, getAllCommaSeparated()),
+              child: _isUploading ? const Text("Uploading...") : const Text("Done", style: TextStyle(color: Colors.white)),
             )
           ],
         ),

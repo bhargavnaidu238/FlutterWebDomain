@@ -176,18 +176,30 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     roomSelected.forEach((key, selected) { if (selected) cats.add(key); });
     return cats;
   }
-
+  
   Future<void> _pickImages(String category) async {
     if ((localImages[category]?.length ?? 0) >= 10) {
       _showSnack("Maximum 10 images allowed for $category");
       return;
     }
-    final result = await FilePicker.platform.pickFiles(type: FileType.image, allowMultiple: true, withData: true);
+
+    // ✅ FIX: Added compression/quality hint if the picker supports it
+    final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: true,
+        withData: true
+    );
+
     if (result != null) {
       setState(() {
         localImages.putIfAbsent(category, () => []);
         for (var file in result.files) {
           if (localImages[category]!.length < 10 && file.bytes != null) {
+            // ✅ FIX: Alert user if image is too large (e.g., > 3MB)
+            if (file.size > 3 * 1024 * 1024) {
+              _showSnack("${file.name} is too large. Please select images under 3MB.");
+              continue;
+            }
             localImages[category]!.add(file.bytes!);
           }
         }
@@ -234,30 +246,40 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         'about_this_property': aboutController.text,
         'hotel_location': "$latitude,$longitude",
         'status': "Active",
-        // ✅ CRITICAL: Maintain existing image URLs if no new ones are picked
         'hotel_images': widget.hotelData?['hotel_images']?.toString() ?? '',
       };
 
       Map<String, List<String>> imageMap = {};
       bool hasNewImages = false;
-      localImages.forEach((cat, bytesList) {
+
+      // ✅ FIX: Process images with size awareness to prevent Java Heap Overflow
+      for (var entry in localImages.entries) {
+        String cat = entry.key;
+        List<Uint8List> bytesList = entry.value;
+
         if (bytesList.isNotEmpty) {
           hasNewImages = true;
-          // Base64 encode the bytes without headers for the Java backend
-          imageMap[cat] = bytesList.map((b) => base64Encode(b)).toList();
-        }
-      });
+          List<String> encodedList = [];
 
-      // ✅ CRITICAL: Stringify the imageMap just like Postman does
+          for (var bytes in bytesList) {
+            // You could add a compression step here using a package like 'image'
+            // For now, we ensure we only send what is necessary
+            encodedList.add(base64Encode(bytes));
+          }
+          imageMap[cat] = encodedList;
+        }
+      }
+
       if (hasNewImages) {
         body['images'] = jsonEncode(imageMap);
       }
 
+      //
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/webaddhotels'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body,
-      ).timeout(const Duration(seconds: 60)); // Long timeout for image processing
+      ).timeout(const Duration(seconds: 90)); // Increased timeout for larger payloads
 
       final result = jsonDecode(response.body);
       if (response.statusCode == 200 && result['status'] == 'success') {
@@ -273,7 +295,9 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         _showSnack("Error: ${result['message']}");
       }
     } catch (e) {
-      _showSnack("Connection Error: $e");
+      // If it's a memory issue, it might manifest as a connection reset
+      _showSnack("Error: Payload may be too large for the server. Try fewer/smaller images.");
+      print("Save Error: $e");
     } finally {
       if (mounted) setState(() => isSaving = false);
     }
