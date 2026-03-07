@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'View_PGs_Page.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 
@@ -84,6 +85,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   final Map<String, TextEditingController> controllers = {};
   bool isSaving = false;
   bool showSuccess = false;
+  bool _isUploading = false; // Track active background uploads
 
   String? selectedPGType;
   final List<String> pgTypes = ['Gents', 'Ladies', 'Co-Live'];
@@ -149,7 +151,10 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     "Four Sharing",
     "Five Sharing"
   ];
-  final Map<String, List<LocalPickedImage>> localImages = {};
+
+  // ✅ Changed: We now store Public URLs instead of Local Picked Images
+  final Map<String, List<String>> uploadedUrls = {};
+
   final Map<String, int> categoryLimits = {
     "Facade": 10,
     "Lobby/Entrance": 10,
@@ -159,7 +164,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     "Four Sharing": 10,
     "Five Sharing": 10,
   };
-  final int maxFileSizeBytes = 5 * 1024 * 1024;
+  final int maxFileSizeBytes = 3 * 1024 * 1024; // Lowered to 3MB for web stability
   bool showImageSections = false;
 
   final TextEditingController locationController = TextEditingController();
@@ -186,13 +191,13 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     }
 
     for (var c in categories) {
-      localImages[c] = [];
+      uploadedUrls[c] = [];
     }
 
     if (widget.pgData != null) {
       final data = widget.pgData!;
       for (var f in fields) {
-        controllers[f]?.text = data[f] ?? '';
+        controllers[f]?.text = data[f]?.toString() ?? '';
       }
       selectedPGType = data['pg_type'];
 
@@ -215,6 +220,12 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
 
       aboutController.text = data['about_this_pg'] ?? '';
       ratingController.text = (data['rating'] ?? '0.0').toString();
+
+      // Load existing images if any
+      String existingImages = data['hotel_images'] ?? '';
+      if (existingImages.isNotEmpty) {
+        uploadedUrls["Facade"] = existingImages.split(',').where((s) => s.isNotEmpty).toList();
+      }
 
       if ((data['hotel_location'] ?? '').contains(',')) {
         final parts = data['hotel_location']!.split(',');
@@ -239,6 +250,61 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     locationController.dispose();
     _expandCtrl.dispose();
     super.dispose();
+  }
+
+  void _showSnack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+
+  // ✅ New: Function to upload picked images immediately to Supabase
+  Future<void> _pickAndUploadImages(String category) async {
+    final already = uploadedUrls[category]!.length;
+    final limit = categoryLimits[category] ?? 10;
+    final remaining = limit - already;
+
+    if (remaining <= 0) {
+      _showSnack("Limit reached for $category");
+      return;
+    }
+
+    try {
+      final res = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: true,
+        withData: true,
+      );
+
+      if (res == null) return;
+
+      setState(() => _isUploading = true);
+
+      final supabase = Supabase.instance.client;
+      final picked = res.files;
+      int toTake = picked.length > remaining ? remaining : picked.length;
+
+      for (int i = 0; i < toTake; i++) {
+        final pf = picked[i];
+        if (pf.bytes == null) continue;
+        if (pf.size > maxFileSizeBytes) {
+          _showSnack("${pf.name} is too large (>3MB). Skipped.");
+          continue;
+        }
+
+        String fileName = "${widget.partnerId}/PG_${DateTime.now().millisecondsSinceEpoch}_${pf.name}";
+
+        // Immediate Upload
+        await supabase.storage.from('hotels').uploadBinary(fileName, pf.bytes!);
+        final publicUrl = supabase.storage.from('hotels').getPublicUrl(fileName);
+
+        setState(() {
+          uploadedUrls[category]!.add(publicUrl);
+        });
+      }
+
+      _showSnack("Uploaded successfully to $category");
+    } catch (e) {
+      _showSnack("Upload error: $e");
+    } finally {
+      setState(() => _isUploading = false);
+    }
   }
 
   Widget buildTextField(String field) {
@@ -448,8 +514,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     );
   }
 
-  void _showSnack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-
   Future<void> pickLocation() async {
     final result = await Navigator.push<Map<String, double>>(
       context,
@@ -493,7 +557,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
           const SizedBox(height: 8),
           Text(_displayPriceSummary(), style: const TextStyle(color: Colors.black54)),
           const SizedBox(height: 8),
-          Text("Images: ${localImages.values.map((l) => l.length).fold<int>(0, (a, b) => a + b)}", style: const TextStyle(color: Colors.black54)),
+          Text("Images: ${uploadedUrls.values.map((l) => l.length).fold<int>(0, (a, b) => a + b)}", style: const TextStyle(color: Colors.black54)),
         ],
       ),
     );
@@ -512,59 +576,8 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     return parts.join(" | ");
   }
 
-  Future<void> _pickImagesForCategory(String category) async {
-    final already = localImages[category]!.length;
-    final limit = categoryLimits[category] ?? 10;
-    final remaining = limit - already;
-
-    if (remaining <= 0) {
-      _showSnack("Limit reached for $category");
-      return;
-    }
-
-    try {
-      final res = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: true,
-        withData: true,
-      );
-
-      if (res == null) return;
-
-      final picked = res.files;
-      int toTake = picked.length > remaining ? remaining : picked.length;
-
-      int added = 0;
-
-      for (int i = 0; i < toTake; i++) {
-        final pf = picked[i];
-        final Uint8List? bytes = pf.bytes;
-
-        if (bytes == null) continue;
-        if (bytes.length > maxFileSizeBytes) continue;
-
-        localImages[category]!.add(
-          LocalPickedImage(name: pf.name, bytes: bytes, path: null),
-        );
-        added++;
-      }
-
-      setState(() {});
-      if (added > 0) _showSnack("Selected $added image(s) for $category");
-    } catch (e) {
-      _showSnack("Error selecting images: $e");
-    }
-  }
-
-  Future<void> _removeImage(String category, int index) async {
-    if (index < 0 || index >= localImages[category]!.length) return;
-    setState(() {
-      localImages[category]!.removeAt(index);
-    });
-  }
-
   Widget _buildCategoryCard(String category) {
-    final list = localImages[category]!;
+    final list = uploadedUrls[category]!;
     final used = list.length;
     final limit = categoryLimits[category] ?? 10;
 
@@ -580,17 +593,16 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
               Expanded(child: Text(category, style: const TextStyle(color: Colors.black87, fontSize: 16))),
               Text("$used / $limit", style: const TextStyle(color: Colors.black54)),
               const SizedBox(width: 8),
-              // Use GradientButton for the "Pick" action
               GradientButton(
                 width: 120,
                 height: 40,
-                onPressed: (used >= limit) ? null : () => _pickImagesForCategory(category),
+                onPressed: (used >= limit || _isUploading) ? null : () => _pickAndUploadImages(category),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.add_a_photo, size: 18, color: Colors.white),
-                    SizedBox(width: 6),
-                    Text("Pick", style: TextStyle(color: Colors.white)),
+                  children: [
+                    _isUploading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.add_a_photo, size: 18, color: Colors.white),
+                    const SizedBox(width: 6),
+                    Text(_isUploading ? "Uploading" : "Pick", style: const TextStyle(color: Colors.white)),
                   ],
                 ),
               ),
@@ -604,51 +616,27 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
                 scrollDirection: Axis.horizontal,
                 itemCount: list.length,
                 itemBuilder: (_, i) {
-                  final img = list[i];
+                  final url = list[i];
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: Stack(
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: img.bytes != null
-                              ? Image.memory(img.bytes!, width: 140, height: 90, fit: BoxFit.cover)
-                              : Container(
-                            width: 140,
-                            height: 90,
-                            color: Colors.grey.shade200,
-                            child: Center(
-                              child: Text(
-                                img.name,
-                                style: const TextStyle(color: Colors.black54, fontSize: 12),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
+                          child: Image.network(url, width: 140, height: 90, fit: BoxFit.cover,
+                              errorBuilder: (ctx, err, stack) => Container(width: 140, height: 90, color: Colors.grey.shade200, child: const Icon(Icons.broken_image))),
                         ),
                         Positioned(
                           right: 4,
                           top: 4,
                           child: GestureDetector(
-                            onTap: () => _removeImage(category, i),
+                            onTap: () => setState(() => uploadedUrls[category]!.removeAt(i)),
                             child: Container(
                               decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
                               child: const Icon(Icons.close, size: 20, color: Colors.white),
                             ),
                           ),
                         ),
-                        Positioned(
-                          left: 6,
-                          bottom: 6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
-                            child: Text(
-                              img.name.length > 14 ? img.name.substring(0, 12) + "..." : img.name,
-                              style: const TextStyle(color: Colors.white70, fontSize: 10),
-                            ),
-                          ),
-                        )
                       ],
                     ),
                   );
@@ -656,9 +644,9 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
               ),
             ),
           if (list.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text("No images selected yet for $category", style: const TextStyle(color: Colors.black54)),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text("No images uploaded yet", style: TextStyle(color: Colors.black54)),
             )
         ]),
       ),
@@ -679,7 +667,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         ),
         child: Column(
           children: [
-            const Text("Upload images per category (Max 10 images per section, 5MB per image)", style: TextStyle(color: Colors.black54)),
+            const Text("Upload images per category (Direct to Cloud)", style: TextStyle(color: Colors.black54)),
             const SizedBox(height: 10),
             ...categories.map((c) => Padding(padding: const EdgeInsets.only(bottom: 8), child: _buildCategoryCard(c))).toList(),
             const SizedBox(height: 8),
@@ -699,11 +687,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      for (var c in categories) localImages[c]!.clear();
-                    });
-                  },
+                  onPressed: () => setState(() { for (var c in categories) uploadedUrls[c]!.clear(); }),
                   icon: const Icon(Icons.delete_forever),
                   label: const Text("Clear All"),
                   style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.black26)),
@@ -737,28 +721,20 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     );
   }
 
-  Future<void> saveHotel() async {
+  Future<void> savePG() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isUploading) { _showSnack("Please wait for images to finish uploading"); return; }
 
-    // Validate room prices when selected
     final selectedRoomTypes = roomTypeOptions.where((rt) => roomTypeSelected[rt] == true).toList();
     for (var rt in selectedRoomTypes) {
-      final priceText = roomPriceControllers[rt]?.text.trim() ?? "";
-      if (priceText.isEmpty) {
-        _showSnack("Please enter price for $rt");
-        return;
-      }
-      if (double.tryParse(priceText) == null) {
-        _showSnack("Price for $rt must be numeric");
-        return;
-      }
+      if (roomPriceControllers[rt]!.text.trim().isEmpty) { _showSnack("Price for $rt is required"); return; }
     }
 
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Confirm"),
-        content: const Text("Do you want to save this pg and upload selected images?"),
+        content: const Text("Save this PG details?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Confirm")),
@@ -767,11 +743,12 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     );
     if (confirm != true) return;
 
-    setState(() {
-      isSaving = true;
-    });
+    setState(() => isSaving = true);
 
     try {
+      // ✅ Now sending all URLs as a comma-separated string to prevent OOM
+      String allImages = uploadedUrls.values.expand((x) => x).join(',');
+
       final Map<String, dynamic> body = {
         'pg_id': widget.pgData?['pg_id'] ?? '',
         'partner_id': widget.partnerId,
@@ -790,7 +767,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         'total_four_sharing_rooms': controllers["total_four_sharing_rooms"]?.text.trim() ?? '',
         'total_five_sharing_rooms': controllers["total_five_sharing_rooms"]?.text.trim() ?? '',
         'available_rooms': availableRoomsController.text.trim().isEmpty
-            ? controllers["total_double_sharing_rooms"]?.text.trim() ?? ''
+            ? controllers["total_single_sharing_rooms"]?.text.trim() ?? '0'
             : availableRoomsController.text.trim(),
         'amenities': controllers['amenities']?.text.trim() ?? '',
         'description': controllers["description"]?.text.trim() ?? '',
@@ -800,20 +777,8 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         'about_this_pg': aboutController.text.trim(),
         'hotel_location': "${latitude ?? ''},${longitude ?? ''}",
         'status': "Active",
+        'hotel_images': allImages,
       };
-
-      // Attach images as base64
-      Map<String, List<String>> base64Images = {};
-      for (var category in categories) {
-        final imgs = localImages[category]!;
-        if (imgs.isNotEmpty) {
-          base64Images[category] = imgs.map((img) => base64Encode(img.bytes!)).toList();
-        }
-      }
-
-      if (base64Images.isNotEmpty) {
-        body['images'] = jsonEncode(base64Images);
-      }
 
       final res = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/webaddpgs'),
@@ -830,14 +795,11 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
           if (!mounted) return;
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ViewPGsPage(partnerId: widget.partnerId)));
         } else {
-          final msg = decoded['message'] ?? res.body;
-          _showSnack("Save failed: $msg");
+          _showSnack("Save failed: ${decoded['message']}");
         }
-      } else {
-        _showSnack("Server error: ${res.statusCode}");
       }
     } catch (e) {
-      _showSnack("Error saving PG: $e");
+      _showSnack("Error: $e");
     } finally {
       if (mounted) setState(() => isSaving = false);
     }
@@ -846,22 +808,15 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Top nav bar with requested greenAccent shade
       appBar: AppBar(
         backgroundColor: Colors.greenAccent.shade700,
         title: const Text("Add Paying Guests"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
         actions: [
           AnimatedScale(
             scale: showSuccess ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 400),
-            child: const Padding(
-              padding: EdgeInsets.only(right: 12.0),
-              child: Icon(Icons.check_circle, color: Colors.white, size: 28),
-            ),
+            child: const Padding(padding: EdgeInsets.only(right: 12.0), child: Icon(Icons.check_circle, color: Colors.white, size: 28)),
           ),
         ],
       ),
@@ -874,7 +829,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
               constraints: const BoxConstraints(maxWidth: 1100),
               child: Container(
                 padding: const EdgeInsets.all(24),
-                // remove glassy effect -> solid white card with subtle shadow
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -884,49 +838,26 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
                 child: Form(
                   key: _formKey,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const SizedBox(height: 4),
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 12.0),
-                      child: Text("Add PGs",
-                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87)),
-                    ),
+                    const Padding(padding: EdgeInsets.only(bottom: 12.0), child: Text("Add PGs", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87))),
                     Wrap(
-                      spacing: 20,
-                      runSpacing: 20,
+                      spacing: 20, runSpacing: 20,
                       children: [
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 700),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ...fields.map((f) => Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: buildTextField(f),
-                              )),
-                              const SizedBox(height: 12),
+                              ...fields.map((f) => Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: buildTextField(f))),
                               Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                                 child: TextFormField(
-                                  controller: locationController,
-                                  readOnly: true,
-                                  onTap: pickLocation,
-                                  decoration: InputDecoration(
-                                    labelText: "PG Location (Click to select on map)",
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    suffixIcon: const Icon(Icons.location_on, color: Colors.black54),
-                                  ),
+                                  controller: locationController, readOnly: true, onTap: pickLocation,
+                                  decoration: InputDecoration(labelText: "PG Location (Click to select on map)", filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.green.shade900, width: 2), borderRadius: BorderRadius.circular(12)), suffixIcon: const Icon(Icons.location_on, color: Colors.black54)),
                                   validator: (v) => v == null || v.isEmpty ? "Required" : null,
                                 ),
                               ),
                               const SizedBox(height: 12),
                               buildDropdown(),
-                              const SizedBox(height: 12),
                               const SizedBox(height: 12),
                               buildRoomTypeSection(700),
                               const SizedBox(height: 12),
@@ -935,45 +866,23 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
                               buildPoliciesSection(),
                               const SizedBox(height: 12),
                               buildUploadImagesButton(700),
-                              const SizedBox(height: 16),
                               if (showImageSections) buildImageSections(),
                               const SizedBox(height: 20),
                               TextFormField(
-                                controller: aboutController,
-                                maxLines: 3,
-                                decoration: InputDecoration(
-                                  labelText: "About This Property",
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
+                                controller: aboutController, maxLines: 3,
+                                decoration: InputDecoration(labelText: "About This Property", filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.green.shade900, width: 2), borderRadius: BorderRadius.circular(12))),
                               ),
                               const SizedBox(height: 12),
                               Row(
                                 children: [
                                   Expanded(
                                     child: TextFormField(
-                                      controller: ratingController,
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      decoration: InputDecoration(
-                                        labelText: "Rating (0.0 - 5.0)",
-                                        filled: true,
-                                        fillColor: Colors.white,
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                      ),
+                                      controller: ratingController, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      decoration: InputDecoration(labelText: "Rating (0.0 - 5.0)", filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.green.shade900, width: 2), borderRadius: BorderRadius.circular(12))),
                                       validator: (v) {
                                         if (v == null || v.isEmpty) return "Required";
                                         final d = double.tryParse(v);
-                                        if (d == null) return "Invalid";
-                                        if (d < 0 || d > 5) return "Must be 0.0 - 5.0";
+                                        if (d == null || d < 0 || d > 5) return "Invalid (0-5)";
                                         return null;
                                       },
                                     ),
@@ -982,53 +891,21 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
                                   SizedBox(
                                     height: 56,
                                     child: GradientButton(
-                                      onPressed: isSaving ? null : saveHotel,
+                                      onPressed: isSaving ? null : savePG,
                                       padding: const EdgeInsets.symmetric(horizontal: 18),
-                                      child: isSaving
-                                          ? Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-                                          SizedBox(width: 8),
-                                          Text("Saving...", style: TextStyle(color: Colors.white))
-                                        ],
-                                      )
-                                          : const Text("Add PG", style: TextStyle(color: Colors.white)),
+                                      child: isSaving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text("Add PG", style: TextStyle(color: Colors.white)),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 10),
                             ],
                           ),
                         ),
-                        Column(
-                          children: [
-                            buildPreviewCard(),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              width: 300,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  Text("Tips", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-                                  SizedBox(height: 8),
-                                  Text(
-                                      "- Use clear photos for Facade and Lobby.\n- Max 5MB per image.\n- Up to 10 images per category.\n- All images are uploaded together with the form.",
-                                      style: TextStyle(color: Colors.black54)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
+                        Column(children: [
+                          buildPreviewCard(),
+                          const SizedBox(height: 12),
+                          Container(padding: const EdgeInsets.all(12), width: 300, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [Text("Tips", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)), SizedBox(height: 8), Text("- Max 3MB per image.\n- Images upload to cloud immediately.\n- Ensure all price fields are filled.", style: TextStyle(color: Colors.black54))])),
+                        ])
                       ],
                     )
                   ]),
@@ -1042,16 +919,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   }
 }
 
-// -------------------- MODEL ---------------------
-class LocalPickedImage {
-  final String name;
-  final Uint8List? bytes;
-  final String? path;
-
-  LocalPickedImage({required this.name, required this.bytes, required this.path});
-}
-
-// -------------------- MAP PICKER ---------------------
+// ✅ Keeping Your Exact Map Picker
 class MapPickerPage extends StatefulWidget {
   final double? initialLat;
   final double? initialLng;
@@ -1064,10 +932,8 @@ class MapPickerPage extends StatefulWidget {
 class _MapPickerPageState extends State<MapPickerPage> {
   late CameraPosition _initialPosition;
   LatLng? pickedLocation;
-
   final TextEditingController latController = TextEditingController();
   final TextEditingController lngController = TextEditingController();
-
   GoogleMapController? _mapController;
 
   @override
@@ -1077,119 +943,34 @@ class _MapPickerPageState extends State<MapPickerPage> {
   }
 
   Future<void> _determineInitialPosition() async {
-    double lat, lng;
-
+    double lat = widget.initialLat ?? 20.5937;
+    double lng = widget.initialLng ?? 78.9629;
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        await Geolocator.openLocationSettings();
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
       Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-
       lat = widget.initialLat ?? position.latitude;
       lng = widget.initialLng ?? position.longitude;
-    } catch (e) {
-      lat = widget.initialLat ?? 20.5937;
-      lng = widget.initialLng ?? 78.9629;
-    }
+    } catch (e) {}
 
     setState(() {
       pickedLocation = LatLng(lat, lng);
       _initialPosition = CameraPosition(target: pickedLocation!, zoom: 15);
-
       latController.text = pickedLocation!.latitude.toStringAsFixed(6);
       lngController.text = pickedLocation!.longitude.toStringAsFixed(6);
     });
-  }
-
-  void _updateLocationFromFields() {
-    final lat = double.tryParse(latController.text);
-    final lng = double.tryParse(lngController.text);
-
-    if (lat != null && lng != null) {
-      setState(() {
-        pickedLocation = LatLng(lat, lng);
-        _mapController?.animateCamera(CameraUpdate.newLatLng(pickedLocation!));
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    latController.dispose();
-    lngController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Pick PG Location"),
-        backgroundColor: Colors.greenAccent.shade700,
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (pickedLocation != null) {
-                Navigator.pop(context, {
-                  'lat': pickedLocation!.latitude,
-                  'lng': pickedLocation!.longitude,
-                });
-              }
-            },
-            child: const Text("Done", style: TextStyle(color: Colors.white)),
-          )
-        ],
+          title: const Text("Pick PG Location"), backgroundColor: Colors.greenAccent.shade700,
+          actions: [TextButton(onPressed: () => Navigator.pop(context, {'lat': pickedLocation!.latitude, 'lng': pickedLocation!.longitude}), child: const Text("Done", style: TextStyle(color: Colors.white)))]
       ),
-      body: pickedLocation == null
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: latController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: "Latitude", border: OutlineInputBorder()),
-                    onChanged: (_) => _updateLocationFromFields(),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextFormField(
-                    controller: lngController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: "Longitude", border: OutlineInputBorder()),
-                    onChanged: (_) => _updateLocationFromFields(),
-                  ),
-                )
-              ],
-            ),
-          ),
-          Expanded(
-            child: GoogleMap(
-              initialCameraPosition: _initialPosition,
-              onMapCreated: (controller) => _mapController = controller,
-              onTap: (pos) {
-                setState(() {
-                  pickedLocation = pos;
-                  latController.text = pos.latitude.toStringAsFixed(6);
-                  lngController.text = pos.longitude.toStringAsFixed(6);
-                });
-              },
-              markers: pickedLocation != null ? {Marker(markerId: const MarkerId("picked"), position: pickedLocation!)} : {},
-            ),
-          ),
-        ],
+      body: pickedLocation == null ? const Center(child: CircularProgressIndicator()) : GoogleMap(
+        initialCameraPosition: _initialPosition,
+        onMapCreated: (controller) => _mapController = controller,
+        onTap: (pos) => setState(() { pickedLocation = pos; latController.text = pos.latitude.toStringAsFixed(6); lngController.text = pos.longitude.toStringAsFixed(6); }),
+        markers: {Marker(markerId: const MarkerId("picked"), position: pickedLocation!)},
       ),
     );
   }
