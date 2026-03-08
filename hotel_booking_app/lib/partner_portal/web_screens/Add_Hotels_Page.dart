@@ -43,7 +43,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
   Map<String, bool> roomSelected = {};
   Map<String, TextEditingController> roomPrices = {};
 
-  List<String> amenities = ['AC', 'TV', 'Free WIFI', 'Power Backup', 'Attached Bathroom', 'Elevator Geyser', 'Parking'];
+  List<String> amenities = ['AC', 'TV', 'Free WIFI', 'Power Backup', 'Attached Bathroom', 'Elevator', 'Geyser', 'Parking'];
   Map<String, bool> amenitySelected = {};
 
   List<String> policies = ['Couple Friendly', 'Alcohol Allowed', 'Guest Should Display Govt ID\'s', 'Non-Refundable', 'Refundable'];
