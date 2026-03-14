@@ -41,8 +41,6 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
           List<String> rows = dataPart.trim().split("\n");
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
-
-            // Re-aligned indices to match the 25 columns sent by WebViewPGsHandler
             pgs.add({
               "pg_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',
@@ -64,12 +62,12 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
               "room_price": cols.length > 17 ? cols[17] : '0',
               "amenities": cols.length > 18 ? cols[18] : '',
               "policies": cols.length > 19 ? cols[19] : '',
-              "rating": cols.length > 20 ? cols[20] : '0',
+              "rating": cols.length > 20 ? cols[20] : '0.0',
               "pg_contact": cols.length > 21 ? cols[21] : '',
               "about_this_pg": cols.length > 22 ? cols[22] : '',
               "pg_images": cols.length > 23 ? cols[23] : '',
               "status": cols.length > 24 ? cols[24] : '',
-              "total_Rooms": _calculateTotal(cols), // Logic helper
+              "total_Rooms": cols.length > 25 ? cols[25] : '0',
             });
           }
         }
