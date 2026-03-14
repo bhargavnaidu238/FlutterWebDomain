@@ -63,7 +63,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
   }
 
   void _initData() {
-    List<String> fields = ["hotel_name", "address", "city", "state", "country", "pincode", "total_rooms", "description", "hotel_contact"];
+    List<String> fields = ["hotel_name", "address", "city", "state", "country", "pincode", "total_rooms", "hotel_contact"];
     for (var f in fields) {
       controllers[f] = TextEditingController();
       controllers[f]!.addListener(() => setState(() {}));
@@ -90,7 +90,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     controllers["country"]!.text = data['country']?.toString() ?? "";
     controllers["pincode"]!.text = data['pincode']?.toString() ?? "";
     controllers["total_rooms"]!.text = data['total_rooms']?.toString() ?? "0";
-    controllers["description"]!.text = data['description']?.toString() ?? "";
     controllers["hotel_contact"]!.text = data['hotel_contact']?.toString() ?? "";
 
     aboutController.text = data['about_this_property']?.toString() ?? "";
@@ -239,7 +238,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         'total_rooms': controllers["total_rooms"]!.text,
         'available_rooms': controllers["total_rooms"]!.text,
         'amenities': amenitySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
-        'description': controllers["description"]!.text,
         'policies': policySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
         'rating': ratingController.text,
         'hotel_contact': controllers["hotel_contact"]!.text,
@@ -262,8 +260,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
           List<String> encodedList = [];
 
           for (var bytes in bytesList) {
-            // You could add a compression step here using a package like 'image'
-            // For now, we ensure we only send what is necessary
             encodedList.add(base64Encode(bytes));
           }
           imageMap[cat] = encodedList;
@@ -274,12 +270,11 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         body['images'] = jsonEncode(imageMap);
       }
 
-      //
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/webaddhotels'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body,
-      ).timeout(const Duration(seconds: 90)); // Increased timeout for larger payloads
+      ).timeout(const Duration(seconds: 90));
 
       final result = jsonDecode(response.body);
       if (response.statusCode == 200 && result['status'] == 'success') {
@@ -379,7 +374,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
               ),
             ),
           ),
-          // ✅ FIX: Added a loading overlay to prevent the "blank screen" hang
           if (isSaving)
             Container(
               color: Colors.black54,
