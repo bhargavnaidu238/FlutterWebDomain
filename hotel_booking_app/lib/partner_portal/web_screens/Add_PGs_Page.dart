@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -19,825 +19,182 @@ class AddPGSPage extends StatefulWidget {
   State<AddPGSPage> createState() => _AddPGSPageState();
 }
 
-class GradientButton extends StatelessWidget {
-  final Widget child;
-  final VoidCallback? onPressed;
-  final double? width;
-  final double height;
-  final EdgeInsets padding;
-  final BorderRadius borderRadius;
-
-  const GradientButton({
-    required this.child,
-    required this.onPressed,
-    this.width,
-    this.height = 48,
-    this.padding = const EdgeInsets.symmetric(horizontal: 16),
-    this.borderRadius = const BorderRadius.all(Radius.circular(12)),
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    return Opacity(
-      opacity: enabled ? 1.0 : 0.6,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF64DD17),
-              Color(0xFF2E7D32),
-            ],
-          ),
-          borderRadius: borderRadius,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.12),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: borderRadius,
-            onTap: onPressed,
-            child: Padding(
-              padding: padding,
-              child: Center(child: child),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final Map<String, TextEditingController> controllers = {};
   bool isSaving = false;
-  bool showSuccess = false;
+  bool showImageSections = false;
 
   String? selectedPGType;
   final List<String> pgTypes = ['Gents', 'Ladies', 'Co-Live'];
 
   final List<String> fields = [
-    "pg_name",
-    "address",
-    "city",
-    "state",
-    "country",
-    "pincode",
-    "total_single_sharing_rooms",
-    "total_double_sharing_rooms",
-    "total_three_sharing_rooms",
-    "total_four_sharing_rooms",
-    "total_five_sharing_rooms",
-    "description",
-    "pg_contact",
-    "about_this_pg"
+    "pg_name", "address", "city", "state", "country", "pincode",
+    "total_single_sharing_rooms", "total_double_sharing_rooms", "total_three_sharing_rooms",
+    "total_four_sharing_rooms", "total_five_sharing_rooms", "description",
+    "pg_contact"
   ];
 
   final List<String> roomTypeOptions = ['Single Sharing', 'Double Sharing', 'Three Sharing', 'Four Sharing', 'Five Sharing'];
   final Map<String, bool> roomTypeSelected = {
-    'Single Sharing': false,
-    'Double Sharing': false,
-    'Three Sharing': false,
-    'Four Sharing': false,
-    'Five Sharing': false,
+    'Single Sharing': false, 'Double Sharing': false, 'Three Sharing': false, 'Four Sharing': false, 'Five Sharing': false,
   };
   final Map<String, TextEditingController> roomPriceControllers = {};
-  final TextEditingController availableRoomsController = TextEditingController();
 
-  final List<String> amenityOptions = [
-    'AC',
-    'TV',
-    'Fridge',
-    'Washing Machine',
-    'Free WIFI',
-    'Power Backup',
-    'Attached Bathroom',
-    'Elevator',
-    'Geyser',
-    'Parking'
-  ];
-
-  final Map<String, bool> policies = {
-    'Couple Friendly': false,
-    'Alcohol Allowed': false,
-    'Guest Should Display Govt ID\'s': false,
-    'Non-Refundable': false,
-    'Refundable': false
-  };
+  final List<String> amenityOptions = ['AC', 'TV', 'Fridge', 'Washing Machine', 'Free WIFI', 'Power Backup', 'Attached Bathroom', 'Elevator', 'Geyser', 'Parking'];
+  final Map<String, bool> policies = {'Couple Friendly': false, 'Alcohol Allowed': false, 'Guest Should Display Govt ID\'s': false, 'Non-Refundable': false, 'Refundable': false};
 
   final TextEditingController aboutController = TextEditingController();
   final TextEditingController ratingController = TextEditingController(text: '0.0');
-
-  final List<String> categories = [
-    "Facade",
-    "Lobby/Entrance",
-    "Single Sharing",
-    "Double Sharing",
-    "Three Sharing",
-    "Four Sharing",
-    "Five Sharing"
-  ];
-  final Map<String, List<LocalPickedImage>> localImages = {};
-  final Map<String, int> categoryLimits = {
-    "Facade": 10,
-    "Lobby/Entrance": 10,
-    "Single Sharing": 10,
-    "Double Sharing": 10,
-    "Three Sharing": 10,
-    "Four Sharing": 10,
-    "Five Sharing": 10,
-  };
-  final int maxFileSizeBytes = 5 * 1024 * 1024;
-  bool showImageSections = false;
-
   final TextEditingController locationController = TextEditingController();
-  double? latitude;
-  double? longitude;
 
+  // Image handling matches add_hotels.dart
+  final List<String> categories = ["Facade", "Lobby/Entrance", "Single Sharing", "Double Sharing", "Three Sharing", "Four Sharing", "Five Sharing"];
+  final Map<String, List<Uint8List>> localImages = {};
+
+  double? latitude, longitude;
   late AnimationController _expandCtrl;
   late Animation<double> _expandAnim;
 
   @override
   void initState() {
     super.initState();
-
     _expandCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     _expandAnim = CurvedAnimation(parent: _expandCtrl, curve: Curves.easeInOut);
 
-    for (var field in fields) {
-      controllers[field] = TextEditingController();
-    }
+    for (var field in fields) controllers[field] = TextEditingController();
     controllers['amenities'] = TextEditingController();
+    for (var rt in roomTypeOptions) roomPriceControllers[rt] = TextEditingController();
+    for (var c in categories) localImages[c] = [];
 
-    for (var rt in roomTypeOptions) {
-      roomPriceControllers[rt] = TextEditingController();
+    if (widget.pgData != null) _populateExistingData();
+  }
+
+  void _populateExistingData() {
+    final data = widget.pgData!;
+    for (var f in fields) controllers[f]?.text = data[f]?.toString() ?? '';
+    selectedPGType = data['pg_type'];
+    aboutController.text = data['about_this_pg'] ?? '';
+    ratingController.text = (data['rating'] ?? '0.0').toString();
+    controllers['amenities']?.text = data['amenities'] ?? '';
+
+    // Location
+    if ((data['hotel_location'] ?? '').contains(',')) {
+      final parts = data['hotel_location']!.split(',');
+      latitude = double.tryParse(parts[0]);
+      longitude = double.tryParse(parts[1]);
+      if (latitude != null) locationController.text = "Lat: ${latitude!.toStringAsFixed(3)}, Lng: ${longitude!.toStringAsFixed(3)}";
     }
 
-    for (var c in categories) {
-      localImages[c] = [];
+    // Room Selection
+    final savedRooms = (data['room_type'] ?? '').toString().split(',');
+    final savedPrices = (data['room_price'] ?? '').toString().split(',');
+    for (int i = 0; i < savedRooms.length; i++) {
+      String rt = savedRooms[i].trim();
+      if (roomTypeOptions.contains(rt)) {
+        roomTypeSelected[rt] = true;
+        if (i < savedPrices.length) roomPriceControllers[rt]?.text = savedPrices[i].trim();
+      }
     }
 
-    if (widget.pgData != null) {
-      final data = widget.pgData!;
-      for (var f in fields) {
-        controllers[f]?.text = data[f] ?? '';
-      }
-      selectedPGType = data['pg_type'];
-
-      final roomTypes = (data['room_type'] ?? '').split(',');
-      final roomPrices = (data['room_price'] ?? '').split(',');
-
-      for (int i = 0; i < roomTypes.length; i++) {
-        final rt = roomTypes[i].trim();
-        if (roomTypeOptions.contains(rt)) {
-          roomTypeSelected[rt] = true;
-          if (i < roomPrices.length) roomPriceControllers[rt]?.text = roomPrices[i].trim();
-        }
-      }
-
-      controllers['amenities']?.text = data['amenities'] ?? '';
-
-      for (var k in policies.keys) {
-        policies[k] = (data['policies'] ?? '').split(',').contains(k);
-      }
-
-      aboutController.text = data['about_this_pg'] ?? '';
-      ratingController.text = (data['rating'] ?? '0.0').toString();
-
-      if ((data['hotel_location'] ?? '').contains(',')) {
-        final parts = data['hotel_location']!.split(',');
-        latitude = double.tryParse(parts[0]);
-        longitude = double.tryParse(parts[1]);
-
-        if (latitude != null && longitude != null) {
-          locationController.text =
-          "Lat: ${latitude!.toStringAsFixed(5)}, Lng: ${longitude!.toStringAsFixed(5)}";
-        }
-      }
+    // Policies
+    for (var k in policies.keys) {
+      policies[k] = (data['policies'] ?? '').toString().split(',').contains(k);
     }
   }
 
-  @override
-  void dispose() {
-    for (var c in controllers.values) c.dispose();
-    for (var c in roomPriceControllers.values) c.dispose();
-    availableRoomsController.dispose();
-    aboutController.dispose();
-    ratingController.dispose();
-    locationController.dispose();
-    _expandCtrl.dispose();
-    super.dispose();
-  }
+  Future<void> _pickImages(String category) async {
+    if ((localImages[category]?.length ?? 0) >= 10) {
+      _showSnack("Maximum 10 images allowed for $category");
+      return;
+    }
 
-  Widget buildTextField(String field) {
-    bool isNumber = ["total_single_sharing_rooms", "total_double_sharing_rooms", "total_three_sharing_rooms",
-      "total_four_sharing_rooms", "total_five_sharing_rooms", "pincode"].contains(field);
-    bool isPhone = field == "pg_contact";
-
-    return TextFormField(
-      controller: controllers[field],
-      keyboardType: isNumber || isPhone ? TextInputType.number : TextInputType.text,
-      inputFormatters: isNumber || isPhone ? [FilteringTextInputFormatter.digitsOnly] : [],
-      decoration: InputDecoration(
-        labelText: field.replaceAll("_", " "),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      validator: (v) {
-        if (v == null || v.isEmpty) return "Required";
-        if (isNumber && double.tryParse(v) == null) return "Invalid number";
-        if (isPhone && v.length != 10) return "Must be 10 digits";
-        return null;
-      },
-      onChanged: (_) => setState(() {}),
-    );
-  }
-
-  Widget buildRoomTypeSection(double width) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Room Types", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: roomTypeOptions.map((rt) {
-              return FilterChip(
-                label: Text(rt),
-                selected: roomTypeSelected[rt] == true,
-                onSelected: (sel) {
-                  setState(() {
-                    roomTypeSelected[rt] = sel;
-                    if (!sel) roomPriceControllers[rt]?.clear();
-                  });
-                },
-                selectedColor: Colors.greenAccent.shade700,
-                backgroundColor: Colors.grey.shade100,
-                labelStyle: const TextStyle(color: Colors.black87),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 12),
-          Column(
-            children: roomTypeOptions
-                .where((rt) => roomTypeSelected[rt] == true)
-                .map((rt) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: TextFormField(
-                  controller: roomPriceControllers[rt],
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: InputDecoration(
-                    labelText: "$rt Price (INR)",
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  validator: (v) {
-                    if (roomTypeSelected[rt] == true) {
-                      if (v == null || v.isEmpty) return "Required";
-                      if (double.tryParse(v) == null) return "Invalid number";
-                    }
-                    return null;
-                  },
-                ),
-              );
-            }).toList(),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget buildAmenitiesInput(double width) {
-    final amenitiesText = controllers['amenities']?.text ?? '';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Amenities", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: amenityOptions.map((a) {
-            return ChoiceChip(
-              label: Text(a),
-              selected: amenitiesText.split(',').map((s) => s.trim()).contains(a),
-              onSelected: (sel) {
-                setState(() {
-                  final current = amenitiesText
-                      .split(',')
-                      .map((s) => s.trim())
-                      .where((s) => s.isNotEmpty)
-                      .toList();
-
-                  if (sel) {
-                    if (!current.contains(a)) current.add(a);
-                  } else {
-                    current.removeWhere((c) => c == a);
-                  }
-
-                  controllers['amenities']?.text = current.join(',');
-                });
-              },
-              selectedColor: Colors.greenAccent.shade700,
-              backgroundColor: Colors.grey.shade100,
-              labelStyle: const TextStyle(color: Colors.black87),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controllers['amenities'],
-          decoration: InputDecoration(
-            labelText: "Other Amenities (comma separated)",
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        )
-      ],
-    );
-  }
-
-  Widget buildPoliciesSection() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Policies", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-          const SizedBox(height: 8),
-          Column(
-            children: policies.keys.map((k) {
-              return CheckboxListTile(
-                value: policies[k],
-                onChanged: (v) => setState(() => policies[k] = v ?? false),
-                title: Text(k, style: const TextStyle(color: Colors.black87)),
-                controlAffinity: ListTileControlAffinity.leading,
-                dense: true,
-                activeColor: Colors.greenAccent.shade700,
-                tileColor: Colors.transparent,
-              );
-            }).toList(),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget buildDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DropdownButtonFormField<String>(
-          value: selectedPGType,
-          items: pgTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
-          onChanged: (val) => setState(() => selectedPGType = val),
-          decoration: InputDecoration(
-            labelText: "PG Type",
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          validator: (v) => v == null || v.isEmpty ? "Required" : null,
-        ),
-      ],
-    );
-  }
-
-  void _showSnack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-
-  Future<void> pickLocation() async {
-    final result = await Navigator.push<Map<String, double>>(
-      context,
-      MaterialPageRoute(builder: (_) => MapPickerPage(initialLat: latitude, initialLng: longitude)),
+    final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: true,
+        withData: true
     );
 
     if (result != null) {
       setState(() {
-        latitude = result['lat'];
-        longitude = result['lng'];
-        locationController.text =
-        "Lat: ${latitude!.toStringAsFixed(5)}, Lng: ${longitude!.toStringAsFixed(5)}";
+        for (var file in result.files) {
+          if (localImages[category]!.length < 10 && file.bytes != null) {
+            if (file.size > 3 * 1024 * 1024) {
+              _showSnack("${file.name} is too large (>3MB).");
+              continue;
+            }
+            localImages[category]!.add(file.bytes!);
+          }
+        }
       });
     }
   }
 
-  Widget buildPreviewCard() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      width: 320,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black12, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            controllers["pg_name"]?.text.isEmpty ?? true ? "PG Name" : controllers["pg_name"]!.text,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            (controllers["city"]?.text.isEmpty ?? true) ? "City, State" : "${controllers["city"]?.text}, ${controllers["state"]?.text}",
-            style: const TextStyle(color: Colors.black54),
-          ),
-          const SizedBox(height: 8),
-          Text(selectedPGType == null ? "" : "Type: $selectedPGType", style: const TextStyle(color: Colors.black54)),
-          const SizedBox(height: 8),
-          Text(_displayPriceSummary(), style: const TextStyle(color: Colors.black54)),
-          const SizedBox(height: 8),
-          Text("Images: ${localImages.values.map((l) => l.length).fold<int>(0, (a, b) => a + b)}", style: const TextStyle(color: Colors.black54)),
-        ],
-      ),
-    );
-  }
-
-  String _displayPriceSummary() {
-    final selected = roomTypeOptions.where((rt) => roomTypeSelected[rt] == true).toList();
-    if (selected.isEmpty) return "Price: -";
-
-    final parts = selected.map((rt) {
-      final p = roomPriceControllers[rt]?.text.trim() ?? "";
-      if (p.isEmpty) return "$rt: -";
-      return "$rt: ₹$p";
-    }).toList();
-
-    return parts.join(" | ");
-  }
-
-  Future<void> _pickImagesForCategory(String category) async {
-    final already = localImages[category]!.length;
-    final limit = categoryLimits[category] ?? 10;
-    final remaining = limit - already;
-
-    if (remaining <= 0) {
-      _showSnack("Limit reached for $category");
-      return;
-    }
-
-    try {
-      final res = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: true,
-        withData: true,
-      );
-
-      if (res == null) return;
-
-      final picked = res.files;
-      int toTake = picked.length > remaining ? remaining : picked.length;
-
-      int added = 0;
-
-      for (int i = 0; i < toTake; i++) {
-        final pf = picked[i];
-        final Uint8List? bytes = pf.bytes;
-
-        if (bytes == null) continue;
-        if (bytes.length > maxFileSizeBytes) continue;
-
-        localImages[category]!.add(
-          LocalPickedImage(name: pf.name, bytes: bytes, path: null),
-        );
-        added++;
-      }
-
-      setState(() {});
-      if (added > 0) _showSnack("Selected $added image(s) for $category");
-    } catch (e) {
-      _showSnack("Error selecting images: $e");
-    }
-  }
-
-  Future<void> _removeImage(String category, int index) async {
-    if (index < 0 || index >= localImages[category]!.length) return;
-    setState(() {
-      localImages[category]!.removeAt(index);
-    });
-  }
-
-  Widget _buildCategoryCard(String category) {
-    final list = localImages[category]!;
-    final used = list.length;
-    final limit = categoryLimits[category] ?? 10;
-
-    return Card(
-      color: Colors.white,
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(
-            children: [
-              Expanded(child: Text(category, style: const TextStyle(color: Colors.black87, fontSize: 16))),
-              Text("$used / $limit", style: const TextStyle(color: Colors.black54)),
-              const SizedBox(width: 8),
-              // Use GradientButton for the "Pick" action
-              GradientButton(
-                width: 120,
-                height: 40,
-                onPressed: (used >= limit) ? null : () => _pickImagesForCategory(category),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.add_a_photo, size: 18, color: Colors.white),
-                    SizedBox(width: 6),
-                    Text("Pick", style: TextStyle(color: Colors.white)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (list.isNotEmpty)
-            SizedBox(
-              height: 110,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: list.length,
-                itemBuilder: (_, i) {
-                  final img = list[i];
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: img.bytes != null
-                              ? Image.memory(img.bytes!, width: 140, height: 90, fit: BoxFit.cover)
-                              : Container(
-                            width: 140,
-                            height: 90,
-                            color: Colors.grey.shade200,
-                            child: Center(
-                              child: Text(
-                                img.name,
-                                style: const TextStyle(color: Colors.black54, fontSize: 12),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 4,
-                          top: 4,
-                          child: GestureDetector(
-                            onTap: () => _removeImage(category, i),
-                            child: Container(
-                              decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
-                              child: const Icon(Icons.close, size: 20, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          left: 6,
-                          bottom: 6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
-                            child: Text(
-                              img.name.length > 14 ? img.name.substring(0, 12) + "..." : img.name,
-                              style: const TextStyle(color: Colors.white70, fontSize: 10),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          if (list.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text("No images selected yet for $category", style: const TextStyle(color: Colors.black54)),
-            )
-        ]),
-      ),
-    );
-  }
-
-  Widget buildImageSections() {
-    return SizeTransition(
-      sizeFactor: _expandAnim,
-      axisAlignment: -1,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.black12),
-        ),
-        child: Column(
-          children: [
-            const Text("Upload images per category (Max 10 images per section, 5MB per image)", style: TextStyle(color: Colors.black54)),
-            const SizedBox(height: 10),
-            ...categories.map((c) => Padding(padding: const EdgeInsets.only(bottom: 8), child: _buildCategoryCard(c))).toList(),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                GradientButton(
-                  onPressed: () {
-                    setState(() {
-                      showImageSections = false;
-                      _expandCtrl.reverse();
-                    });
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [Icon(Icons.check, color: Colors.white), SizedBox(width: 8), Text("Done", style: TextStyle(color: Colors.white))],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      for (var c in categories) localImages[c]!.clear();
-                    });
-                  },
-                  icon: const Icon(Icons.delete_forever),
-                  label: const Text("Clear All"),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.black26)),
-                )
-              ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildUploadImagesButton(double width) {
-    return GradientButton(
-      width: width,
-      height: 50,
-      onPressed: () {
-        setState(() {
-          showImageSections = true;
-          _expandCtrl.forward();
-        });
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.upload_file, color: Colors.white),
-          SizedBox(width: 8),
-          Text("Upload / Manage Images", style: TextStyle(color: Colors.white)),
-        ],
-      ),
-    );
-  }
-
-  Future<void> saveHotel() async {
+  Future<void> savePG() async {
     if (!_formKey.currentState!.validate()) return;
+    if (latitude == null) { _showSnack("Please select location on map"); return; }
 
-    // Validate room prices when selected
-    final selectedRoomTypes = roomTypeOptions.where((rt) => roomTypeSelected[rt] == true).toList();
-    for (var rt in selectedRoomTypes) {
-      final priceText = roomPriceControllers[rt]?.text.trim() ?? "";
-      if (priceText.isEmpty) {
-        _showSnack("Please enter price for $rt");
-        return;
-      }
-      if (double.tryParse(priceText) == null) {
-        _showSnack("Price for $rt must be numeric");
-        return;
-      }
-    }
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Confirm"),
-        content: const Text("Do you want to save this pg and upload selected images?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Confirm")),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-
-    setState(() {
-      isSaving = true;
-    });
+    setState(() => isSaving = true);
 
     try {
-      final Map<String, dynamic> body = {
-        'pg_id': widget.pgData?['pg_id'] ?? '',
+      final selectedRooms = roomTypeOptions.where((rt) => roomTypeSelected[rt] == true).toList();
+
+      final Map<String, String> body = {
+        'pg_id': widget.pgData?['pg_id']?.toString() ?? '',
         'partner_id': widget.partnerId,
-        'pg_name': controllers["pg_name"]?.text.trim() ?? '',
+        'pg_name': controllers["pg_name"]!.text,
         'pg_type': selectedPGType ?? '',
-        'room_type': selectedRoomTypes.join(','),
-        'room_price': selectedRoomTypes.map((rt) => roomPriceControllers[rt]?.text.trim() ?? '').join(','),
-        'address': controllers["address"]?.text.trim() ?? '',
-        'city': controllers["city"]?.text.trim() ?? '',
-        'state': controllers["state"]?.text.trim() ?? '',
-        'country': controllers["country"]?.text.trim() ?? '',
-        'pincode': controllers["pincode"]?.text.trim() ?? '',
-        'total_single_sharing_rooms': controllers["total_single_sharing_rooms"]?.text.trim() ?? '',
-        'total_double_sharing_rooms': controllers["total_double_sharing_rooms"]?.text.trim() ?? '',
-        'total_three_sharing_rooms': controllers["total_three_sharing_rooms"]?.text.trim() ?? '',
-        'total_four_sharing_rooms': controllers["total_four_sharing_rooms"]?.text.trim() ?? '',
-        'total_five_sharing_rooms': controllers["total_five_sharing_rooms"]?.text.trim() ?? '',
-        'available_rooms': availableRoomsController.text.trim().isEmpty
-            ? controllers["total_double_sharing_rooms"]?.text.trim() ?? ''
-            : availableRoomsController.text.trim(),
-        'amenities': controllers['amenities']?.text.trim() ?? '',
-        'description': controllers["description"]?.text.trim() ?? '',
+        'room_type': selectedRooms.join(','),
+        'room_price': selectedRooms.map((rt) => roomPriceControllers[rt]!.text).join(','),
+        'address': controllers["address"]!.text,
+        'city': controllers["city"]!.text,
+        'state': controllers["state"]!.text,
+        'country': controllers["country"]!.text,
+        'pincode': controllers["pincode"]!.text,
+        'total_single_sharing_rooms': controllers["total_single_sharing_rooms"]!.text,
+        'total_double_sharing_rooms': controllers["total_double_sharing_rooms"]!.text,
+        'total_three_sharing_rooms': controllers["total_three_sharing_rooms"]!.text,
+        'total_four_sharing_rooms': controllers["total_four_sharing_rooms"]!.text,
+        'total_five_sharing_rooms': controllers["total_five_sharing_rooms"]!.text,
+        'available_rooms': controllers["total_double_sharing_rooms"]!.text, // Default logic
+        'amenities': controllers['amenities']!.text,
+        'description': controllers["description"]!.text,
         'policies': policies.entries.where((e) => e.value).map((e) => e.key).join(','),
-        'rating': ratingController.text.trim(),
-        'pg_contact': controllers["pg_contact"]?.text.trim() ?? '',
-        'about_this_pg': aboutController.text.trim(),
-        'hotel_location': "${latitude ?? ''},${longitude ?? ''}",
+        'rating': ratingController.text,
+        'pg_contact': controllers["pg_contact"]!.text,
+        'about_this_pg': aboutController.text,
+        'hotel_location': "$latitude,$longitude",
         'status': "Active",
       };
 
-      // Attach images as base64
-      Map<String, List<String>> base64Images = {};
-      for (var category in categories) {
-        final imgs = localImages[category]!;
-        if (imgs.isNotEmpty) {
-          base64Images[category] = imgs.map((img) => base64Encode(img.bytes!)).toList();
+      // Image Encoding logic from add_hotels.dart
+      Map<String, List<String>> imageMap = {};
+      bool hasNewImages = false;
+      for (var cat in categories) {
+        if (localImages[cat]!.isNotEmpty) {
+          hasNewImages = true;
+          imageMap[cat] = localImages[cat]!.map((bytes) => base64Encode(bytes)).toList();
         }
       }
+      if (hasNewImages) body['images'] = jsonEncode(imageMap);
 
-      if (base64Images.isNotEmpty) {
-        body['images'] = jsonEncode(base64Images);
-      }
-
-      final res = await http.post(
+      final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/webaddpgs'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: body.map((k, v) => MapEntry(k, v.toString())),
-      );
+        body: body,
+      ).timeout(const Duration(seconds: 90));
 
-      if (res.statusCode == 200) {
-        final decoded = json.decode(res.body);
-        if (decoded['status'] == 'success' || decoded['status'] == true) {
-          _showSnack("PG saved successfully");
-          setState(() => showSuccess = true);
-          await Future.delayed(const Duration(milliseconds: 700));
-          if (!mounted) return;
+      final result = jsonDecode(response.body);
+      if (response.statusCode == 200 && (result['status'] == 'success' || result['status'] == true)) {
+        _showSnack("PG Saved Successfully");
+        if (mounted) {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ViewPGsPage(partnerId: widget.partnerId)));
-        } else {
-          final msg = decoded['message'] ?? res.body;
-          _showSnack("Save failed: $msg");
         }
       } else {
-        _showSnack("Server error: ${res.statusCode}");
+        _showSnack("Error: ${result['message']}");
       }
     } catch (e) {
-      _showSnack("Error saving PG: $e");
+      _showSnack("Save Error: Payload may be too large or connection timed out.");
     } finally {
       if (mounted) setState(() => isSaving = false);
     }
@@ -846,199 +203,204 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Top nav bar with requested greenAccent shade
-      appBar: AppBar(
-        backgroundColor: Colors.greenAccent.shade700,
-        title: const Text("Add Paying Guests"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          AnimatedScale(
-            scale: showSuccess ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 400),
-            child: const Padding(
-              padding: EdgeInsets.only(right: 12.0),
-              child: Icon(Icons.check_circle, color: Colors.white, size: 28),
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(backgroundColor: Colors.greenAccent.shade700, title: const Text("Add/Edit PG")),
       backgroundColor: Colors.greenAccent.shade100,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1100),
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                // remove glassy effect -> solid white card with subtle shadow
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.black12),
-                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 30, offset: Offset(0, 12))],
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const SizedBox(height: 4),
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 12.0),
-                      child: Text("Add PGs",
-                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87)),
-                    ),
-                    Wrap(
-                      spacing: 20,
-                      runSpacing: 20,
-                      children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 700),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1100),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 20)]),
+                        child: Form(
+                          key: _formKey,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ...fields.map((f) => Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: buildTextField(f),
-                              )),
-                              const SizedBox(height: 12),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                child: TextFormField(
-                                  controller: locationController,
-                                  readOnly: true,
-                                  onTap: pickLocation,
-                                  decoration: InputDecoration(
-                                    labelText: "PG Location (Click to select on map)",
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    suffixIcon: const Icon(Icons.location_on, color: Colors.black54),
-                                  ),
-                                  validator: (v) => v == null || v.isEmpty ? "Required" : null,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              buildDropdown(),
-                              const SizedBox(height: 12),
-                              const SizedBox(height: 12),
-                              buildRoomTypeSection(700),
-                              const SizedBox(height: 12),
-                              buildAmenitiesInput(700),
-                              const SizedBox(height: 12),
-                              buildPoliciesSection(),
-                              const SizedBox(height: 12),
-                              buildUploadImagesButton(700),
-                              const SizedBox(height: 16),
-                              if (showImageSections) buildImageSections(),
+                              const Text("PG Registration", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 20),
+                              _buildDropdown(),
+                              const SizedBox(height: 15),
+                              ...fields.map((f) => Padding(padding: const EdgeInsets.only(bottom: 12), child: _buildTextField(f))),
+
                               TextFormField(
-                                controller: aboutController,
-                                maxLines: 3,
-                                decoration: InputDecoration(
-                                  labelText: "About This Property",
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
+                                controller: locationController, readOnly: true,
+                                decoration: _inputStyle("PG Location").copyWith(suffixIcon: const Icon(Icons.map)),
+                                onTap: _pickLocationOnMap,
                               ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: ratingController,
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      decoration: InputDecoration(
-                                        labelText: "Rating (0.0 - 5.0)",
-                                        filled: true,
-                                        fillColor: Colors.white,
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                      validator: (v) {
-                                        if (v == null || v.isEmpty) return "Required";
-                                        final d = double.tryParse(v);
-                                        if (d == null) return "Invalid";
-                                        if (d < 0 || d > 5) return "Must be 0.0 - 5.0";
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  SizedBox(
-                                    height: 56,
-                                    child: GradientButton(
-                                      onPressed: isSaving ? null : saveHotel,
-                                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                                      child: isSaving
-                                          ? Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-                                          SizedBox(width: 8),
-                                          Text("Saving...", style: TextStyle(color: Colors.white))
-                                        ],
-                                      )
-                                          : const Text("Add PG", style: TextStyle(color: Colors.white)),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 20),
+                              _buildRoomTypeSection(),
+                              const SizedBox(height: 20),
+                              _buildAmenitiesSection(),
+                              const SizedBox(height: 20),
+                              _buildPoliciesSection(),
+                              const SizedBox(height: 25),
+
+                              // Image Upload Section Toggle
+                              SizedBox(width: double.infinity, child: ElevatedButton.icon(
+                                onPressed: () => setState(() { showImageSections = !showImageSections; showImageSections ? _expandCtrl.forward() : _expandCtrl.reverse(); }),
+                                icon: const Icon(Icons.image), label: const Text("Manage Images"),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent.shade700, foregroundColor: Colors.white, padding: const EdgeInsets.all(15)),
+                              )),
+
+                              SizeTransition(sizeFactor: _expandAnim, child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                child: Column(children: categories.map((c) => _buildImageCategoryTile(c)).toList()),
+                              )),
+
+                              const SizedBox(height: 25),
+                              TextFormField(controller: aboutController, maxLines: 3, decoration: _inputStyle("About PG")),
+                              const SizedBox(height: 20),
+                              _buildFooter(),
                             ],
                           ),
                         ),
-                        Column(
-                          children: [
-                            buildPreviewCard(),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              width: 300,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  Text("Tips", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-                                  SizedBox(height: 8),
-                                  Text(
-                                      "- Use clear photos for Facade and Lobby.\n- Max 5MB per image.\n- Up to 10 images per category.\n- All images are uploaded together with the form.",
-                                      style: TextStyle(color: Colors.black54)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
-                      ],
-                    )
-                  ]),
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    _buildPreviewSidebar(),
+                  ],
                 ),
               ),
             ),
           ),
-        ),
+          if (isSaving) _buildLoadingOverlay(),
+        ],
       ),
     );
+  }
+
+  // --- UI Components ---
+
+  Widget _buildImageCategoryTile(String category) {
+    return Column(
+      children: [
+        ListTile(
+          title: Text(category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          trailing: Text("${localImages[category]?.length ?? 0} / 10"),
+          onTap: () => _pickImages(category),
+        ),
+        if (localImages[category]?.isNotEmpty ?? false)
+          SizedBox(height: 80, child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: localImages[category]!.length,
+            itemBuilder: (ctx, i) => _imageThumbnail(category, i),
+          )),
+        const Divider(),
+      ],
+    );
+  }
+
+  Widget _imageThumbnail(String c, int i) => Stack(children: [
+    Container(margin: const EdgeInsets.only(right: 8), width: 70, height: 70, decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(4)), child: ClipRRect(borderRadius: BorderRadius.circular(4), child: Image.memory(localImages[c]![i], fit: BoxFit.cover))),
+    Positioned(right: 0, child: GestureDetector(onTap: () => setState(() => localImages[c]!.removeAt(i)), child: const CircleAvatar(radius: 10, backgroundColor: Colors.red, child: Icon(Icons.close, size: 12, color: Colors.white))))
+  ]);
+
+  Widget _buildFooter() {
+    return Row(children: [
+      Expanded(child: TextFormField(controller: ratingController, decoration: _inputStyle("Rating (0.0-5.0)"))),
+      const SizedBox(width: 15),
+      SizedBox(height: 50, width: 150, child: ElevatedButton(onPressed: isSaving ? null : savePG, style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent.shade700, foregroundColor: Colors.white), child: const Text("Save PG"))),
+    ]);
+  }
+
+  Widget _buildLoadingOverlay() => Container(
+    color: Colors.black54,
+    child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: const [
+      CircularProgressIndicator(color: Colors.white),
+      SizedBox(height: 20),
+      Text("Uploading Data & Images...", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+    ])),
+  );
+
+  InputDecoration _inputStyle(String label) => InputDecoration(labelText: label, filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)));
+
+  Widget _buildTextField(String field) => TextFormField(
+    controller: controllers[field],
+    decoration: _inputStyle(field.replaceAll("_", " ")),
+    validator: (v) => (v == null || v.isEmpty) ? "Required" : null,
+  );
+
+  Widget _buildDropdown() => DropdownButtonFormField<String>(
+    value: selectedPGType,
+    items: pgTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+    onChanged: (v) => setState(() => selectedPGType = v),
+    decoration: _inputStyle("PG Type"),
+  );
+
+  Widget _buildRoomTypeSection() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text("Room Sharing Types", style: TextStyle(fontWeight: FontWeight.bold)),
+      Wrap(spacing: 8, children: roomTypeOptions.map((rt) => FilterChip(
+          label: Text(rt), selected: roomTypeSelected[rt]!,
+          onSelected: (v) => setState(() => roomTypeSelected[rt] = v))).toList()),
+      ...roomTypeOptions.where((rt) => roomTypeSelected[rt]!).map((rt) => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: TextFormField(controller: roomPriceControllers[rt], decoration: _inputStyle("$rt Price")),
+      ))
+    ],
+  );
+
+  Widget _buildAmenitiesSection() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text("Amenities", style: TextStyle(fontWeight: FontWeight.bold)),
+      TextFormField(controller: controllers['amenities'], decoration: _inputStyle("Comma separated amenities")),
+    ],
+  );
+
+  Widget _buildPoliciesSection() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text("Policies", style: TextStyle(fontWeight: FontWeight.bold)),
+      ...policies.keys.map((k) => CheckboxListTile(title: Text(k), value: policies[k], onChanged: (v) => setState(() => policies[k] = v!), dense: true, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading)),
+    ],
+  );
+
+  Widget _buildPreviewSidebar() => Container(
+    width: 300, padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(controllers["pg_name"]!.text.isEmpty ? "PG Name" : controllers["pg_name"]!.text, style: const TextStyle(fontWeight: FontWeight.bold)),
+      const Divider(),
+      Text("Type: ${selectedPGType ?? '-'}"),
+      Text("Rating: ${ratingController.text}"),
+      const SizedBox(height: 10),
+      const Text("Photos Selected:", style: TextStyle(fontSize: 12, color: Colors.grey)),
+      ...categories.map((c) => Text("$c: ${localImages[c]!.length}", style: const TextStyle(fontSize: 11))),
+    ]),
+  );
+
+  Future<void> _pickLocationOnMap() async {
+    final res = await Navigator.push(context, MaterialPageRoute(builder: (_) => MapPickerPage(initialLat: latitude, initialLng: longitude)));
+    if (res != null) {
+      setState(() {
+        latitude = res['lat']; longitude = res['lng'];
+        locationController.text = "Lat: ${latitude!.toStringAsFixed(3)}, Lng: ${longitude!.toStringAsFixed(3)}";
+      });
+    }
+  }
+
+  void _showSnack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+
+  @override
+  void dispose() {
+    _expandCtrl.dispose();
+    for (var c in controllers.values) c.dispose();
+    for (var c in roomPriceControllers.values) c.dispose();
+    aboutController.dispose();
+    ratingController.dispose();
+    locationController.dispose();
+    super.dispose();
   }
 }
 
