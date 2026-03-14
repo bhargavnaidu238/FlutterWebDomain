@@ -42,6 +42,7 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
 
+            // Re-aligned indices to match the 25 columns sent by WebViewPGsHandler
             pgs.add({
               "pg_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',
@@ -58,13 +59,17 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
               "total_three_sharing_rooms": cols.length > 12 ? cols[12] : '0',
               "total_four_sharing_rooms": cols.length > 13 ? cols[13] : '0',
               "total_five_sharing_rooms": cols.length > 14 ? cols[14] : '0',
-              "available_rooms": cols.length > 15 ? cols[15] : '0',
-              "room_price": cols.length > 15 ? cols[15] : '0',
-              "amenities": cols.length > 16 ? cols[16] : '',
-              "rating": cols.length > 17 ? cols[17] : '0',
-              "pg_contact": cols.length > 18 ? cols[18] : '',
-              "status": cols.length > 19 ? cols[19] : '',
-              "total_Rooms": cols.length > 20 ? cols[20] : '0',    // <-- Total Rooms
+              "hotel_location": cols.length > 15 ? cols[15] : '',
+              "available_rooms": cols.length > 16 ? cols[16] : '0',
+              "room_price": cols.length > 17 ? cols[17] : '0',
+              "amenities": cols.length > 18 ? cols[18] : '',
+              "policies": cols.length > 19 ? cols[19] : '',
+              "rating": cols.length > 20 ? cols[20] : '0',
+              "pg_contact": cols.length > 21 ? cols[21] : '',
+              "about_this_pg": cols.length > 22 ? cols[22] : '',
+              "pg_images": cols.length > 23 ? cols[23] : '',
+              "status": cols.length > 24 ? cols[24] : '',
+              "total_Rooms": _calculateTotal(cols), // Logic helper
             });
           }
         }
@@ -75,6 +80,16 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
       );
     } finally {
       setState(() => isLoading = false);
+    }
+  }
+
+  String _calculateTotal(List<String> cols) {
+    try {
+      if (cols.length < 15) return "0";
+      int total = int.parse(cols[10]) + int.parse(cols[11]) + int.parse(cols[12]) + int.parse(cols[13]) + int.parse(cols[14]);
+      return total.toString();
+    } catch (_) {
+      return "0";
     }
   }
 
@@ -155,20 +170,19 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(pg['pg_name']!, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(pg['pg_name'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 4),
-                  Text("PG Type: ${pg['pg_type']}", style: const TextStyle(color: Colors.white70)),
+                  Text("PG Type: ${pg['pg_type'] ?? ''}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
                   Text(fullAddress, style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Room Types: ${pg['room_type']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Room Types: ${pg['room_type'] ?? ''}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Total Rooms: ${pg['total_rooms']} | Price: ₹${pg['room_price']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Total Rooms: ${pg['total_Rooms'] ?? '0'} | Price: ₹${pg['room_price'] ?? '0'}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Amenities: ${pg['amenities']}", style: const TextStyle(color: Colors.white70)),
-                  Text("Description: ${pg['description']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Amenities: ${pg['amenities'] ?? ''}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Status: ${pg['status']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Status: ${pg['status'] ?? ''}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -178,7 +192,7 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
                       const SizedBox(width: 15),
                       Icon(Icons.phone, color: Colors.white70, size: 18),
                       const SizedBox(width: 4),
-                      Text(pg['hotel_contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
+                      Text(pg['pg_contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
                     ],
                   ),
                 ],
