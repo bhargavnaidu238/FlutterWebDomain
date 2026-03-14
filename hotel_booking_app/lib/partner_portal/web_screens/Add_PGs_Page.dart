@@ -36,7 +36,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   final List<String> fields = [
     "PG Name", "Address", "City", "State", "Country", "Pincode",
     "Total Single Sharing Rooms", "Total Double Sharing Rooms", "Total Three Sharing Rooms",
-    "Total Four Sharing Rooms", "Total Five Sharing Rooms", "Description", "PG Contact"
+    "Total Four Sharing Rooms", "Total Five Sharing Rooms", "PG Contact"
   ];
 
   // Dynamic Selection Lists
@@ -107,7 +107,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     controllers["Total Three Sharing Rooms"]?.text = data['total_three_sharing_rooms']?.toString() ?? '0';
     controllers["Total Four Sharing Rooms"]?.text = data['total_four_sharing_rooms']?.toString() ?? '0';
     controllers["Total Five Sharing Rooms"]?.text = data['total_five_sharing_rooms']?.toString() ?? '0';
-    controllers["Description"]?.text = data['description']?.toString() ?? '';
     controllers["PG Contact"]?.text = data['pg_contact']?.toString() ?? '';
 
     selectedPGType = data['pg_type'];
@@ -243,7 +242,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         'total_five_sharing_rooms': controllers["Total Five Sharing Rooms"]!.text,
         'available_rooms': controllers["Total Double Sharing Rooms"]!.text,
         'amenities': amenitySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
-        'description': controllers["Description"]!.text,
         'policies': policySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
         'rating': ratingController.text,
         'pg_contact': controllers["PG Contact"]!.text,
