@@ -11,7 +11,6 @@ class ViewHotelsPage extends StatefulWidget {
   State<ViewHotelsPage> createState() => _ViewHotelsPageState();
 }
 
-// ========= Fetch or View Hotels Section ===================
 class _ViewHotelsPageState extends State<ViewHotelsPage> {
   List<Map<String, String>> hotels = [];
   List<String> selectedHotels = [];
@@ -42,6 +41,8 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
           List<String> rows = dataPart.trim().split("\n");
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
+
+            // Re-aligned to match the DB schema order provided (22 columns)
             hotels.add({
               "hotel_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',
@@ -54,16 +55,16 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
               "country": cols.length > 8 ? cols[8] : '',
               "pincode": cols.length > 9 ? cols[9] : '',
               "hotel_location": cols.length > 10 ? cols[10] : '',
-              "total_rooms": cols.length > 11 ? cols[11] : '',
-              "available_rooms": cols.length > 12 ? cols[12] : '',
-              "room_price": cols.length > 13 ? cols[13] : '',
+              "total_rooms": cols.length > 11 ? cols[11] : '0',
+              "available_rooms": cols.length > 12 ? cols[12] : '0',
+              "room_price": cols.length > 13 ? cols[13] : '0',
               "amenities": cols.length > 14 ? cols[14] : '',
               "policies": cols.length > 15 ? cols[15] : '',
-              "rating": cols.length > 16 ? cols[16] : '0',
+              "rating": cols.length > 16 ? cols[16] : '0.0',
               "hotel_contact": cols.length > 17 ? cols[17] : '',
               "about_this_property": cols.length > 18 ? cols[18] : '',
               "hotel_images": cols.length > 19 ? cols[19] : '',
-              "customization": cols.length > 20 ? cols[20] : '',
+              "customization": cols.length > 20 ? cols[20] : 'No',
               "status": cols.length > 21 ? cols[21] : '',
             });
           }
@@ -93,7 +94,6 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
     });
   }
 
-  // =============== Delete Hotels Section =====================
   Future<void> confirmDelete() async {
     if (selectedHotels.isEmpty) return;
 
@@ -116,7 +116,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
       await http.post(
         Uri.parse('${ApiConfig.baseUrl}/webviewhotels'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: "hotel_ids=${Uri.encodeComponent(idsStr)}", // <-- multi-delete
+        body: "hotel_ids=${Uri.encodeComponent(idsStr)}",
       );
 
       fetchHotels();
@@ -136,6 +136,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
     String fullAddress =
         "${hotel['address']}, ${hotel['city']}, ${hotel['state']}, ${hotel['country']} - ${hotel['pincode']}";
     bool isSelected = selectedHotels.contains(hotel['hotel_id']);
+
     return Card(
       color: Colors.white.withOpacity(0.1),
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -153,24 +154,28 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(hotel['hotel_name']!, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(hotel['hotel_name'] ?? 'Unnamed', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 4),
                   Text(fullAddress, style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Rooms: ${hotel['total_rooms']} | Price: ₹${hotel['room_price']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Rooms: ${hotel['total_rooms'] ?? '0'} | Price: ₹${hotel['room_price'] ?? '0'}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Hotel Type: ${hotel['hotel_type']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Hotel Type: ${hotel['hotel_type'] ?? ''}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Amenities: ${hotel['amenities']}", style: const TextStyle(color: Colors.white70)),
-                  Text("About This Hotel: ${hotel['about_this_property']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Amenities: ${hotel['amenities'] ?? ''}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Status: ${hotel['status']}", style: const TextStyle(color: Colors.white70)),
+                  Text("About This Hotel: ${hotel['about_this_property'] ?? ''}",
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white70)),
+                  const SizedBox(height: 4),
+                  Text("Status: ${hotel['status'] ?? ''}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       Icon(Icons.star, color: Colors.amber.shade300, size: 18),
                       const SizedBox(width: 4),
-                      Text(hotel['rating'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
+                      Text(hotel['rating'] ?? "0.0", style: const TextStyle(color: Colors.white70)),
                       const SizedBox(width: 15),
                       Icon(Icons.phone, color: Colors.white70, size: 18),
                       const SizedBox(width: 4),
@@ -213,10 +218,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => AddHotelsPage(
-                          partnerId: widget.partnerId,
-                          hotelData: hotel,
-                        ),
+                        builder: (_) => AddHotelsPage(partnerId: widget.partnerId, hotelData: hotel),
                       ),
                     ).then((value) {
                       fetchHotels();
