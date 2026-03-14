@@ -32,7 +32,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   String? selectedPGType;
   final List<String> pgTypes = ['Gents', 'Ladies', 'Co-Live'];
 
-  // Standard Form Fields
+  // Standard Form Fields - Description Removed
   final List<String> fields = [
     "PG Name", "Address", "City", "State", "Country", "Pincode",
     "Total Single Sharing Rooms", "Total Double Sharing Rooms", "Total Three Sharing Rooms",
@@ -121,7 +121,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
       locationController.text = "Lat: ${latitude!.toStringAsFixed(3)}, Lng: ${longitude!.toStringAsFixed(3)}";
     }
 
-    // Dynamic Lists Parsing (Similar to Hotels)
+    // Dynamic Lists Parsing
     _parseCsvToMap(data['amenities'], amenitySelected, amenityOptions);
     _parseCsvToMap(data['policies'], policySelected, policyOptions);
 
@@ -150,7 +150,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     }
   }
 
-  // Add functionality logic
   void _addNewAmenity() {
     String val = newAmenityCtrl.text.trim();
     if (val.isNotEmpty) {
@@ -188,7 +187,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     }
   }
 
-  // Image category helper (Dynamic based on selected rooms)
   List<String> get dynamicCategories {
     List<String> cats = ["Facade", "Lobby/Entrance"];
     roomTypeSelected.forEach((key, selected) { if (selected) cats.add(key); });
@@ -373,15 +371,20 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   }
 
   void _showSnack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-}
 
-// -------------------- MODEL ---------------------
-class LocalPickedImage {
-  final String name;
-  final Uint8List? bytes;
-  final String? path;
-
-  LocalPickedImage({required this.name, required this.bytes, required this.path});
+  @override
+  void dispose() {
+    _expandCtrl.dispose();
+    for (var c in controllers.values) c.dispose();
+    for (var c in roomPriceControllers.values) c.dispose();
+    newRoomTypeCtrl.dispose();
+    newAmenityCtrl.dispose();
+    newPolicyCtrl.dispose();
+    aboutController.dispose();
+    ratingController.dispose();
+    locationController.dispose();
+    super.dispose();
+  }
 }
 
 // -------------------- MAP PICKER ---------------------
@@ -411,20 +414,8 @@ class _MapPickerPageState extends State<MapPickerPage> {
 
   Future<void> _determineInitialPosition() async {
     double lat, lng;
-
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        await Geolocator.openLocationSettings();
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
       Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-
       lat = widget.initialLat ?? position.latitude;
       lng = widget.initialLng ?? position.longitude;
     } catch (e) {
@@ -435,7 +426,6 @@ class _MapPickerPageState extends State<MapPickerPage> {
     setState(() {
       pickedLocation = LatLng(lat, lng);
       _initialPosition = CameraPosition(target: pickedLocation!, zoom: 15);
-
       latController.text = pickedLocation!.latitude.toStringAsFixed(6);
       lngController.text = pickedLocation!.longitude.toStringAsFixed(6);
     });
@@ -444,7 +434,6 @@ class _MapPickerPageState extends State<MapPickerPage> {
   void _updateLocationFromFields() {
     final lat = double.tryParse(latController.text);
     final lng = double.tryParse(lngController.text);
-
     if (lat != null && lng != null) {
       setState(() {
         pickedLocation = LatLng(lat, lng);
@@ -470,10 +459,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
           TextButton(
             onPressed: () {
               if (pickedLocation != null) {
-                Navigator.pop(context, {
-                  'lat': pickedLocation!.latitude,
-                  'lng': pickedLocation!.longitude,
-                });
+                Navigator.pop(context, {'lat': pickedLocation!.latitude, 'lng': pickedLocation!.longitude});
               }
             },
             child: const Text("Done", style: TextStyle(color: Colors.white)),
@@ -488,23 +474,9 @@ class _MapPickerPageState extends State<MapPickerPage> {
             padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: latController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: "Latitude", border: OutlineInputBorder()),
-                    onChanged: (_) => _updateLocationFromFields(),
-                  ),
-                ),
+                Expanded(child: TextFormField(controller: latController, decoration: const InputDecoration(labelText: "Latitude"), onChanged: (_) => _updateLocationFromFields())),
                 const SizedBox(width: 10),
-                Expanded(
-                  child: TextFormField(
-                    controller: lngController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: "Longitude", border: OutlineInputBorder()),
-                    onChanged: (_) => _updateLocationFromFields(),
-                  ),
-                )
+                Expanded(child: TextFormField(controller: lngController, decoration: const InputDecoration(labelText: "Longitude"), onChanged: (_) => _updateLocationFromFields()))
               ],
             ),
           ),
