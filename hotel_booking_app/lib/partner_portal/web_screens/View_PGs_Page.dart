@@ -43,28 +43,27 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
 
             pgs.add({
-              "PG_ID": cols.length > 0 ? cols[0] : '',
-              "Partner_ID": cols.length > 1 ? cols[1] : '',
-              "PG_Name": cols.length > 2 ? cols[2] : '',
-              "PG_Type": cols.length > 3 ? cols[3] : '',
-              "Room_Type": cols.length > 4 ? cols[4] : '',
-              "Address": cols.length > 5 ? cols[5] : '',
-              "City": cols.length > 6 ? cols[6] : '',
-              "State": cols.length > 7 ? cols[7] : '',
-              "Country": cols.length > 8 ? cols[8] : '',
-              "Pincode": cols.length > 9 ? cols[9] : '',
-              "Total_Single_Sharing_Rooms": cols.length > 10 ? cols[10] : '0',
-              "Total_Double_Sharing_Rooms": cols.length > 11 ? cols[11] : '0',
-              "Total_Three_Sharing_Rooms": cols.length > 12 ? cols[12] : '0',
-              "Total_Four_Sharing_Rooms": cols.length > 13 ? cols[13] : '0',
-              "Total_Five_Sharing_Rooms": cols.length > 14 ? cols[14] : '0',
-              "Room_Price": cols.length > 15 ? cols[15] : '0',
-              "Amenities": cols.length > 16 ? cols[16] : '',
-              "Description": cols.length > 17 ? cols[17] : '',
-              "Rating": cols.length > 18 ? cols[18] : '0',
-              "Hotel_Contact": cols.length > 19 ? cols[19] : '',
-              "Status": cols.length > 20 ? cols[20] : '',
-              "Total_Rooms": cols.length > 21 ? cols[21] : '0',    // <-- Total Rooms
+              "pg_id": cols.length > 0 ? cols[0] : '',
+              "partner_id": cols.length > 1 ? cols[1] : '',
+              "pg_name": cols.length > 2 ? cols[2] : '',
+              "pg_type": cols.length > 3 ? cols[3] : '',
+              "room_type": cols.length > 4 ? cols[4] : '',
+              "address": cols.length > 5 ? cols[5] : '',
+              "city": cols.length > 6 ? cols[6] : '',
+              "state": cols.length > 7 ? cols[7] : '',
+              "country": cols.length > 8 ? cols[8] : '',
+              "pincode": cols.length > 9 ? cols[9] : '',
+              "total_single_sharing_rooms": cols.length > 10 ? cols[10] : '0',
+              "total_double_sharing_rooms": cols.length > 11 ? cols[11] : '0',
+              "total_three_sharing_rooms": cols.length > 12 ? cols[12] : '0',
+              "total_four_sharing_rooms": cols.length > 13 ? cols[13] : '0',
+              "total_Five_sharing_rooms": cols.length > 14 ? cols[14] : '0',
+              "room_price": cols.length > 15 ? cols[15] : '0',
+              "amenities": cols.length > 16 ? cols[16] : '',
+              "rating": cols.length > 17 ? cols[17] : '0',
+              "hotel_contact": cols.length > 18 ? cols[18] : '',
+              "status": cols.length > 19 ? cols[19] : '',
+              "total_Rooms": cols.length > 20 ? cols[20] : '0',    // <-- Total Rooms
             });
           }
         }
@@ -81,7 +80,7 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
   void toggleSelectAll(bool? value) {
     setState(() {
       selectAll = value ?? false;
-      selectedPGs = selectAll ? pgs.map((h) => h['PG_ID']!).toList() : [];
+      selectedPGs = selectAll ? pgs.map((h) => h['pg_id']!).toList() : [];
     });
   }
 
@@ -135,8 +134,8 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
 
   Widget buildPGRow(Map<String, String> pg) {
     String fullAddress =
-        "${pg['Address']}, ${pg['City']}, ${pg['State']}, ${pg['Country']} - ${pg['Pincode']}";
-    bool isSelected = selectedPGs.contains(pg['PG_ID']);
+        "${pg['address']}, ${pg['city']}, ${pg['state']}, ${pg['country']} - ${pg['pincode']}";
+    bool isSelected = selectedPGs.contains(pg['pg_id']);
 
     return Card(
       color: Colors.white.withOpacity(0.1),
@@ -148,37 +147,37 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
           children: [
             Checkbox(
               value: isSelected,
-              onChanged: (v) => togglePGSelection(pg['PG_ID']!, v),
+              onChanged: (v) => togglePGSelection(pg['pg_id']!, v),
               activeColor: Colors.green.shade900,
             ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(pg['PG_Name']!, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(pg['pg_name']!, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 4),
-                  Text("PG Type: ${pg['PG_Type']}", style: const TextStyle(color: Colors.white70)),
+                  Text("PG Type: ${pg['pg_type']}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
                   Text(fullAddress, style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Room Types: ${pg['Room_Type']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Room Types: ${pg['room_type']}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Total Rooms: ${pg['Total_Rooms']} | Price: ₹${pg['Room_Price']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Total Rooms: ${pg['total_rooms']} | Price: ₹${pg['room_price']}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Amenities: ${pg['Amenities']}", style: const TextStyle(color: Colors.white70)),
-                  Text("Description: ${pg['Description']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Amenities: ${pg['amenities']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Description: ${pg['description']}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Status: ${pg['Status']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Status: ${pg['status']}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       Icon(Icons.star, color: Colors.amber.shade300, size: 18),
                       const SizedBox(width: 4),
-                      Text(pg['Rating'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
+                      Text(pg['rating'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
                       const SizedBox(width: 15),
                       Icon(Icons.phone, color: Colors.white70, size: 18),
                       const SizedBox(width: 4),
-                      Text(pg['Hotel_Contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
+                      Text(pg['hotel_contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
                     ],
                   ),
                 ],
@@ -213,7 +212,7 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
                 ElevatedButton.icon(
                   onPressed: selectedPGs.length == 1
                       ? () {
-                    final pg = pgs.firstWhere((h) => h['PG_ID'] == selectedPGs[0]);
+                    final pg = pgs.firstWhere((h) => h['pg_id'] == selectedPGs[0]);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
