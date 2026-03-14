@@ -43,22 +43,28 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
             hotels.add({
-              "Hotel_ID": cols.length > 0 ? cols[0] : '',
-              "Partner_ID": cols.length > 1 ? cols[1] : '',
-              "Hotel_Name": cols.length > 2 ? cols[2] : '',
-              "Hotel_Type": cols.length > 3 ? cols[3] : '',
-              "Address": cols.length > 4 ? cols[4] : '',
-              "City": cols.length > 5 ? cols[5] : '',
-              "State": cols.length > 6 ? cols[6] : '',
-              "Country": cols.length > 7 ? cols[7] : '',
-              "Pincode": cols.length > 8 ? cols[8] : '',
-              "Total_Rooms": cols.length > 9 ? cols[9] : '',
-              "Room_Price": cols.length > 10 ? cols[10] : '',
-              "Amenities": cols.length > 11 ? cols[11] : '',
-              "Description": cols.length > 12 ? cols[12] : '',
-              "Rating": cols.length > 13 ? cols[13] : '0',
-              "Hotel_Contact": cols.length > 14 ? cols[14] : '',
-              "Status": cols.length > 15 ? cols[15] : '',
+              "hotel_id": cols.length > 0 ? cols[0] : '',
+              "partner_id": cols.length > 1 ? cols[1] : '',
+              "hotel_name": cols.length > 2 ? cols[2] : '',
+              "hotel_type": cols.length > 3 ? cols[3] : '',
+              "room_type": cols.length > 4 ? cols[4] : '',
+              "address": cols.length > 5 ? cols[5] : '',
+              "city": cols.length > 6 ? cols[6] : '',
+              "state": cols.length > 7 ? cols[7] : '',
+              "country": cols.length > 8 ? cols[8] : '',
+              "pincode": cols.length > 9 ? cols[9] : '',
+              "hotel_location": cols.length > 10 ? cols[10] : '',
+              "total_rooms": cols.length > 11 ? cols[11] : '',
+              "available_rooms": cols.length > 12 ? cols[12] : '',
+              "room_price": cols.length > 13 ? cols[13] : '',
+              "amenities": cols.length > 14 ? cols[14] : '',
+              "policies": cols.length > 15 ? cols[15] : '',
+              "rating": cols.length > 16 ? cols[16] : '0',
+              "hotel_contact": cols.length > 17 ? cols[17] : '',
+              "about_this_property": cols.length > 18 ? cols[18] : '',
+              "hotel_images": cols.length > 19 ? cols[19] : '',
+              "customization": cols.length > 20 ? cols[20] : '',
+              "status": cols.length > 21 ? cols[21] : '',
             });
           }
         }
@@ -75,7 +81,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
   void toggleSelectAll(bool? value) {
     setState(() {
       selectAll = value ?? false;
-      selectedHotels = selectAll ? hotels.map((h) => h['Hotel_ID']!).toList() : [];
+      selectedHotels = selectAll ? hotels.map((h) => h['hotel_id']!).toList() : [];
     });
   }
 
@@ -128,8 +134,8 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
 
   Widget buildHotelRow(Map<String, String> hotel) {
     String fullAddress =
-        "${hotel['Address']}, ${hotel['City']}, ${hotel['State']}, ${hotel['Country']} - ${hotel['Pincode']}";
-    bool isSelected = selectedHotels.contains(hotel['Hotel_ID']);
+        "${hotel['address']}, ${hotel['city']}, ${hotel['state']}, ${hotel['country']} - ${hotel['pincode']}";
+    bool isSelected = selectedHotels.contains(hotel['hotel_id']);
     return Card(
       color: Colors.white.withOpacity(0.1),
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -140,35 +146,35 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
           children: [
             Checkbox(
               value: isSelected,
-              onChanged: (v) => toggleHotelSelection(hotel['Hotel_ID']!, v),
+              onChanged: (v) => toggleHotelSelection(hotel['hotel_id']!, v),
               activeColor: Colors.green.shade900,
             ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(hotel['Hotel_Name']!, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(hotel['hotel_name']!, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 4),
                   Text(fullAddress, style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Rooms: ${hotel['Total_Rooms']} | Price: ₹${hotel['Room_Price']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Rooms: ${hotel['total_rooms']} | Price: ₹${hotel['room_price']}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Hotel Type: ${hotel['Hotel_Type']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Hotel Type: ${hotel['hotel_type']}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Amenities: ${hotel['Amenities']}", style: const TextStyle(color: Colors.white70)),
-                  Text("Description: ${hotel['Description']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Amenities: ${hotel['amenities']}", style: const TextStyle(color: Colors.white70)),
+                  Text("About This Hotel: ${hotel['about_this_property']}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Text("Status: ${hotel['Status']}", style: const TextStyle(color: Colors.white70)),
+                  Text("Status: ${hotel['status']}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       Icon(Icons.star, color: Colors.amber.shade300, size: 18),
                       const SizedBox(width: 4),
-                      Text(hotel['Rating'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
+                      Text(hotel['rating'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
                       const SizedBox(width: 15),
                       Icon(Icons.phone, color: Colors.white70, size: 18),
                       const SizedBox(width: 4),
-                      Text(hotel['Hotel_Contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
+                      Text(hotel['hotel_contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
                     ],
                   ),
                 ],
@@ -203,7 +209,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
                 ElevatedButton.icon(
                   onPressed: selectedHotels.length == 1
                       ? () {
-                    final hotel = hotels.firstWhere((h) => h['Hotel_ID'] == selectedHotels[0]);
+                    final hotel = hotels.firstWhere((h) => h['hotel_id'] == selectedHotels[0]);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
