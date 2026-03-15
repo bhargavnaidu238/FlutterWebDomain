@@ -36,10 +36,8 @@ class _BookingPageState extends State<BookingPage> {
     super.dispose();
   }
 
-  // ========================== Fetch User Bookings =========================
   Future<void> fetchBookings() async {
     setState(() => isLoading = true);
-
     try {
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/webgetPartnerBookings?partnerId=${widget.partnerId}'),
@@ -61,7 +59,6 @@ class _BookingPageState extends State<BookingPage> {
     }
   }
 
-  // ============== Update Bookings Status Sections ============================
   Future<void> updateBookingStatus(String bookingId, String newStatus) async {
     try {
       final response = await http.post(
@@ -75,7 +72,6 @@ class _BookingPageState extends State<BookingPage> {
 
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
-
         if (result['status'] == 'success') {
           await fetchBookings();
         } else {
@@ -89,30 +85,20 @@ class _BookingPageState extends State<BookingPage> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
-  // ====================== FILTER LOGIC ============================
   void applyFilters() {
     String searchText = searchController.text.toLowerCase().trim();
-
     setState(() {
       filteredBookings = bookings.where((booking) {
-        // Use lowercase key to match DB result 'booking_status'
         final statusValue = (booking['booking_status'] ?? '').toString().trim().toLowerCase();
-
-        final statusMatches = statusFilter == 'All' ||
-            statusValue == statusFilter.toLowerCase();
-
+        final statusMatches = statusFilter == 'All' || statusValue == statusFilter.toLowerCase();
         final searchMatches = booking.values.any((val) {
           if (val == null) return false;
           return val.toString().toLowerCase().contains(searchText);
         });
-
         return statusMatches && searchMatches;
       }).toList();
     });
@@ -124,70 +110,57 @@ class _BookingPageState extends State<BookingPage> {
     }
 
     final columns = filteredBookings.first.keys.map((key) {
-      return DataColumn(
-        label: Text(key, style: const TextStyle(fontWeight: FontWeight.bold)),
-      );
-    }).toList()
-      ..add(const DataColumn(
-        label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold)),
-      ));
+      return DataColumn(label: Text(key, style: const TextStyle(fontWeight: FontWeight.bold)));
+    }).toList()..add(const DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))));
 
     final rows = filteredBookings.map((booking) {
-      // Logic using DB-exact keys (case sensitive)
       final status = (booking['booking_status']?.toString() ?? '').toLowerCase();
       final bookingId = booking['booking_id']?.toString() ?? '';
 
-      String? checkOutStr = booking['check_out_date']?.toString();
-      DateTime? checkOutDate;
-
-      if (checkOutStr != null && checkOutStr.isNotEmpty) {
-        checkOutStr = checkOutStr.trim().split(" ").first;
-        checkOutDate = DateTime.tryParse(checkOutStr);
-      }
+      // Date Parsing
+      DateTime? checkInDate = _parseDate(booking['check_in_date']);
+      DateTime? checkOutDate = _parseDate(booking['check_out_date']);
 
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      final normalizedCheckOut = checkOutDate != null
-          ? DateTime(checkOutDate.year, checkOutDate.month, checkOutDate.day)
-          : null;
 
       return DataRow(
         color: MaterialStateProperty.resolveWith<Color?>(
-              (_) => status == 'cancelled'
-              ? Colors.grey.withOpacity(0.2)
-              : Colors.white,
+              (_) => status == 'cancelled' ? Colors.grey.withOpacity(0.2) : Colors.white,
         ),
         cells: booking.keys.map((key) {
-          return DataCell(
-            Text(
-              booking[key]?.toString() ?? '',
-              style: const TextStyle(fontSize: 14),
-            ),
-          );
+          return DataCell(Text(booking[key]?.toString() ?? '', style: const TextStyle(fontSize: 14)));
         }).toList()
           ..add(
             DataCell(
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
-                onSelected: (value) {
-                  updateBookingStatus(bookingId, value);
-                },
+                onSelected: (value) => updateBookingStatus(bookingId, value),
                 itemBuilder: (_) => [
                   PopupMenuItem(
-                    value: 'Confirmed',
+                    value: 'CONFIRMED',
                     enabled: status == 'pending',
                     child: const Text('Confirm'),
                   ),
                   PopupMenuItem(
-                    value: 'Cancelled',
+                    value: 'CANCELLED',
                     enabled: status == 'pending' || status == 'confirmed',
                     child: const Text('Cancel'),
                   ),
                   PopupMenuItem(
-                    value: 'Completed',
-                    // Enabled if Pending OR if Confirmed and (Date is today or past)
-                    enabled: status == 'pending' ||
-                        (status == 'confirmed' && (normalizedCheckOut == null || !normalizedCheckOut.isAfter(today))),
+                    value: 'CHECKED_IN',
+                    enabled: (status == 'pending' && checkInDate != null && checkInDate.isAtSameMomentAs(today)) ||
+                        (status == 'confirmed'),
+                    child: const Text('Check-in'),
+                  ),
+                  PopupMenuItem(
+                    value: 'CHECKED_OUT',
+                    enabled: status == 'confirmed' && checkOutDate != null && !checkOutDate.isAfter(today),
+                    child: const Text('Check-out'),
+                  ),
+                  PopupMenuItem(
+                    value: 'COMPLETED',
+                    enabled: status == 'confirmed',
                     child: const Text('Completed'),
                   ),
                 ],
@@ -198,10 +171,7 @@ class _BookingPageState extends State<BookingPage> {
     }).toList();
 
     return ScrollConfiguration(
-      behavior: const ScrollBehavior().copyWith(
-        dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
-        overscroll: false,
-      ),
+      behavior: const ScrollBehavior().copyWith(dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse}, overscroll: false),
       child: Scrollbar(
         controller: horizontalController,
         thumbVisibility: true,
@@ -212,12 +182,7 @@ class _BookingPageState extends State<BookingPage> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 800),
             child: DataTable(
-              headingRowColor:
-              MaterialStateProperty.all(Colors.green.shade200.withOpacity(0.4)),
-              headingTextStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+              headingRowColor: MaterialStateProperty.all(Colors.green.shade200.withOpacity(0.4)),
               columns: columns,
               rows: rows,
             ),
@@ -227,21 +192,24 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 
+  DateTime? _parseDate(dynamic dateVal) {
+    if (dateVal == null || dateVal.toString().isEmpty) return null;
+    try {
+      String dateStr = dateVal.toString().trim().split(" ").first;
+      return DateTime.tryParse(dateStr);
+    } catch (e) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Partner Bookings'),
-        backgroundColor: Colors.green.shade700,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Partner Bookings'), backgroundColor: Colors.green.shade700),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Colors.lime.shade100.withOpacity(0.3),
-              Colors.lime.shade300.withOpacity(0.3),
-            ],
+            colors: [Colors.lime.shade100.withOpacity(0.3), Colors.lime.shade300.withOpacity(0.3)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -261,10 +229,7 @@ class _BookingPageState extends State<BookingPage> {
                         prefixIcon: const Icon(Icons.search),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       ),
                     ),
                   ),
@@ -272,8 +237,7 @@ class _BookingPageState extends State<BookingPage> {
                   DropdownButton<String>(
                     value: statusFilter,
                     items: ['All', 'Pending', 'Confirmed', 'Cancelled', 'Completed']
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                        .toList(),
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                     onChanged: (value) {
                       setState(() {
                         statusFilter = value!;
@@ -284,11 +248,7 @@ class _BookingPageState extends State<BookingPage> {
                 ],
               ),
             ),
-            Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : buildDataTable(),
-            ),
+            Expanded(child: isLoading ? const Center(child: CircularProgressIndicator()) : buildDataTable()),
           ],
         ),
       ),
