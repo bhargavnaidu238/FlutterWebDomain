@@ -99726,7 +99726,7 @@ s=A.ab(B.d.aE(229.5),B.h.p()>>>16&255,B.h.p()>>>8&255,B.h.p()&255)
 s=A.dd(A.l_(n,B.bH,!1,n,!0,B.n,n,A.mw(),o.r,n,n,n,n,n,2,A.fE(n,new A.d4(4,A.bO(12),B.v),n,n,n,n,n,n,!0,n,n,n,n,n,n,s,!0,n,n,n,n,n,n,n,n,n,n,n,n,n,n,"Search bookings\u2026",n,n,n,n,n,n,n,n,n,!0,!0,n,B.ST,n,n,n,n,n,n,n,n,n,n,n,n),B.a6,!0,n,!0,n,!1,n,B.bA,n,n,n,n,n,n,n,n,1,n,n,!1,"\u2022",n,new A.azB(o),n,n,n,!1,n,n,!1,n,!0,n,B.aF,n,n,n,n,n,n,n,n,n,n,n,n,!0,B.al,n,B.cw,n,n,n,n),1)
 r=o.w
 q=t.fo
-q=A.a1(new A.S(A.c(["All","Pending","Confirmed","Cancelled","Completed"],t.s),new A.azC(),q),q.i("a6.E"))
+q=A.a1(new A.S(A.c(["All","Pending","Confirmed","Cancelled","Completed","Checked_In","Checked_Out"],t.s),new A.azC(),q),q.i("a6.E"))
 p=t.p
 r=A.c_(A.c([s,B.eR,A.abl(n,q,new A.azD(o),r,t.N)],p),B.t,B.o,B.p,0,n)
 return A.h8(m,n,A.c1(n,A.bD(A.c([new A.bk(B.Rq,r,n),A.dd(o.f?B.hi:o.awz(),1)],p),B.t,B.o,B.p),B.u,n,n,new A.bY(n,n,n,n,n,new A.jE(B.dh,B.j3,B.cx,l,n,n),n,B.X),n,n,n,n,n,n,n))}}
@@ -99795,15 +99795,16 @@ A.azw.prototype={
 $1(a){return this.a.zg(this.b,a)},
 $S:29}
 A.azv.prototype={
-$1(a){var s=this,r=s.a,q=r==="pending",p=t.N,o=A.F5(B.ayW,q,"CONFIRMED",p),n=A.F5(B.qN,q||r==="confirmed","CANCELLED",p),m=!1
-if(q){q=s.b
-if(q!=null){m=s.c
-q=q.a===m.a&&q.b===m.b}else q=m}else q=m
-m=A.F5(B.azy,q||r==="confirmed","CHECKED_IN",p)
-r=r==="confirmed"
-if(r){q=s.d
-q=q!=null&&!q.qL(s.c)}else q=!1
-return A.c([o,n,m,A.F5(B.azm,q,"CHECKED_OUT",p),A.F5(B.aA6,r,"COMPLETED",p)],t.Do)},
+$1(a){var s,r=this,q=r.a,p=q==="pending",o=t.N,n=A.F5(B.ayW,p,"CONFIRMED",o),m=A.F5(B.qN,p||q==="confirmed","CANCELLED",o),l=!1
+if(p){p=r.b
+if(p!=null){l=r.c
+p=p.a===l.a&&p.b===l.b}else p=l}else p=l
+l=A.F5(B.azy,p||q==="confirmed","CHECKED_IN",o)
+p=q!=="confirmed"
+if(!p||q==="checked_in"){s=r.d
+s=s!=null&&!s.qL(r.c)}else s=!1
+s=A.F5(B.azm,s,"CHECKED_OUT",o)
+return A.c([n,m,l,s,A.F5(B.aA6,!p||q==="checked_in","COMPLETED",o)],t.Do)},
 $S:254}
 A.azB.prototype={
 $1(a){return this.a.Lh()},

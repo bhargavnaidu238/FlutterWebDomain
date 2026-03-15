@@ -149,18 +149,22 @@ class _BookingPageState extends State<BookingPage> {
                   ),
                   PopupMenuItem(
                     value: 'CHECKED_IN',
+                    // Enabled if Pending (and date is today) OR if Confirmed
                     enabled: (status == 'pending' && checkInDate != null && checkInDate.isAtSameMomentAs(today)) ||
                         (status == 'confirmed'),
                     child: const Text('Check-in'),
                   ),
                   PopupMenuItem(
                     value: 'CHECKED_OUT',
-                    enabled: status == 'confirmed' && checkOutDate != null && !checkOutDate.isAfter(today),
+                    // Fixed: Enabled if Confirmed OR Checked_In, provided date is <= today
+                    enabled: (status == 'confirmed' || status == 'checked_in') &&
+                        checkOutDate != null && !checkOutDate.isAfter(today),
                     child: const Text('Check-out'),
                   ),
                   PopupMenuItem(
                     value: 'COMPLETED',
-                    enabled: status == 'confirmed',
+                    // Fixed: Enabled if status is Confirmed OR Checked_In
+                    enabled: status == 'confirmed' || status == 'checked_in',
                     child: const Text('Completed'),
                   ),
                 ],
@@ -236,7 +240,7 @@ class _BookingPageState extends State<BookingPage> {
                   const SizedBox(width: 12),
                   DropdownButton<String>(
                     value: statusFilter,
-                    items: ['All', 'Pending', 'Confirmed', 'Cancelled', 'Completed']
+                    items: ['All', 'Pending', 'Confirmed', 'Cancelled', 'Completed', 'Checked_In', 'Checked_Out']
                         .map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                     onChanged: (value) {
                       setState(() {
