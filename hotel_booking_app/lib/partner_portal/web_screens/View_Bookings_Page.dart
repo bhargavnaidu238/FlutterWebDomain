@@ -36,6 +36,7 @@ class _BookingPageState extends State<BookingPage> {
     super.dispose();
   }
 
+  // ========================== Fetch User Bookings =========================
   Future<void> fetchBookings() async {
     setState(() => isLoading = true);
     try {
@@ -59,6 +60,37 @@ class _BookingPageState extends State<BookingPage> {
     }
   }
 
+  // ========================== Confirmation Dialog =========================
+  Future<void> _confirmAndStatusUpdate(String bookingId, String newStatus) async {
+    String displayStatus = newStatus.replaceAll('_', ' ');
+
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm $displayStatus"),
+          content: Text("Are you sure you want to change this booking status to $displayStatus?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              child: const Text("Confirm"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      await updateBookingStatus(bookingId, newStatus);
+    }
+  }
+
+  // ========================== Update Logic =========================
   Future<void> updateBookingStatus(String bookingId, String newStatus) async {
     try {
       final response = await http.post(
@@ -117,7 +149,6 @@ class _BookingPageState extends State<BookingPage> {
       final status = (booking['booking_status']?.toString() ?? '').toLowerCase();
       final bookingId = booking['booking_id']?.toString() ?? '';
 
-      // Date Parsing
       DateTime? checkInDate = _parseDate(booking['check_in_date']);
       DateTime? checkOutDate = _parseDate(booking['check_out_date']);
 
@@ -135,7 +166,7 @@ class _BookingPageState extends State<BookingPage> {
             DataCell(
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
-                onSelected: (value) => updateBookingStatus(bookingId, value),
+                onSelected: (value) => _confirmAndStatusUpdate(bookingId, value),
                 itemBuilder: (_) => [
                   PopupMenuItem(
                     value: 'CONFIRMED',
@@ -149,22 +180,19 @@ class _BookingPageState extends State<BookingPage> {
                   ),
                   PopupMenuItem(
                     value: 'CHECKED_IN',
-                    // Enabled if Pending (and date is today) OR if Confirmed
                     enabled: (status == 'pending' && checkInDate != null && checkInDate.isAtSameMomentAs(today)) ||
                         (status == 'confirmed'),
                     child: const Text('Check-in'),
                   ),
                   PopupMenuItem(
                     value: 'CHECKED_OUT',
-                    // Fixed: Enabled if Confirmed OR Checked_In, provided date is <= today
                     enabled: (status == 'confirmed' || status == 'checked_in') &&
                         checkOutDate != null && !checkOutDate.isAfter(today),
                     child: const Text('Check-out'),
                   ),
                   PopupMenuItem(
                     value: 'COMPLETED',
-                    // Fixed: Enabled if status is Confirmed OR Checked_In
-                    enabled: status == 'confirmed' || status == 'checked_in',
+                    enabled: status == 'confirmed' || status == 'checked_in' || status == 'checked_out',
                     child: const Text('Completed'),
                   ),
                 ],
