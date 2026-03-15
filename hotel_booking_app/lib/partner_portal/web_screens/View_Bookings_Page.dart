@@ -102,7 +102,8 @@ class _BookingPageState extends State<BookingPage> {
 
     setState(() {
       filteredBookings = bookings.where((booking) {
-        final statusValue = (booking['Booking_Status'] ?? '').toString().trim().toLowerCase();
+        // Use lowercase key to match DB result 'booking_status'
+        final statusValue = (booking['booking_status'] ?? '').toString().trim().toLowerCase();
 
         final statusMatches = statusFilter == 'All' ||
             statusValue == statusFilter.toLowerCase();
@@ -132,9 +133,11 @@ class _BookingPageState extends State<BookingPage> {
       ));
 
     final rows = filteredBookings.map((booking) {
-      final status = (booking['Booking_Status']?.toString() ?? '').toLowerCase();
+      // Logic using DB-exact keys (case sensitive)
+      final status = (booking['booking_status']?.toString() ?? '').toLowerCase();
+      final bookingId = booking['booking_id']?.toString() ?? '';
 
-      String? checkOutStr = booking['Check_Out_Date']?.toString();
+      String? checkOutStr = booking['check_out_date']?.toString();
       DateTime? checkOutDate;
 
       if (checkOutStr != null && checkOutStr.isNotEmpty) {
@@ -142,7 +145,6 @@ class _BookingPageState extends State<BookingPage> {
         checkOutDate = DateTime.tryParse(checkOutStr);
       }
 
-      // Normalize dates to remove time for accurate comparison
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final normalizedCheckOut = checkOutDate != null
@@ -168,7 +170,7 @@ class _BookingPageState extends State<BookingPage> {
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
                 onSelected: (value) {
-                  updateBookingStatus(booking['Booking_ID'], value);
+                  updateBookingStatus(bookingId, value);
                 },
                 itemBuilder: (_) => [
                   PopupMenuItem(
@@ -183,7 +185,7 @@ class _BookingPageState extends State<BookingPage> {
                   ),
                   PopupMenuItem(
                     value: 'Completed',
-                    // Enabled if Pending (per request) OR if Confirmed and date is today/past
+                    // Enabled if Pending OR if Confirmed and (Date is today or past)
                     enabled: status == 'pending' ||
                         (status == 'confirmed' && (normalizedCheckOut == null || !normalizedCheckOut.isAfter(today))),
                     child: const Text('Completed'),
