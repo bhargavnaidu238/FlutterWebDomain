@@ -26,12 +26,114 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
   final TextEditingController pincodeController = TextEditingController();
   final TextEditingController gstController = TextEditingController();
 
+  final TextEditingController otpController = TextEditingController();
+
   bool isLoading = false;
 
-  Future<void> register() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  Map<String, String>? registrationData;
+
+  /// STEP 1 → SEND OTP
+  Future<void> sendOtp() async {
+    final email = emailController.text.trim();
+
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/send-email-otp');
+
+      final res = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"email": email}),
+      );
+
+      final data = jsonDecode(res.body);
+
+      if (res.statusCode == 200 && data['status'] == 'success') {
+        showOtpDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Failed to send OTP")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("OTP Error: $e")));
     }
+  }
+
+  /// STEP 2 → VERIFY OTP
+  Future<void> verifyOtp() async {
+    final email = emailController.text.trim();
+    final otp = otpController.text.trim();
+
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/verify-email-otp');
+
+      final res = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "email": email,
+          "otp": otp,
+        }),
+      );
+
+      final data = jsonDecode(res.body);
+
+      if (res.statusCode == 200 && data['status'] == 'success') {
+        Navigator.pop(context);
+        await registerUser();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Wrong OTP")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("OTP Verification Error: $e")));
+    }
+  }
+
+  /// STEP 3 → FINAL REGISTRATION
+  Future<void> registerUser() async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/registerlogin');
+
+      final body = registrationData!.entries
+          .map((e) =>
+      '${e.key}=${Uri.encodeComponent(e.value)}')
+          .join("&");
+
+      final res = await http.post(
+        url,
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: body,
+      );
+
+      final data = jsonDecode(res.body);
+
+      if (res.statusCode == 200 && data['status'] == 'success') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Registration Successful")),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const WebLoginPage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Registration failed")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Registration Error: $e")));
+    }
+  }
+
+  /// REGISTER BUTTON
+  Future<void> register() async {
+    if (!_formKey.currentState!.validate()) return;
 
     final name = nameController.text.trim();
     final business = businessController.text.trim();
@@ -45,57 +147,58 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
     final pincode = pincodeController.text.trim();
     final gst = gstController.text.trim();
 
-    setState(() {
-      isLoading = true;
-    });
+    registrationData = {
+      "partner_name": name,
+      "business_name": business,
+      "email": email,
+      "password": password,
+      "contact_number": phone,
+      "address": address,
+      "city": city,
+      "state": state,
+      "country": country,
+      "pincode": pincode,
+      "gst_number": gst
+    };
 
-    try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/registerlogin');
+    await sendOtp();
+  }
 
-      final body = 'partner_name=${Uri.encodeComponent(name)}'
-          '&business_name=${Uri.encodeComponent(business)}'
-          '&email=${Uri.encodeComponent(email)}'
-          '&password=${Uri.encodeComponent(password)}'
-          '&contact_number=${Uri.encodeComponent(phone)}'
-          '&address=${Uri.encodeComponent(address)}'
-          '&city=${Uri.encodeComponent(city)}'
-          '&state=${Uri.encodeComponent(state)}'
-          '&country=${Uri.encodeComponent(country)}'
-          '&pincode=${Uri.encodeComponent(pincode)}'
-          '&gst_number=${Uri.encodeComponent(gst)}';
-
-      final res = await http.post(
-        url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: body,
-      );
-
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Registration failed")),
+  /// OTP DIALOG UI
+  void showOtpDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Email Verification"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Enter the OTP sent to your email"),
+              const SizedBox(height: 10),
+              TextField(
+                controller: otpController,
+                decoration: const InputDecoration(
+                  labelText: "OTP",
+                  border: OutlineInputBorder(),
+                ),
+              )
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: sendOtp,
+              child: const Text("Resend OTP"),
+            ),
+            ElevatedButton(
+              onPressed: verifyOtp,
+              child: const Text("Verify & Register"),
+            )
+          ],
         );
-
-        if (data['status'] == 'success') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const WebLoginPage()),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Server error: ${res.statusCode}")),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
+      },
+    );
   }
 
   Widget buildTextField({
@@ -112,9 +215,8 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: icon != null
-            ? Icon(icon, color: Colors.white70)
-            : const SizedBox(),
+        prefixIcon:
+        icon != null ? Icon(icon, color: Colors.white70) : const SizedBox(),
         filled: true,
         fillColor: Colors.white.withOpacity(0.1),
         errorStyle: const TextStyle(color: Colors.redAccent),
@@ -124,14 +226,6 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
         ),
         enabledBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: Colors.white38),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.redAccent),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.redAccent),
           borderRadius: BorderRadius.circular(12),
         ),
       ),
@@ -161,204 +255,64 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(20),
-                border:
-                Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.green.withOpacity(0.3),
-                    blurRadius: 30,
-                    spreadRadius: 5,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+
                   const Text(
                     "Partner Registration",
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      shadows: [
-                        Shadow(color: Colors.black45, blurRadius: 8),
-                      ],
                     ),
                   ),
+
                   const SizedBox(height: 30),
 
-                  // ---- FIELDS ----
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final width = constraints.maxWidth > 900
-                          ? 380.0
-                          : double.infinity;
-
-                      return Wrap(
-                        spacing: 25,
-                        runSpacing: 20,
-                        children: [
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: nameController,
-                              label: "Full Name",
-                              icon: Icons.person,
-                              validator: (value) =>
-                              value!.isEmpty ? "Full Name required" : null,
-                            ),
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: businessController,
-                              label: "Business Name",
-                              icon: Icons.business,
-                              validator: (value) => value!.isEmpty
-                                  ? "Business Name required"
-                                  : null,
-                            ),
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: emailController,
-                              label: "Email",
-                              icon: Icons.email,
-                              validator: (value) =>
-                              value!.isEmpty ? "Email required" : null,
-                            ),
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: passwordController,
-                              label: "Password",
-                              icon: Icons.lock,
-                              obscure: true,
-                              validator: (value) =>
-                              value!.isEmpty ? "Password required" : null,
-                            ),
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: phoneController,
-                              label: "Phone Number",
-                              icon: Icons.phone,
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return "Phone number required";
-                                }
-                                if (!RegExp(r'^[0-9]{10}$')
-                                    .hasMatch(value.trim())) {
-                                  return "Enter valid 10-digit phone number";
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: addressController,
-                              label: "Address",
-                              icon: Icons.home,
-                              validator: (value) =>
-                              value!.isEmpty ? "Address required" : null,
-                            ),
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: cityController,
-                              label: "City",
-                              icon: Icons.location_city,
-                              validator: (value) =>
-                              value!.isEmpty ? "City required" : null,
-                            ),
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: stateController,
-                              label: "State",
-                              icon: Icons.map,
-                              validator: (value) =>
-                              value!.isEmpty ? "State required" : null,
-                            ),
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: countryController,
-                              label: "Country",
-                              icon: Icons.flag,
-                              validator: (value) =>
-                              value!.isEmpty ? "Country required" : null,
-                            ),
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: pincodeController,
-                              label: "Pincode",
-                              icon: Icons.pin_drop,
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return "Pincode required";
-                                }
-                                if (!RegExp(r'^[0-9]{6}$')
-                                    .hasMatch(value.trim())) {
-                                  return "Enter valid 6-digit pincode";
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: buildTextField(
-                              controller: gstController,
-                              label: "GST Number",
-                              icon: Icons.receipt_long,
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return "GST Number required";
-                                }
-                                if (!RegExp(r'^[A-Za-z0-9]{15}$')
-                                    .hasMatch(value.trim())) {
-                                  return "GST must be 15 alphanumeric characters";
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                  buildTextField(
+                    controller: nameController,
+                    label: "Full Name",
+                    icon: Icons.person,
+                    validator: (v) => v!.isEmpty ? "Full Name required" : null,
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 15),
 
-                  isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : ElevatedButton(
+                  buildTextField(
+                    controller: businessController,
+                    label: "Business Name",
+                    icon: Icons.business,
+                    validator: (v) =>
+                    v!.isEmpty ? "Business Name required" : null,
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  buildTextField(
+                    controller: emailController,
+                    label: "Email",
+                    icon: Icons.email,
+                    validator: (v) => v!.isEmpty ? "Email required" : null,
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  buildTextField(
+                    controller: passwordController,
+                    label: "Password",
+                    icon: Icons.lock,
+                    obscure: true,
+                    validator: (v) =>
+                    v!.isEmpty ? "Password required" : null,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  ElevatedButton(
                     onPressed: register,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(260, 50),
-                      backgroundColor: const Color(0xFF00C853),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      "Register",
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+                    child: const Text("Register"),
                   ),
 
                   const SizedBox(height: 20),

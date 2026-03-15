@@ -20,7 +20,6 @@ class ApiConfig {
     return _localAndroid;
   }
 
-  // Optional alternate local server if needed
   static String get alternateLocalUrl => _altLocal;
 
   static String get razorpayKeyId {
@@ -58,6 +57,60 @@ class ApiService {
     html.window.localStorage.remove(_tokenKey);
     html.window.localStorage.remove(_emailKey);
     html.window.localStorage.remove(_userIdKey);
+  }
+
+  /// ================= EMAIL OTP =================
+
+  static Future<Map<String, dynamic>> sendEmailOtp(String email) async {
+
+    final url = Uri.parse('${ApiConfig.baseUrl}/send-email-otp');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": email.trim(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+
+    } catch (e) {
+      print("❌ Send OTP Error: $e");
+    }
+
+    return {"status": "error", "message": "Failed to send OTP"};
+  }
+
+  static Future<Map<String, dynamic>> verifyEmailOtp({
+    required String email,
+    required String otp,
+  }) async {
+
+    final url = Uri.parse('${ApiConfig.baseUrl}/verify-email-otp');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": email.trim(),
+          "otp": otp.trim(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+
+    } catch (e) {
+      print("❌ Verify OTP Error: $e");
+    }
+
+    return {"status": "error", "message": "OTP verification failed"};
   }
 
   /// ================= REGISTER =================
