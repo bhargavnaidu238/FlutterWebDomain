@@ -99763,9 +99763,8 @@ A.azL.prototype={
 $0(){return this.a.f=!1},
 $S:0}
 A.azu.prototype={
-$1(a){var s=null,r=this.a,q=A.a7("Confirm "+r,s,s,s,s,s,s)
-r=A.a7("Are you sure you want to change this booking status to "+r+"?",s,s,s,s,s,s)
-return A.a7H(A.c([A.j7(B.az_,new A.azs(a),s),A.iH(!1,B.Kc,s,s,s,s,s,s,new A.azt(a),s,A.ec(s,s,B.an,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s))],t.p),s,r,q)},
+$1(a){var s=null,r=A.a7("Booking Status!!!",s,s,s,s,s,s),q=A.a7("Are you sure you want to change this booking status to "+this.a+"?",s,s,s,s,s,s)
+return A.a7H(A.c([A.j7(B.az_,new A.azs(a),s),A.iH(!1,B.Kc,s,s,s,s,s,s,new A.azt(a),s,A.ec(s,s,B.an,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s))],t.p),s,q,r)},
 $S:93}
 A.azs.prototype={
 $0(){return A.cc(this.a,!1).hV(!1)},

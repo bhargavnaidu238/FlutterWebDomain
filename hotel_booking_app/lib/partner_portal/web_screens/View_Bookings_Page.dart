@@ -68,7 +68,7 @@ class _BookingPageState extends State<BookingPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Confirm $displayStatus"),
+          title: Text("Booking Status!!!"),
           content: Text("Are you sure you want to change this booking status to $displayStatus?"),
           actions: [
             TextButton(
