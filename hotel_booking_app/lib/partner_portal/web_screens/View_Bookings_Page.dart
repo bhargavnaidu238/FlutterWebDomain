@@ -49,8 +49,8 @@ class _BookingPageState extends State<BookingPage> {
         final List data = json.decode(response.body);
         setState(() {
           bookings = List<Map<String, dynamic>>.from(data);
-          filteredBookings = bookings; // SHOW EVERYTHING FIRST
-          applyFilters(); // THEN FILTER IF USER SELECTS ANYTHING
+          filteredBookings = bookings;
+          applyFilters();
           isLoading = false;
         });
       } else {
@@ -96,7 +96,7 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 
-  // ====================== FILTER LOGIC FIXED ============================
+  // ====================== FILTER LOGIC ============================
   void applyFilters() {
     String searchText = searchController.text.toLowerCase().trim();
 
@@ -132,7 +132,7 @@ class _BookingPageState extends State<BookingPage> {
       ));
 
     final rows = filteredBookings.map((booking) {
-      final status = booking['Booking_Status']?.toString() ?? '';
+      final status = (booking['Booking_Status']?.toString() ?? '').toLowerCase();
 
       String? checkOutStr = booking['Check_Out_Date']?.toString();
       DateTime? checkOutDate;
@@ -142,11 +142,16 @@ class _BookingPageState extends State<BookingPage> {
         checkOutDate = DateTime.tryParse(checkOutStr);
       }
 
-      final today = DateTime.now();
+      // Normalize dates to remove time for accurate comparison
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final normalizedCheckOut = checkOutDate != null
+          ? DateTime(checkOutDate.year, checkOutDate.month, checkOutDate.day)
+          : null;
 
       return DataRow(
         color: MaterialStateProperty.resolveWith<Color?>(
-              (_) => status.toLowerCase() == 'cancelled'
+              (_) => status == 'cancelled'
               ? Colors.grey.withOpacity(0.2)
               : Colors.white,
         ),
@@ -168,20 +173,19 @@ class _BookingPageState extends State<BookingPage> {
                 itemBuilder: (_) => [
                   PopupMenuItem(
                     value: 'Confirmed',
-                    enabled: status.toLowerCase() == 'pending',
+                    enabled: status == 'pending',
                     child: const Text('Confirm'),
                   ),
                   PopupMenuItem(
                     value: 'Cancelled',
-                    enabled: status.toLowerCase() == 'pending' ||
-                        status.toLowerCase() == 'confirmed',
+                    enabled: status == 'pending' || status == 'confirmed',
                     child: const Text('Cancel'),
                   ),
                   PopupMenuItem(
                     value: 'Completed',
-                    enabled: status.toLowerCase() == 'confirmed' &&
-                        checkOutDate != null &&
-                        !checkOutDate.isAfter(today),
+                    // Enabled if Pending (per request) OR if Confirmed and date is today/past
+                    enabled: status == 'pending' ||
+                        (status == 'confirmed' && (normalizedCheckOut == null || !normalizedCheckOut.isAfter(today))),
                     child: const Text('Completed'),
                   ),
                 ],
