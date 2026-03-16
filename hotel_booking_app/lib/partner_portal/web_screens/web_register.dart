@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async'; // Required for Timer logic
 import 'web_login.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 
@@ -36,7 +37,6 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/send-email-otp');
 
-      // Ensure we send a clean JSON object
       final Map<String, String> requestData = {
         'email': emailController.text.trim().toLowerCase(),
         'type': 'send_otp'
@@ -76,17 +76,17 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Failed to send OTP")),
-        );
+        _showSnackBar(data['message'] ?? "Failed to send OTP");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      _showSnackBar("Connection Error: $e");
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget buildTextField({
@@ -201,12 +201,79 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   final TextEditingController otpController = TextEditingController();
   bool isLoading = false;
 
+  // Timer related variables
+  Timer? _timer;
+  int _secondsRemaining = 60; // 1 Minute timer
+  bool _canResend = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    otpController.dispose();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    setState(() {
+      _secondsRemaining = 60;
+      _canResend = false;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining == 0) {
+        setState(() {
+          _canResend = true;
+          timer.cancel();
+        });
+      } else {
+        setState(() {
+          _secondsRemaining--;
+        });
+      }
+    });
+  }
+
+  Future<void> resendOtp() async {
+    if (!_canResend) return;
+
+    try {
+      final res = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/send-email-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': widget.userData['email'],
+          'type': 'send_otp'
+        }),
+      );
+
+      final data = json.decode(res.body);
+      if (res.statusCode == 200 && data['status'] == 'success') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("OTP resent successfully")),
+        );
+        _startTimer(); // Restart the 1-minute timer
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Failed to resend OTP")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
+  }
+
   Future<void> verifyAndRegister() async {
     if (otpController.text.isEmpty) return;
     setState(() => isLoading = true);
 
     try {
-      // STEP 1: VERIFY OTP
       final verifyRes = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/verify-email-otp'),
         headers: {'Content-Type': 'application/json'},
@@ -220,9 +287,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       final verifyData = json.decode(verifyRes.body);
 
       if (verifyRes.statusCode == 200 && verifyData['status'] == 'success') {
-
-        // STEP 2: FINAL REGISTRATION
-        // Using a Map for the body automatically sets it to x-www-form-urlencoded
         final regRes = await http.post(
           Uri.parse('${ApiConfig.baseUrl}/registerlogin'),
           body: {
@@ -240,9 +304,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             'otp': otpController.text.trim(),
           },
         );
-
-        // Log response for debugging
-        print("Registration Response: ${regRes.body}");
 
         if (regRes.statusCode == 200) {
           if (!mounted) return;
@@ -312,6 +373,21 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 15),
+              // Resend OTP Section
+              GestureDetector(
+                onTap: _canResend ? resendOtp : null,
+                child: Text(
+                  _canResend
+                      ? "Resend Code"
+                      : "Resend in $_secondsRemaining s",
+                  style: TextStyle(
+                    color: _canResend ? Colors.white : Colors.white60,
+                    fontWeight: FontWeight.bold,
+                    decoration: _canResend ? TextDecoration.underline : TextDecoration.none,
+                  ),
+                ),
+              ),
               const SizedBox(height: 30),
               isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
@@ -321,7 +397,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   backgroundColor: const Color(0xFF00C853),
                   minimumSize: const Size(double.infinity, 50),
                 ),
-                child: const Text("Register", style: TextStyle(color: Colors.white)),
+                child: const Text("Register", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
