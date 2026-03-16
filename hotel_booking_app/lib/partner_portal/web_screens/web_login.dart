@@ -108,7 +108,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
     bool showPassword = false;
     bool isApiLoading = false;
 
-    // Timer for Resend OTP
+    // Timer for Resend OTP (1 Minute)
     int secondsRemaining = 60;
     bool canResend = false;
     Timer? timer;
@@ -120,7 +120,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
 
-            // Function to start the 1-minute countdown
+            // Function to start/restart the 1-minute countdown
             void startTimer() {
               setDialogState(() {
                 secondsRemaining = 60;
@@ -129,16 +129,26 @@ class _WebLoginPageState extends State<WebLoginPage> {
               timer?.cancel();
               timer = Timer.periodic(const Duration(seconds: 1), (t) {
                 if (secondsRemaining == 0) {
-                  setDialogState(() { t.cancel(); canResend = true; });
+                  setDialogState(() {
+                    t.cancel();
+                    canResend = true;
+                  });
                 } else {
-                  setDialogState(() { secondsRemaining--; });
+                  setDialogState(() {
+                    secondsRemaining--;
+                  });
                 }
               });
             }
 
-            // Step 1: Send OTP
+            // Step 1: Send OTP (with Email Validation Check)
             Future<void> handleSendOtp() async {
-              if (emailController.text.isEmpty) return;
+              if (emailController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please enter your email")));
+                return;
+              }
+
               setDialogState(() => isApiLoading = true);
               try {
                 final res = await http.post(
@@ -146,18 +156,25 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   headers: {'Content-Type': 'application/json'},
                   body: jsonEncode({
                     'email': emailController.text.trim().toLowerCase(),
-                    'type': 'send_otp'
+                    // CRITICAL: Type changed to trigger User Existence Check in Java
+                    'type': 'forgot_password_otp'
                   }),
                 );
+
                 final data = jsonDecode(res.body);
-                if (data['status'] == 'success') {
+
+                if (res.statusCode == 200 && data['status'] == 'success') {
                   startTimer();
                   setDialogState(() => currentStep = 2);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'])));
+                  // This will catch the 404 "email not registered" error from Java
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(data['message'] ?? "Error sending OTP")),
+                  );
                 }
               } catch (e) {
-                print("Error: $e");
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Connection Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
@@ -178,35 +195,45 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   }),
                 );
                 final data = jsonDecode(res.body);
-                if (data['status'] == 'success') {
+                if (res.statusCode == 200 && data['status'] == 'success') {
                   setDialogState(() => currentStep = 3);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'])));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(data['message'] ?? "Invalid OTP")));
                 }
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
             }
 
-            // Step 3: Final Reset
+            // Step 3: Final Password Update
             Future<void> handleResetPassword() async {
-              if (newPasswordController.text != confirmPasswordController.text) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+              final pwd = newPasswordController.text.trim();
+              final confirmPwd = confirmPasswordController.text.trim();
+
+              if (pwd.isEmpty || pwd != confirmPwd) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Passwords do not match!")));
                 return;
               }
+
               setDialogState(() => isApiLoading = true);
               try {
                 final res = await http.post(
                   Uri.parse('${ApiConfig.baseUrl}/forgotpassword'),
                   headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                  body: 'email=${Uri.encodeComponent(emailController.text.trim())}&newPassword=${Uri.encodeComponent(newPasswordController.text.trim())}',
+                  body: 'email=${Uri.encodeComponent(emailController.text.trim().toLowerCase())}&newPassword=${Uri.encodeComponent(pwd)}',
                 );
+
                 final data = jsonDecode(res.body);
-                if (data['status'] == 'success') {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password changed successfully!")));
+                if (res.statusCode == 200 && data['status'] == 'success') {
+                  timer?.cancel();
+                  Navigator.pop(context); // Close Dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Password updated successfully!")));
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'])));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(data['message'] ?? "Reset failed")));
                 }
               } finally {
                 setDialogState(() => isApiLoading = false);
@@ -218,7 +245,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Text(
                 currentStep == 1 ? "Forgot Password" : currentStep == 2 ? "Verify OTP" : "Set New Password",
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               content: SizedBox(
                 width: 400,
@@ -226,22 +253,35 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (currentStep == 1) ...[
-                      const Text("Enter your registered email to receive an OTP.", style: TextStyle(color: Colors.white70)),
+                      const Text("Enter your registered email. We will send a 6-digit code to verify your identity.",
+                          style: TextStyle(color: Colors.white70), textAlign: TextAlign.center),
                       const SizedBox(height: 20),
                       _dialogTextField(emailController, "Registered Email", Icons.email),
                     ] else if (currentStep == 2) ...[
-                      Text("OTP sent to ${emailController.text}", style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center),
+                      Text("We've sent a code to ${emailController.text}",
+                          style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center),
                       const SizedBox(height: 20),
-                      _dialogTextField(otpController, "Enter 6-Digit OTP", Icons.lock_clock),
+                      _dialogTextField(otpController, "6-Digit OTP", Icons.security),
+                      const SizedBox(height: 10),
                       TextButton(
                         onPressed: canResend ? handleSendOtp : null,
                         child: Text(canResend ? "Resend OTP" : "Resend in ${secondsRemaining}s",
-                            style: TextStyle(color: canResend ? Colors.white : Colors.white38)),
+                            style: TextStyle(color: canResend ? Colors.white : Colors.white38, fontWeight: FontWeight.bold)),
                       ),
                     ] else if (currentStep == 3) ...[
-                      _dialogTextField(newPasswordController, "New Password", Icons.lock, obscure: !showPassword),
+                      _dialogTextField(newPasswordController, "New Password", Icons.lock_outline, obscure: !showPassword),
                       const SizedBox(height: 15),
-                      _dialogTextField(confirmPasswordController, "Confirm Password", Icons.check_circle, obscure: !showPassword),
+                      _dialogTextField(confirmPasswordController, "Confirm Password", Icons.lock_reset, obscure: !showPassword),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: showPassword,
+                            onChanged: (val) => setDialogState(() => showPassword = val!),
+                            side: const BorderSide(color: Colors.white70),
+                          ),
+                          const Text("Show Password", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        ],
+                      ),
                     ],
                   ],
                 ),
@@ -256,7 +296,11 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 else
                   ElevatedButton(
                     onPressed: currentStep == 1 ? handleSendOtp : currentStep == 2 ? handleVerifyOtp : handleResetPassword,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent[700], foregroundColor: Colors.black),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.greenAccent[700],
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+                    ),
                     child: Text(currentStep == 1 ? "Next" : currentStep == 2 ? "Verify" : "Reset Password"),
                   ),
               ],
@@ -267,7 +311,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
     );
   }
 
-// Helper Widget for Dialog TextFields
+// Helper Widget for UI consistency
   Widget _dialogTextField(TextEditingController controller, String label, IconData icon, {bool obscure = false}) {
     return TextField(
       controller: controller,
@@ -278,8 +322,9 @@ class _WebLoginPageState extends State<WebLoginPage> {
         labelStyle: const TextStyle(color: Colors.white70),
         prefixIcon: Icon(icon, color: Colors.white70),
         filled: true,
-        fillColor: Colors.white10,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        fillColor: Colors.white.withOpacity(0.1),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.white)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.white24)),
       ),
     );
   }
