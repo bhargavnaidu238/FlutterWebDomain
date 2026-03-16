@@ -28,7 +28,6 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
 
   bool isLoading = false;
 
-  // Step 1: Trigger OTP via Email
   Future<void> sendOtpAndProceed() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -36,10 +35,15 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
 
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/send-email-otp');
+
+      // Sending as JSON to match the EmailHandler logic
       final res = await http.post(
         url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'email=${Uri.encodeComponent(emailController.text.trim())}',
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': emailController.text.trim(),
+          'type': 'send_otp'
+        }),
       );
 
       final data = json.decode(res.body);
@@ -77,6 +81,7 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
     }
   }
 
+  // Reuse the buildTextField helper from earlier...
   Widget buildTextField({
     required TextEditingController controller,
     required String label,
@@ -91,10 +96,9 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : const SizedBox(),
+        prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : null,
         filled: true,
         fillColor: Colors.white.withOpacity(0.1),
-        errorStyle: const TextStyle(color: Colors.redAccent),
         focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white70), borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white38), borderRadius: BorderRadius.circular(12)),
       ),
@@ -159,11 +163,6 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
                     ),
                     child: const Text("Next", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const WebLoginPage())),
-                    child: const Text("Already have an account? Login", style: TextStyle(color: Colors.white70)),
-                  ),
                 ],
               ),
             ),
@@ -189,38 +188,39 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   Future<void> verifyAndRegister() async {
     if (otpController.text.isEmpty) return;
-
     setState(() => isLoading = true);
 
     try {
-      // Step 2: Verify OTP
-      final verifyUrl = Uri.parse('${ApiConfig.baseUrl}/verify-email-otp');
+      // Step 1: Verify OTP first using the new EmailHandler logic
       final verifyRes = await http.post(
-        verifyUrl,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'email=${Uri.encodeComponent(widget.userData['email']!)}&otp=${Uri.encodeComponent(otpController.text.trim())}',
+        Uri.parse('${ApiConfig.baseUrl}/verify-email-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': widget.userData['email'],
+          'otp': otpController.text.trim(),
+          'type': 'verify_otp'
+        }),
       );
 
       final verifyData = json.decode(verifyRes.body);
 
       if (verifyRes.statusCode == 200 && verifyData['status'] == 'success') {
-        // Step 3: OTP Verified, now perform actual Registration
-        final regUrl = Uri.parse('${ApiConfig.baseUrl}/registerlogin');
-        final body = widget.userData.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
-
+        // Step 2: Final Registration
+        // Note: Backend handleRegister expects form-urlencoded according to your previous snippet
         final regRes = await http.post(
-          regUrl,
+          Uri.parse('${ApiConfig.baseUrl}/registerlogin'),
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body: body,
+          body: {
+            ...widget.userData,
+            'otp': otpController.text.trim(),
+          },
         );
 
         final regData = json.decode(regRes.body);
-
-        if (regRes.statusCode == 200 && regData['status'] == 'success') {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Registration Successful! Welcome Email Sent.")));
+        if (regRes.statusCode == 200) {
           Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WebLoginPage()), (route) => false);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(regData['message'] ?? "Registration failed after verification")));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(regData['message'] ?? "Reg failed")));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(verifyData['message'] ?? "Invalid OTP")));
