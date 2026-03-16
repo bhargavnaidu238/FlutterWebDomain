@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'partner_portal/web_screens/web_login.dart';
 import 'partner_portal/web_screens/web_register.dart';
 import 'partner_portal/web_screens/web_dashboard_page.dart';
@@ -11,9 +10,7 @@ import 'services/api_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await _initializeSupabaseFromBackend();
-
   runApp(const MyApp());
 }
 

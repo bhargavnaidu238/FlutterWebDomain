@@ -182,7 +182,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       return;
     }
 
-    // ✅ FIX: Added compression/quality hint if the picker supports it
     final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
         allowMultiple: true,
@@ -194,7 +193,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         localImages.putIfAbsent(category, () => []);
         for (var file in result.files) {
           if (localImages[category]!.length < 10 && file.bytes != null) {
-            // ✅ FIX: Alert user if image is too large (e.g., > 3MB)
             if (file.size > 3 * 1024 * 1024) {
               _showSnack("${file.name} is too large. Please select images under 3MB.");
               continue;
@@ -250,7 +248,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       Map<String, List<String>> imageMap = {};
       bool hasNewImages = false;
 
-      // ✅ FIX: Process images with size awareness to prevent Java Heap Overflow
       for (var entry in localImages.entries) {
         String cat = entry.key;
         List<Uint8List> bytesList = entry.value;
@@ -290,7 +287,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         _showSnack("Error: ${result['message']}");
       }
     } catch (e) {
-      // If it's a memory issue, it might manifest as a connection reset
       _showSnack("Error: Payload may be too large for the server. Try fewer/smaller images.");
       print("Save Error: $e");
     } finally {

@@ -156,7 +156,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   headers: {'Content-Type': 'application/json'},
                   body: jsonEncode({
                     'email': emailController.text.trim().toLowerCase(),
-                    // CRITICAL: Type changed to trigger User Existence Check in Java
                     'type': 'forgot_password_otp'
                   }),
                 );

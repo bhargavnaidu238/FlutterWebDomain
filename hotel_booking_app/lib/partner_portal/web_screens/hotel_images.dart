@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -45,7 +44,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   final Map<String, List<String>> uploadedUrls = {};
   final Map<String, List<_LocalImage>> localImages = {};
 
-  // ✅ PREVENTS SERVER CRASH: Files over 3MB are filtered out before upload
+  // PREVENTS SERVER CRASH: Files over 3MB are filtered out before upload
   final int maxFileSizeBytes = 3 * 1024 * 1024;
 
   bool _isUploading = false;
@@ -95,7 +94,6 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
     }
 
     setState(() {});
-    // Trigger upload immediately after picking
     if (localImages[category]!.isNotEmpty) {
       await _uploadBatch(category);
     }
@@ -136,7 +134,6 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
         for (final img in batch) {
           final fileName = "${widget.partnerId}/${widget.hotelId}/$category/${DateTime.now().millisecondsSinceEpoch}_${img.name}";
 
-          // Upload binary directly to Supabase Storage
           await supabase.storage.from(bucketName).uploadBinary(fileName, img.bytes!);
 
           // Generate the Public URL
@@ -147,7 +144,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
       setState(() {
         uploadedUrls[category]!.addAll(newUrls);
-        localImages[category]!.clear(); // Clear local bytes once uploaded to save RAM
+        localImages[category]!.clear();
       });
 
       ScaffoldMessenger.of(context).showSnackBar(

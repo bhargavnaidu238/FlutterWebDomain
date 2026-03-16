@@ -5,7 +5,6 @@ class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
   // ===================== Social Media icons Section or Row ========================
-
   Widget _socialIcon(IconData icon, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:async'; // Required for Timer logic
+import 'dart:async';
 import 'web_login.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 
@@ -65,7 +65,7 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
           'state': stateController.text.trim(),
           'country': countryController.text.trim(),
           'pincode': pincodeController.text.trim(),
-          'gst_number': gstController.text.trim(),
+          'gst_number': gstController.text.trim().toUpperCase(),
         };
 
         if (!mounted) return;

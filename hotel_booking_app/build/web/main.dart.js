@@ -103067,7 +103067,7 @@ return A.A(A.el(l,B.K.iN(k),null,d),$async$zS)
 case 7:j=a0
 d=j
 i=B.K.b4(0,A.dj(A.di(d.e)).b4(0,d.w))
-if(j.b===200&&J.f(J.Y(i,"status"),"success")){h=A.P(["partner_name",B.c.b7(m.e.a.a),"business_name",B.c.b7(m.f.a.a),"email",B.c.b7(f.a.a).toLowerCase(),"password",B.c.b7(m.w.a.a),"contact_number",B.c.b7(m.x.a.a),"address",B.c.b7(m.y.a.a),"city",B.c.b7(m.z.a.a),"state",B.c.b7(m.Q.a.a),"country",B.c.b7(m.as.a.a),"pincode",B.c.b7(m.at.a.a),"gst_number",B.c.b7(m.ax.a.a)],e,e)
+if(j.b===200&&J.f(J.Y(i,"status"),"success")){h=A.P(["partner_name",B.c.b7(m.e.a.a),"business_name",B.c.b7(m.f.a.a),"email",B.c.b7(f.a.a).toLowerCase(),"password",B.c.b7(m.w.a.a),"contact_number",B.c.b7(m.x.a.a),"address",B.c.b7(m.y.a.a),"city",B.c.b7(m.z.a.a),"state",B.c.b7(m.Q.a.a),"country",B.c.b7(m.as.a.a),"pincode",B.c.b7(m.at.a.a),"gst_number",B.c.b7(m.ax.a.a).toUpperCase()],e,e)
 f=m.c
 if(f==null){n=[1]
 s=5

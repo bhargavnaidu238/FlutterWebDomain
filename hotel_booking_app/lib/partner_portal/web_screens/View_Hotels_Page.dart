@@ -42,7 +42,6 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
 
-            // Re-aligned to match the DB schema order provided (22 columns)
             hotels.add({
               "hotel_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',

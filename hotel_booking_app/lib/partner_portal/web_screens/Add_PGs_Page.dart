@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +11,6 @@ import 'package:hotel_booking_app/services/api_service.dart';
 class AddPGSPage extends StatefulWidget {
   final String partnerId;
   final Map<String, dynamic>? pgData;
-
   const AddPGSPage({required this.partnerId, Key? key, this.pgData}) : super(key: key);
 
   @override
@@ -32,7 +30,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   String? selectedPGType;
   final List<String> pgTypes = ['Gents', 'Ladies', 'Co-Live'];
 
-  // Standard Form Fields - Description Removed
   final List<String> fields = [
     "PG Name", "Address", "City", "State", "Country", "Pincode",
     "Total Single Sharing Rooms", "Total Double Sharing Rooms", "Total Three Sharing Rooms",
@@ -85,7 +82,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     for (var a in amenityOptions) amenitySelected[a] = false;
     for (var p in policyOptions) policySelected[p] = false;
 
-    // Fixed Image Categories
     localImages["Facade"] = [];
     localImages["Lobby/Entrance"] = [];
 
@@ -95,7 +91,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   void _populateExistingData() {
     final data = widget.pgData!;
 
-    // Map API keys to Capitalized keys used in UI
     controllers["PG Name"]?.text = data['pg_name']?.toString() ?? '';
     controllers["Address"]?.text = data['address']?.toString() ?? '';
     controllers["City"]?.text = data['city']?.toString() ?? '';

@@ -135,7 +135,6 @@ class _FinancePageState extends State<FinancePage> {
     }
   }
 
-
   // ---------- Utilities ----------
   double _parseDouble(dynamic val) {
     if (val == null) return 0.0;
@@ -417,7 +416,6 @@ class _FinancePageState extends State<FinancePage> {
       );
     }
   }
-
 
   // ---------- Transactions: CSV Export ----------
   Future<void> exportTransactionsCSV() async {
