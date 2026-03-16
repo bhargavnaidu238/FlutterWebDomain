@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'web_register.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
+import 'dart:async';
 
 class WebLoginPage extends StatefulWidget {
   const WebLoginPage({Key? key}) : super(key: key);
@@ -99,134 +99,188 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
   // ===================== FORGOT PASSWORD =====================
   Future<void> forgotPassword() async {
-    final TextEditingController emailResetController =
-    TextEditingController();
-    final TextEditingController newPasswordController =
-    TextEditingController();
-    bool showNewPassword = false;
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController otpController = TextEditingController();
+    final TextEditingController newPasswordController = TextEditingController();
+    final TextEditingController confirmPasswordController = TextEditingController();
+
+    int currentStep = 1; // 1: Email, 2: OTP, 3: New Password
+    bool showPassword = false;
+    bool isApiLoading = false;
+
+    // Timer for Resend OTP
+    int secondsRemaining = 60;
+    bool canResend = false;
+    Timer? timer;
 
     await showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.green[900]?.withOpacity(0.9),
-          title: const Text("Reset Password",
-              style: TextStyle(color: Colors.white)),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: emailResetController,
-                  decoration: InputDecoration(
-                    labelText: "Registered Email",
-                    labelStyle:
-                    const TextStyle(color: Colors.white70),
-                    filled: true,
-                    fillColor: Colors.white10,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                ),
-                const SizedBox(height: 15),
-                StatefulBuilder(
-                  builder: (context, setStateSB) {
-                    return TextField(
-                      controller: newPasswordController,
-                      obscureText: !showNewPassword,
-                      decoration: InputDecoration(
-                        labelText: "New Password",
-                        labelStyle:
-                        const TextStyle(color: Colors.white70),
-                        filled: true,
-                        fillColor: Colors.white10,
-                        border: OutlineInputBorder(
-                          borderRadius:
-                          BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            showNewPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: Colors.white70,
-                          ),
-                          onPressed: () {
-                            setStateSB(() {
-                              showNewPassword =
-                              !showNewPassword;
-                            });
-                          },
-                        ),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+
+            // Function to start the 1-minute countdown
+            void startTimer() {
+              setDialogState(() {
+                secondsRemaining = 60;
+                canResend = false;
+              });
+              timer?.cancel();
+              timer = Timer.periodic(const Duration(seconds: 1), (t) {
+                if (secondsRemaining == 0) {
+                  setDialogState(() { t.cancel(); canResend = true; });
+                } else {
+                  setDialogState(() { secondsRemaining--; });
+                }
+              });
+            }
+
+            // Step 1: Send OTP
+            Future<void> handleSendOtp() async {
+              if (emailController.text.isEmpty) return;
+              setDialogState(() => isApiLoading = true);
+              try {
+                final res = await http.post(
+                  Uri.parse('${ApiConfig.baseUrl}/send-email-otp'),
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode({
+                    'email': emailController.text.trim().toLowerCase(),
+                    'type': 'send_otp'
+                  }),
+                );
+                final data = jsonDecode(res.body);
+                if (data['status'] == 'success') {
+                  startTimer();
+                  setDialogState(() => currentStep = 2);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'])));
+                }
+              } catch (e) {
+                print("Error: $e");
+              } finally {
+                setDialogState(() => isApiLoading = false);
+              }
+            }
+
+            // Step 2: Verify OTP
+            Future<void> handleVerifyOtp() async {
+              if (otpController.text.isEmpty) return;
+              setDialogState(() => isApiLoading = true);
+              try {
+                final res = await http.post(
+                  Uri.parse('${ApiConfig.baseUrl}/verify-email-otp'),
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode({
+                    'email': emailController.text.trim().toLowerCase(),
+                    'otp': otpController.text.trim(),
+                    'type': 'verify_otp'
+                  }),
+                );
+                final data = jsonDecode(res.body);
+                if (data['status'] == 'success') {
+                  setDialogState(() => currentStep = 3);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'])));
+                }
+              } finally {
+                setDialogState(() => isApiLoading = false);
+              }
+            }
+
+            // Step 3: Final Reset
+            Future<void> handleResetPassword() async {
+              if (newPasswordController.text != confirmPasswordController.text) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+                return;
+              }
+              setDialogState(() => isApiLoading = true);
+              try {
+                final res = await http.post(
+                  Uri.parse('${ApiConfig.baseUrl}/forgotpassword'),
+                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                  body: 'email=${Uri.encodeComponent(emailController.text.trim())}&newPassword=${Uri.encodeComponent(newPasswordController.text.trim())}',
+                );
+                final data = jsonDecode(res.body);
+                if (data['status'] == 'success') {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password changed successfully!")));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'])));
+                }
+              } finally {
+                setDialogState(() => isApiLoading = false);
+              }
+            }
+
+            return AlertDialog(
+              backgroundColor: Colors.green[900]?.withOpacity(0.95),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                currentStep == 1 ? "Forgot Password" : currentStep == 2 ? "Verify OTP" : "Set New Password",
+                style: const TextStyle(color: Colors.white),
+              ),
+              content: SizedBox(
+                width: 400,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (currentStep == 1) ...[
+                      const Text("Enter your registered email to receive an OTP.", style: TextStyle(color: Colors.white70)),
+                      const SizedBox(height: 20),
+                      _dialogTextField(emailController, "Registered Email", Icons.email),
+                    ] else if (currentStep == 2) ...[
+                      Text("OTP sent to ${emailController.text}", style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center),
+                      const SizedBox(height: 20),
+                      _dialogTextField(otpController, "Enter 6-Digit OTP", Icons.lock_clock),
+                      TextButton(
+                        onPressed: canResend ? handleSendOtp : null,
+                        child: Text(canResend ? "Resend OTP" : "Resend in ${secondsRemaining}s",
+                            style: TextStyle(color: canResend ? Colors.white : Colors.white38)),
                       ),
-                      style:
-                      const TextStyle(color: Colors.white),
-                    );
-                  },
+                    ] else if (currentStep == 3) ...[
+                      _dialogTextField(newPasswordController, "New Password", Icons.lock, obscure: !showPassword),
+                      const SizedBox(height: 15),
+                      _dialogTextField(confirmPasswordController, "Confirm Password", Icons.check_circle, obscure: !showPassword),
+                    ],
+                  ],
                 ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () { timer?.cancel(); Navigator.pop(context); },
+                  child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
+                ),
+                if (isApiLoading)
+                  const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: CircularProgressIndicator(color: Colors.white))
+                else
+                  ElevatedButton(
+                    onPressed: currentStep == 1 ? handleSendOtp : currentStep == 2 ? handleVerifyOtp : handleResetPassword,
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent[700], foregroundColor: Colors.black),
+                    child: Text(currentStep == 1 ? "Next" : currentStep == 2 ? "Verify" : "Reset Password"),
+                  ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel",
-                  style:
-                  TextStyle(color: Colors.white70)),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final email =
-                emailResetController.text.trim();
-                final newPwd =
-                newPasswordController.text.trim();
-
-                if (email.isEmpty || newPwd.isEmpty) {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(const SnackBar(
-                      content:
-                      Text("Please fill both fields")));
-                  return;
-                }
-
-                try {
-                  final url = Uri.parse(
-                      '${ApiConfig.baseUrl}/forgotpassword');
-
-                  final res = await http.post(
-                    url,
-                    headers: {
-                      'Content-Type':
-                      'application/x-www-form-urlencoded'
-                    },
-                    body:
-                    'email=${Uri.encodeComponent(email)}&newPassword=${Uri.encodeComponent(newPwd)}',
-                  );
-
-                  final data = json.decode(res.body);
-
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(
-                      content:
-                      Text(data['message'] ??
-                          "Error")));
-
-                  if (data['status'] == "success")
-                    Navigator.pop(context);
-                } catch (e) {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                      SnackBar(content: Text("Error: $e")));
-                }
-              },
-              child: const Text("Reset Password"),
-            ),
-          ],
+            );
+          },
         );
       },
+    );
+  }
+
+// Helper Widget for Dialog TextFields
+  Widget _dialogTextField(TextEditingController controller, String label, IconData icon, {bool obscure = false}) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white10,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      ),
     );
   }
 
