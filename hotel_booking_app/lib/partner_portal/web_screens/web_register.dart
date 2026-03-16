@@ -206,13 +206,10 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     setState(() => isLoading = true);
 
     try {
-      // Step 1: Verify OTP using JSON
+      // STEP 1: VERIFY OTP
       final verifyRes = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/verify-email-otp'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': widget.userData['email'],
           'otp': otpController.text.trim(),
@@ -223,27 +220,44 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       final verifyData = json.decode(verifyRes.body);
 
       if (verifyRes.statusCode == 200 && verifyData['status'] == 'success') {
-        // Step 2: Final Registration using Form-UrlEncoded as required by handleRegister
+
+        // STEP 2: FINAL REGISTRATION
+        // Using a Map for the body automatically sets it to x-www-form-urlencoded
         final regRes = await http.post(
           Uri.parse('${ApiConfig.baseUrl}/registerlogin'),
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
           body: {
-            ...widget.userData,
+            'partner_name': widget.userData['partner_name'] ?? '',
+            'business_name': widget.userData['business_name'] ?? '',
+            'email': widget.userData['email'] ?? '',
+            'password': widget.userData['password'] ?? '',
+            'contact_number': widget.userData['contact_number'] ?? '',
+            'address': widget.userData['address'] ?? '',
+            'city': widget.userData['city'] ?? '',
+            'state': widget.userData['state'] ?? '',
+            'country': widget.userData['country'] ?? '',
+            'pincode': widget.userData['pincode'] ?? '',
+            'gst_number': widget.userData['gst_number'] ?? '',
             'otp': otpController.text.trim(),
           },
         );
 
-        final regData = json.decode(regRes.body);
-        if (regRes.statusCode == 200 && regData['status'] == 'success') {
+        // Log response for debugging
+        print("Registration Response: ${regRes.body}");
+
+        if (regRes.statusCode == 200) {
           if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Registration Successful!")),
+          );
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const WebLoginPage()),
                 (route) => false,
           );
         } else {
+          final errorData = json.decode(regRes.body);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(regData['message'] ?? "Registration failed")),
+            SnackBar(content: Text(errorData['message'] ?? "Registration Failed")),
           );
         }
       } else {
