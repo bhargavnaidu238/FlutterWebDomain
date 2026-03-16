@@ -36,14 +36,19 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/send-email-otp');
 
-      // Sending as JSON to match the EmailHandler logic
+      // Ensure we send a clean JSON object
+      final Map<String, String> requestData = {
+        'email': emailController.text.trim().toLowerCase(),
+        'type': 'send_otp'
+      };
+
       final res = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': emailController.text.trim(),
-          'type': 'send_otp'
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode(requestData),
       );
 
       final data = json.decode(res.body);
@@ -52,7 +57,7 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
         final userData = {
           'partner_name': nameController.text.trim(),
           'business_name': businessController.text.trim(),
-          'email': emailController.text.trim(),
+          'email': emailController.text.trim().toLowerCase(),
           'password': passwordController.text.trim(),
           'contact_number': phoneController.text.trim(),
           'address': addressController.text.trim(),
@@ -63,6 +68,7 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
           'gst_number': gstController.text.trim(),
         };
 
+        if (!mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -75,13 +81,14 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
-  // Reuse the buildTextField helper from earlier...
   Widget buildTextField({
     required TextEditingController controller,
     required String label,
@@ -99,8 +106,14 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
         prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : null,
         filled: true,
         fillColor: Colors.white.withOpacity(0.1),
-        focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white70), borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white38), borderRadius: BorderRadius.circular(12)),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.white70),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.white38),
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
       style: const TextStyle(color: Colors.white),
     );
@@ -128,7 +141,10 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
               ),
               child: Column(
                 children: [
-                  const Text("Partner Registration", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const Text(
+                    "Partner Registration",
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
                   const SizedBox(height: 30),
                   LayoutBuilder(
                     builder: (context, constraints) {
@@ -173,7 +189,6 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
   }
 }
 
-// --- OTP VERIFICATION PAGE ---
 class OTPVerificationPage extends StatefulWidget {
   final Map<String, String> userData;
   const OTPVerificationPage({Key? key, required this.userData}) : super(key: key);
@@ -191,11 +206,14 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     setState(() => isLoading = true);
 
     try {
-      // Step 1: Verify OTP first using the new EmailHandler logic
+      // Step 1: Verify OTP using JSON
       final verifyRes = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/verify-email-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
           'email': widget.userData['email'],
           'otp': otpController.text.trim(),
           'type': 'verify_otp'
@@ -205,8 +223,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       final verifyData = json.decode(verifyRes.body);
 
       if (verifyRes.statusCode == 200 && verifyData['status'] == 'success') {
-        // Step 2: Final Registration
-        // Note: Backend handleRegister expects form-urlencoded according to your previous snippet
+        // Step 2: Final Registration using Form-UrlEncoded as required by handleRegister
         final regRes = await http.post(
           Uri.parse('${ApiConfig.baseUrl}/registerlogin'),
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -217,18 +234,29 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         );
 
         final regData = json.decode(regRes.body);
-        if (regRes.statusCode == 200) {
-          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WebLoginPage()), (route) => false);
+        if (regRes.statusCode == 200 && regData['status'] == 'success') {
+          if (!mounted) return;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const WebLoginPage()),
+                (route) => false,
+          );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(regData['message'] ?? "Reg failed")));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(regData['message'] ?? "Registration failed")),
+          );
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(verifyData['message'] ?? "Invalid OTP")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(verifyData['message'] ?? "Invalid OTP")),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -236,16 +264,24 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00C853), Color(0xFFB2FF59)])),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(colors: [Color(0xFF00C853), Color(0xFFB2FF59)]),
+        ),
         alignment: Alignment.center,
         child: Container(
           width: 400,
           padding: const EdgeInsets.all(40),
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("OTP Verification", style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),
+              const Text(
+                "OTP Verification",
+                style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 20),
               TextField(
                 controller: otpController,
@@ -256,7 +292,10 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   hintStyle: const TextStyle(color: Colors.white38),
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.1),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.white38)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white38),
+                  ),
                 ),
               ),
               const SizedBox(height: 30),
@@ -264,7 +303,10 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   ? const CircularProgressIndicator(color: Colors.white)
                   : ElevatedButton(
                 onPressed: verifyAndRegister,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00C853), minimumSize: const Size(double.infinity, 50)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00C853),
+                  minimumSize: const Size(double.infinity, 50),
+                ),
                 child: const Text("Register", style: TextStyle(color: Colors.white)),
               ),
             ],
