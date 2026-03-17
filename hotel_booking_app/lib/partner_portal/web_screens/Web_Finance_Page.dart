@@ -350,48 +350,36 @@ class _FinancePageState extends State<FinancePage> {
     double pending = _parseDouble(
         financeData['pending_payout'] ?? financeData['PendingPayout'] ?? 0);
 
-    // ❗ Block empty request
+    // 1. Validation Checks
     if (payoutAmountController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter withdrawal amount")),
-      );
+      _showSnack("Please enter withdrawal amount");
       return;
     }
 
     double? requestedAmount = double.tryParse(payoutAmountController.text.trim());
     if (requestedAmount == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid amount entered")),
-      );
+      _showSnack("Invalid amount entered");
       return;
     }
 
     if (requestedAmount > pending) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                "Requested amount cannot exceed available pending ${_formatCurrency(pending)}")),
-      );
+      _showSnack("Requested amount cannot exceed available pending ${_formatCurrency(pending)}");
       return;
     }
 
     if (requestedAmount < minimumWithdrawal) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                "Minimum withdrawal is ${_formatCurrency(minimumWithdrawal)}")),
-      );
+      _showSnack("Minimum withdrawal is ${_formatCurrency(minimumWithdrawal)}");
       return;
     }
 
-    // Show Loading
+    // 2. Start Loading State
     setState(() => isPayoutLoading = true);
 
     final body = {
       'partner_id': widget.partnerId,
       'amount': requestedAmount.toString(),
       'comments': commentsController.text.trim().isEmpty
-          ? "No comments provided"
+          ? "User Requested Payment"
           : commentsController.text.trim(),
     };
 
@@ -400,41 +388,64 @@ class _FinancePageState extends State<FinancePage> {
         Uri.parse('${ApiConfig.baseUrl}/requestPayout'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body,
-      );
+      ).timeout(const Duration(seconds: 15)); // Added timeout for better UX
 
-      final data = jsonDecode(res.body);
+      // 3. SECURE JSON DECODING
+      // Only decode if the server actually sent JSON
+      if (res.headers['content-type']?.contains('application/json') ?? false) {
+        final data = jsonDecode(res.body);
 
-      if (data['status'] == 'success') {
-        _showSuccessDialog(requestedAmount); // Custom feedback
-        fetchFinanceData();
-        fetchTransactions();
-        commentsController.clear();
-        payoutAmountController.clear();
+        if (res.statusCode == 200 && data['status'] == 'success') {
+          _showSuccessDialog(requestedAmount);
+          fetchFinanceData();
+          fetchTransactions();
+          commentsController.clear();
+          payoutAmountController.clear();
+        } else {
+          _showSnack(data['message'] ?? "Server rejected the request");
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Error processing request")),
-        );
+        // If we got here, the backend probably crashed with a 500 error and sent raw text
+        _showSnack("Server Error (${res.statusCode}): Please check backend logs.");
+        print("Raw Server Response: ${res.body}");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Connection Error: $e")),
-      );
+      _showSnack("Connection Error: $e");
     } finally {
-      setState(() => isPayoutLoading = false);
+      if (mounted) setState(() => isPayoutLoading = false);
     }
+  }
+
+// Helper to keep the main function clean
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   void _showSuccessDialog(double amount) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Icon(Icons.check_circle, color: Colors.green, size: 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Column(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 60),
+            SizedBox(height: 10),
+            Text("Request Submitted"),
+          ],
+        ),
         content: Text(
-          "Request for ${_formatCurrency(amount)} submitted!\n\nA detailed confirmation email has been sent to your registered address.",
+          "Your request for ${_formatCurrency(amount)} was successful.\n\nA confirmation email has been sent to your registered ID.",
           textAlign: TextAlign.center,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK"))
+          Center(
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
+              child: const Text("Got it", style: TextStyle(color: Colors.white)),
+            ),
+          )
         ],
       ),
     );
