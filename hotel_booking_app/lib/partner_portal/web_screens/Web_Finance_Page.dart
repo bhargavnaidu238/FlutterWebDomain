@@ -47,7 +47,7 @@ class _FinancePageState extends State<FinancePage> {
   final List<String> payoutTypeOptions = [
     "Daily",
     "Weekly",
-    "Fornight",
+    "Fortnight",
     "Monthly",
     "Quarterly"
   ];
@@ -315,32 +315,38 @@ class _FinancePageState extends State<FinancePage> {
 
   // ---------- Update Bank Details ----------
   Future<void> updateBankDetails() async {
+    // Synchronized keys with Java Backend (Case Sensitive)
     final body = {
       'partner_id': widget.partnerId,
-      'account_holder_name': accountHolderController.text.trim(),
-      'bank_name': bankNameController.text.trim(),
-      'account_number': accountNumberController.text.trim(),
-      'ifsc_swift': ifscController.text.trim(),
-      'pan_tax_id': panController.text.trim(),
-      'account_type': selectedAccountType,
-      'payout_type': selectedPayoutType,
+      'Account_Holder_Name': accountHolderController.text.trim(),
+      'Bank_Name': bankNameController.text.trim(),
+      'Account_Number': accountNumberController.text.trim(),
+      'IFSC_SWIFT': ifscController.text.trim(),
+      'Account_Type': selectedAccountType, // e.g., "Savings"
+      'PAN_Tax_ID': panController.text.trim(),
+      'Payout_Type': selectedPayoutType,   // e.g., "Daily"
+      // 'auto_payout' isn't in your current Java table schema,
+      // but keeping it here if you add it later.
       'auto_payout': autoPayout ? '1' : '0',
     };
+
     try {
       final res = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/updateBankDetails'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body,
       );
+
       final data = jsonDecode(res.body);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(data['message']?.toString() ?? "Update complete")),
+        SnackBar(content: Text(data['message']?.toString() ?? "Update complete")),
       );
+
       if (data['status'] == 'success') fetchFinanceData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(content: Text("Network Error: $e")),
       );
     }
   }

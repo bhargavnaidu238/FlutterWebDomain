@@ -100343,7 +100343,7 @@ af(){var s,r,q=t.H7,p=A.c([],q)
 q=A.c([],q)
 s=$.ag()
 r=t.s
-return new A.IZ(A.r(t.N,t.z),p,q,new A.bc(B.I,s),new A.bc(B.I,s),new A.bc(B.I,s),new A.bc(B.I,s),new A.bc(B.I,s),new A.bc(B.I,s),new A.bc(B.I,s),A.c(["Daily","Weekly","Fornight","Monthly","Quarterly"],r),A.c(["Savings","Current"],r))}}
+return new A.IZ(A.r(t.N,t.z),p,q,new A.bc(B.I,s),new A.bc(B.I,s),new A.bc(B.I,s),new A.bc(B.I,s),new A.bc(B.I,s),new A.bc(B.I,s),new A.bc(B.I,s),A.c(["Daily","Weekly","Fortnight","Monthly","Quarterly"],r),A.c(["Savings","Current"],r))}}
 A.IZ.prototype={
 am(){this.aI()
 this.qv()
@@ -100461,12 +100461,12 @@ i=B.c.b7(o.at.a.a)
 h=B.c.b7(o.ax.a.a)
 g=B.c.b7(o.ay.a.a)
 f=B.c.b7(o.ch.a.a)
-e=B.c.b7(o.CW.a.a)
-d=o.db
+e=o.db
+d=B.c.b7(o.CW.a.a)
 c=o.dx
 b=o.dy?"1":"0"
 a=t.N
-a0=A.P(["partner_id",j,"account_holder_name",i,"bank_name",h,"account_number",g,"ifsc_swift",f,"pan_tax_id",e,"account_type",d,"payout_type",c,"auto_payout",b],a,a)
+a0=A.P(["partner_id",j,"Account_Holder_Name",i,"Bank_Name",h,"Account_Number",g,"IFSC_SWIFT",f,"Account_Type",e,"PAN_Tax_ID",d,"Payout_Type",c,"auto_payout",b],a,a)
 q=3
 s=6
 return A.A(A.el(A.c1(A.dS()+"/updateBankDetails",0,null),a0,null,A.P(["Content-Type","application/x-www-form-urlencoded"],a,a)),$async$G0)
@@ -100484,7 +100484,7 @@ break
 case 3:q=2
 a1=p.pop()
 l=A.ac(a1)
-o.c.R(t.q).f.b_(A.bJ(null,null,null,null,null,B.m,null,A.a3("Error: "+A.l(l),null,null,null,null,null,null),null,B.z,null,null,null,null,null,null,null,null,null,null))
+o.c.R(t.q).f.b_(A.bJ(null,null,null,null,null,B.m,null,A.a3("Network Error: "+A.l(l),null,null,null,null,null,null),null,B.z,null,null,null,null,null,null,null,null,null,null))
 s=5
 break
 case 2:s=1
