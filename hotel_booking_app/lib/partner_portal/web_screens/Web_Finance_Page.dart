@@ -16,6 +16,7 @@ class FinancePage extends StatefulWidget {
 class _FinancePageState extends State<FinancePage> {
   bool isLoading = true;
   bool bankExpanded = false;
+  bool isPayoutLoading = false;
 
   Map<String, dynamic> financeData = {};
   List<Map<String, dynamic>> transactions = [];
@@ -350,45 +351,48 @@ class _FinancePageState extends State<FinancePage> {
         financeData['pending_payout'] ?? financeData['PendingPayout'] ?? 0);
 
     // ❗ Block empty request
-    if (payoutAmountController.text
-        .trim()
-        .isEmpty) {
+    if (payoutAmountController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please enter withdrawal amount")),
+        const SnackBar(content: Text("Please enter withdrawal amount")),
       );
       return;
     }
 
-    double? requestedAmount = double.tryParse(
-        payoutAmountController.text.trim());
+    double? requestedAmount = double.tryParse(payoutAmountController.text.trim());
     if (requestedAmount == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Invalid amount entered")),
+        const SnackBar(content: Text("Invalid amount entered")),
       );
       return;
     }
 
     if (requestedAmount > pending) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(
-            "Requested amount cannot exceed available pending ${_formatCurrency(
-                pending)}")),
+        SnackBar(
+            content: Text(
+                "Requested amount cannot exceed available pending ${_formatCurrency(pending)}")),
       );
       return;
     }
 
     if (requestedAmount < minimumWithdrawal) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(
-            "Minimum withdrawal is ${_formatCurrency(minimumWithdrawal)}")),
+        SnackBar(
+            content: Text(
+                "Minimum withdrawal is ${_formatCurrency(minimumWithdrawal)}")),
       );
       return;
     }
 
+    // Show Loading
+    setState(() => isPayoutLoading = true);
+
     final body = {
       'partner_id': widget.partnerId,
       'amount': requestedAmount.toString(),
-      'comments': commentsController.text.trim(),
+      'comments': commentsController.text.trim().isEmpty
+          ? "No comments provided"
+          : commentsController.text.trim(),
     };
 
     try {
@@ -400,21 +404,40 @@ class _FinancePageState extends State<FinancePage> {
 
       final data = jsonDecode(res.body);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'] ?? "Error")),
-      );
-
       if (data['status'] == 'success') {
+        _showSuccessDialog(requestedAmount); // Custom feedback
         fetchFinanceData();
         fetchTransactions();
         commentsController.clear();
         payoutAmountController.clear();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Error processing request")),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(content: Text("Connection Error: $e")),
       );
+    } finally {
+      setState(() => isPayoutLoading = false);
     }
+  }
+
+  void _showSuccessDialog(double amount) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Icon(Icons.check_circle, color: Colors.green, size: 50),
+        content: Text(
+          "Request for ${_formatCurrency(amount)} submitted!\n\nA detailed confirmation email has been sent to your registered address.",
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK"))
+        ],
+      ),
+    );
   }
 
   // ---------- Transactions: CSV Export ----------
