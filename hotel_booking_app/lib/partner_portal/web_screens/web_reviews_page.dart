@@ -15,9 +15,14 @@ class WebReviewsPage extends StatefulWidget {
 }
 
 class _WebReviewsPageState extends State<WebReviewsPage> {
-  List<dynamic> reviews = [];
+  List<dynamic> allReviews = []; // Original data from DB
+  List<dynamic> displayedReviews = []; // Filtered/Sorted data for UI
   bool isLoading = true;
   double averageRating = 0.0;
+
+  // Filter States
+  String filterProperty = "All";
+  String sortOrder = "Recent";
 
   @override
   void initState() {
@@ -38,13 +43,14 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
         final decoded = jsonDecode(res.body);
         if (decoded['status'] == 'success') {
           setState(() {
-            reviews = decoded['data'];
-            if (reviews.isNotEmpty) {
+            allReviews = decoded['data'];
+            applyFilters(); // Initial sort/filter
+            if (allReviews.isNotEmpty) {
               double sum = 0;
-              for (var r in reviews) {
+              for (var r in allReviews) {
                 sum += (r['rating'] ?? 0);
               }
-              averageRating = sum / reviews.length;
+              averageRating = sum / allReviews.length;
             }
             isLoading = false;
           });
@@ -62,12 +68,31 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
     }
   }
 
+  // Logic to Filter and Sort the list locally
+  void applyFilters() {
+    setState(() {
+      // 1. Filter by Property Type
+      displayedReviews = allReviews.where((r) {
+        if (filterProperty == "All") return true;
+        return r['property_type'] == filterProperty;
+      }).toList();
+
+      // 2. Sort Logic
+      if (sortOrder == "Recent") {
+        displayedReviews.sort((a, b) => b['created_at'].compareTo(a['created_at']));
+      } else if (sortOrder == "High to Low") {
+        displayedReviews.sort((a, b) => b['rating'].compareTo(a['rating']));
+      } else if (sortOrder == "Low to High") {
+        displayedReviews.sort((a, b) => a['rating'].compareTo(b['rating']));
+      }
+    });
+  }
+
   void showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget buildReviewCard(Map<String, dynamic> review) {
-    // Correctly handles the property type badge
     bool isHotel = review['property_type'] == 'Hotel';
 
     return Card(
@@ -136,9 +161,16 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "User ID: ${review['user_id']}",
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                // CHANGED: Displaying User Name instead of User ID
+                Row(
+                  children: [
+                    Icon(Icons.person, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      review['user_name'] ?? "Anonymous User",
+                      style: TextStyle(color: Colors.grey.shade800, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
                 Text(
                   review['created_at']?.split('T')[0] ?? "",
@@ -190,6 +222,46 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
     );
   }
 
+  // Filter Bar Widget
+  Widget buildFilterBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      color: Colors.green.shade50,
+      child: Wrap(
+        spacing: 20,
+        runSpacing: 10,
+        children: [
+          // Filter by Type
+          DropdownButton<String>(
+            value: filterProperty,
+            underline: Container(),
+            icon: Icon(Icons.filter_list, color: Colors.green.shade700),
+            items: ["All", "Hotel", "PG"].map((String value) {
+              return DropdownMenuItem<String>(value: value, child: Text("Type: $value"));
+            }).toList(),
+            onChanged: (val) {
+              filterProperty = val!;
+              applyFilters();
+            },
+          ),
+          // Sort by Rating/Date
+          DropdownButton<String>(
+            value: sortOrder,
+            underline: Container(),
+            icon: Icon(Icons.sort, color: Colors.green.shade700),
+            items: ["Recent", "High to Low", "Low to High"].map((String value) {
+              return DropdownMenuItem<String>(value: value, child: Text("Sort: $value"));
+            }).toList(),
+            onChanged: (val) {
+              sortOrder = val!;
+              applyFilters();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     bool isMobile = MediaQuery.of(context).size.width < 800;
@@ -209,7 +281,6 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
           },
         ),
       ),
-      // Drawer added for mobile users to see the overall rating
       drawer: isMobile ? Drawer(child: buildSidebarContent()) : null,
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.green))
@@ -222,27 +293,27 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
               child: buildSidebarContent(),
             ),
           Expanded(
-            child: Container(
-              color: Colors.white,
-              child: reviews.isEmpty
-                  ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.comment_bank_outlined, size: 60, color: Colors.grey),
-                    SizedBox(height: 10),
-                    Text("No reviews found for your properties.",
-                        style: TextStyle(fontSize: 16, color: Colors.grey)),
-                  ],
+            child: Column(
+              children: [
+                buildFilterBar(), // Filter Bar at top of reviews
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
+                    child: displayedReviews.isEmpty
+                        ? const Center(
+                      child: Text("No reviews match your filter.",
+                          style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    )
+                        : ListView.builder(
+                      padding: const EdgeInsets.all(25),
+                      itemCount: displayedReviews.length,
+                      itemBuilder: (context, index) {
+                        return buildReviewCard(displayedReviews[index]);
+                      },
+                    ),
+                  ),
                 ),
-              )
-                  : ListView.builder(
-                padding: const EdgeInsets.all(25),
-                itemCount: reviews.length,
-                itemBuilder: (context, index) {
-                  return buildReviewCard(reviews[index]);
-                },
-              ),
+              ],
             ),
           ),
         ],
