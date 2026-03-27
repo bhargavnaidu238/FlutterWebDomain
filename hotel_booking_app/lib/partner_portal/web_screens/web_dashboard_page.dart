@@ -10,6 +10,7 @@ import 'View_Bookings_Page.dart';
 import 'about_us_page.dart';
 import 'Web_Finance_Page.dart';
 import 'View_PGs_Page.dart';
+import 'web_reviews_page.dart'; // Ensure this file exists
 import 'package:hotel_booking_app/services/api_service.dart';
 
 class WebDashboardPage extends StatefulWidget {
@@ -27,8 +28,9 @@ class WebDashboardPage extends StatefulWidget {
 class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerProviderStateMixin {
   bool isSidebarCollapsed = false;
   bool manageBusinessExpanded = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // Dashboard fields (populated from backend)
+  // Dashboard fields
   int totalBookings = 0;
   int pending = 0;
   int confirmed = 0;
@@ -38,14 +40,10 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
   double totalRevenue = 0.0;
   double netRevenue = 0.0;
 
-  // Notification counts
   int pendingNotif = 0;
   int financeNotif = 0;
 
-  // Bell animation controller
   late final AnimationController bellController;
-
-  //final String apiBase = 'http://127.0.0.1:8080';
   final String apiBase = 'https://test-host-server-tamg.onrender.com';
 
   bool isLoading = false;
@@ -61,7 +59,6 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
       lowerBound: 0.98,
       upperBound: 1.02,
     );
-
     fetchDashboardData();
   }
 
@@ -71,50 +68,38 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     super.dispose();
   }
 
-  // ============= Fetch Dashboard Data ==============
   Future<void> fetchDashboardData() async {
     final partnerId = widget.partnerDetails['partner_id'] ?? '';
     if (partnerId.isEmpty) {
-      setState(() {
-        lastError = 'Missing Partner_ID in partnerDetails';
-      });
+      setState(() => lastError = 'Missing Partner_ID in partnerDetails');
       return;
     }
-
     setState(() {
       isLoading = true;
       lastError = null;
     });
 
     final url = Uri.parse('${ApiConfig.baseUrl}/api/partner/$partnerId/dashboard');
-
     try {
       final response = await http.get(url);
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> d = json.decode(response.body);
-
         setState(() {
           totalBookings = _toInt(d['totalBookings']);
           pending = _toInt(d['pending']);
           confirmed = _toInt(d['confirmed']);
           cancelled = _toInt(d['cancelled']);
           completed = _toInt(d['completed']);
-
           totalRevenue = _toDouble(d['totalRevenue']);
           netRevenue = _toDouble(d['netRevenue']);
-
           pendingNotif = _toInt(d['pendingNotifications']);
           financeNotif = _toInt(d['financeNotifications']);
-
           lastUpdated = DateTime.now();
-
           if (pendingNotif + financeNotif > 0) {
             if (!bellController.isAnimating) bellController.repeat(reverse: true);
           } else {
             if (bellController.isAnimating) bellController.stop();
           }
-
           isLoading = false;
         });
       } else {
@@ -131,36 +116,18 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     }
   }
 
-  int _toInt(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    if (v is double) return v.toInt();
-    if (v is String) return int.tryParse(v) ?? 0;
-    return 0;
-  }
+  int _toInt(dynamic v) => v == null ? 0 : (v is int ? v : int.tryParse(v.toString()) ?? 0);
+  double _toDouble(dynamic v) => v == null ? 0.0 : (v is double ? v : double.tryParse(v.toString()) ?? 0.0);
 
-  double _toDouble(dynamic v) {
-    if (v == null) return 0.0;
-    if (v is double) return v;
-    if (v is int) return v.toDouble();
-    if (v is String) return double.tryParse(v) ?? 0.0;
-    return 0.0;
-  }
-
-  // ================ POP-UP UNDER BELL + RESET COUNT LOGIC ================
   void _onNotificationTap(GlobalKey iconKey) async {
     if (pendingNotif == 0 && financeNotif == 0) return;
-
-    // RESET NOTIFICATION COUNT BEFORE OPENING MENU
     int pendingBefore = pendingNotif;
     int financeBefore = financeNotif;
-
     setState(() {
       pendingNotif = 0;
       financeNotif = 0;
     });
 
-    // Position of bell icon
     final RenderBox renderBox = iconKey.currentContext!.findRenderObject() as RenderBox;
     final Offset position = renderBox.localToGlobal(Offset.zero);
 
@@ -174,37 +141,26 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
       ),
       items: [
         if (pendingBefore > 0)
-          PopupMenuItem(
-            value: 'pending',
-            child: Text("You have $pendingBefore pending bookings"),
-          ),
+          PopupMenuItem(value: 'pending', child: Text("You have $pendingBefore pending bookings")),
         if (financeBefore > 0)
-          const PopupMenuItem(
-            value: 'finance',
-            child: Text("Your payout status is updated, check now."),
-          ),
+          const PopupMenuItem(value: 'finance', child: Text("Your payout status is updated.")),
       ],
     );
 
+    final partnerId = widget.partnerDetails['partner_id'] ?? '';
     if (result == 'pending') {
-      final partnerId = widget.partnerDetails['partner_id'] ?? '';
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => BookingPage(partnerId: partnerId)),
-      ).then((_) => fetchDashboardData());
-    }
-
-    if (result == 'finance') {
-      final partnerId = widget.partnerDetails['partner_id'] ?? '';
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => FinancePage(partnerId: partnerId)),
-      ).then((_) => fetchDashboardData());
+      Navigator.push(context, MaterialPageRoute(builder: (_) => BookingPage(partnerId: partnerId))).then((_) => fetchDashboardData());
+    } else if (result == 'finance') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => FinancePage(partnerId: partnerId))).then((_) => fetchDashboardData());
     }
   }
 
   void _onMenuClick(String option) {
     final partnerId = widget.partnerDetails['partner_id'] ?? '';
+    final email = widget.partnerDetails['email'] ?? '';
+
+    if (MediaQuery.of(context).size.width < 800) Navigator.pop(context); // Auto-close drawer on mobile
+
     if (option == 'Add Hotels') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: partnerId)));
     } else if (option == 'Add Paying Guests') {
@@ -213,46 +169,73 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
       Navigator.push(context, MaterialPageRoute(builder: (_) => ViewHotelsPage(partnerId: partnerId)));
     } else if (option == 'View PGs') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => ViewPGsPage(partnerId: partnerId)));
-    }else if (option == 'Bookings') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => BookingPage(partnerId: partnerId)))
-          .then((_) => fetchDashboardData());
+    } else if (option == 'Bookings') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => BookingPage(partnerId: partnerId))).then((_) => fetchDashboardData());
     } else if (option == 'Finance') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => FinancePage(partnerId: partnerId)));
+    } else if (option == 'Reviews') {
+      // NEW: Navigate to Reviews Page
+      Navigator.push(context, MaterialPageRoute(builder: (_) => WebReviewsPage(email: email, partnerDetails: widget.partnerDetails)));
     } else if (option == 'About Us') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutUsPage()));
     } else if (option == 'Home') {
       fetchDashboardData();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dashboard refreshed')));
     }
   }
 
   void _onProfileMenuSelected(String value) {
     if (value == 'profile') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => WebProfilePage(
-            email: widget.partnerDetails['email'] ?? '',
-            partnerDetails: widget.partnerDetails,
-          ),
-        ),
-      );
-    }
-    else if (value == 'logout') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => WebProfilePage(email: widget.partnerDetails['email'] ?? '', partnerDetails: widget.partnerDetails)));
+    } else if (value == 'logout') {
       ApiService.logout();
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/weblogin',
-            (route) => false,
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/weblogin', (route) => false);
     }
   }
 
-  Widget infoText(String label, dynamic value) {
-    final val = value is double ? value.toStringAsFixed(2) : value.toString();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Text('$label : $val', style: const TextStyle(color: Colors.white, fontSize: 16)),
+  // Sidebar Menu Content (Reused for Mobile Drawer and Desktop Sidebar)
+  Widget _buildSidebarContent() {
+    return Column(
+      children: [
+        const SizedBox(height: 40),
+        Text(
+          'Dashboard',
+          style: TextStyle(
+            fontSize: (isSidebarCollapsed && MediaQuery.of(context).size.width >= 800) ? 16 : 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.green.shade900,
+          ),
+        ),
+        const SizedBox(height: 30),
+        _SideMenuItem(icon: Icons.home, title: 'Home', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Home')),
+        _SideMenuItem(icon: Icons.book, title: 'Bookings', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Bookings')),
+        _SideMenuItem(icon: Icons.business, title: 'Manage Business', collapsed: isSidebarCollapsed, onTap: () {
+          setState(() => manageBusinessExpanded = !manageBusinessExpanded);
+        }),
+        if (manageBusinessExpanded)
+          Padding(
+            padding: EdgeInsets.only(left: isSidebarCollapsed ? 8 : 24),
+            child: Column(
+              children: [
+                _SideMenuItem(icon: Icons.add, title: 'Add Hotels', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Add Hotels')),
+                _SideMenuItem(icon: Icons.add, title: 'Add PGs', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Add Paying Guests')),
+                _SideMenuItem(icon: Icons.view_list, title: 'View Hotels', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('View Hotels')),
+                _SideMenuItem(icon: Icons.view_list, title: 'View PGs', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('View PGs')),
+              ],
+            ),
+          ),
+        _SideMenuItem(icon: Icons.account_balance_wallet, title: 'Finance', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Finance')),
+        // ADDED: Reviews Button in Sidebar
+        _SideMenuItem(icon: Icons.rate_review, title: 'Reviews', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Reviews')),
+        _SideMenuItem(icon: Icons.settings, title: 'Settings', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Settings')),
+        _SideMenuItem(icon: Icons.info_outline, title: 'About Us', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('About Us')),
+        const Spacer(),
+        if (MediaQuery.of(context).size.width >= 800)
+          IconButton(
+            onPressed: () => setState(() => isSidebarCollapsed = !isSidebarCollapsed),
+            icon: Icon(isSidebarCollapsed ? Icons.arrow_forward_ios : Icons.arrow_back_ios),
+          ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 
@@ -261,63 +244,27 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     double screenWidth = MediaQuery.of(context).size.width;
     bool isMobile = screenWidth < 800;
     final partnerName = widget.partnerDetails['partner_name'] ?? 'Partner';
-
     final GlobalKey bellKey = GlobalKey();
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF5F6FA),
+      // Mobile Support: Sidebar as a Drawer
+      drawer: isMobile ? Drawer(child: _buildSidebarContent()) : null,
       body: Row(
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: isMobile ? 0 : (isSidebarCollapsed ? 80 : 220),
-            color: Colors.white,
-            child: isMobile
-                ? null
-                : Column(
-              children: [
-                const SizedBox(height: 40),
-                Text(
-                  'Dashboard',
-                  style: TextStyle(
-                    fontSize: isSidebarCollapsed ? 16 : 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade900,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                _SideMenuItem(icon: Icons.home, title: 'Home', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Home')),
-                _SideMenuItem(icon: Icons.book, title: 'Bookings', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Bookings')),
-                _SideMenuItem(icon: Icons.business, title: 'Manage Business', collapsed: isSidebarCollapsed, onTap: () {
-                  setState(() => manageBusinessExpanded = !manageBusinessExpanded);
-                }),
-                if (manageBusinessExpanded)
-                  Padding(
-                    padding: EdgeInsets.only(left: isSidebarCollapsed ? 8 : 24),
-                    child: Column(
-                      children: [
-                        _SideMenuItem(icon: Icons.add, title: 'Add Hotels', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Add Hotels')),
-                        _SideMenuItem(icon: Icons.add, title: 'Add Paying Guests', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Add Paying Guests')),
-                        _SideMenuItem(icon: Icons.view_list, title: 'View Hotels', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('View Hotels')),
-                        _SideMenuItem(icon: Icons.view_list, title: 'View PGs', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('View PGs')),
-                      ],
-                    ),
-                  ),
-                _SideMenuItem(icon: Icons.account_balance_wallet, title: 'Finance', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Finance')),
-                _SideMenuItem(icon: Icons.settings, title: 'Settings', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Settings')),
-                _SideMenuItem(icon: Icons.info_outline, title: 'About Us', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('About Us')),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => setState(() => isSidebarCollapsed = !isSidebarCollapsed),
-                  icon: Icon(isSidebarCollapsed ? Icons.arrow_forward_ios : Icons.arrow_back_ios),
-                ),
-                const SizedBox(height: 20),
-              ],
+          // Desktop Sidebar
+          if (!isMobile)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: isSidebarCollapsed ? 80 : 220,
+              color: Colors.white,
+              child: _buildSidebarContent(),
             ),
-          ),
           Expanded(
             child: Column(
               children: [
+                // Top Navigation Bar
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
                   height: 70,
@@ -339,7 +286,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
                           if (isMobile)
                             IconButton(
                               icon: const Icon(Icons.menu, color: Colors.white),
-                              onPressed: () => setState(() => isSidebarCollapsed = !isSidebarCollapsed),
+                              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                             ),
                           Text('Welcome, $partnerName!', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                         ],
@@ -363,15 +310,9 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
                                     child: Container(
                                       padding: const EdgeInsets.all(2),
                                       constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
+                                      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(30)),
                                       alignment: Alignment.center,
-                                      child: Text(
-                                        '${pendingNotif + financeNotif}',
-                                        style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-                                      ),
+                                      child: Text('${pendingNotif + financeNotif}', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
                                     ),
                                   ),
                               ],
@@ -409,9 +350,9 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                if (isLoading) const Text('Loading dashboard...', style: TextStyle(color: Colors.black54)),
+                                if (isLoading) const Text('Loading...', style: TextStyle(color: Colors.black54)),
                                 if (lastError != null) Text('Error: $lastError', style: const TextStyle(color: Colors.red)),
-                                if (lastUpdated != null) Text('Last updated: ${lastUpdated!.toLocal().toString().split('.').first}', style: const TextStyle(color: Colors.black54)),
+                                if (lastUpdated != null) Text('Updated: ${lastUpdated!.toLocal().toString().split('.').first}', style: const TextStyle(color: Colors.black54)),
                                 ElevatedButton.icon(
                                   onPressed: fetchDashboardData,
                                   icon: const Icon(Icons.refresh),
@@ -435,10 +376,10 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
                                     backWidget: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        infoText('Pending', pending),
-                                        infoText('Confirmed', confirmed),
-                                        infoText('Cancelled', cancelled),
-                                        infoText('Completed', completed),
+                                        _infoText('Pending', pending),
+                                        _infoText('Confirmed', confirmed),
+                                        _infoText('Cancelled', cancelled),
+                                        _infoText('Completed', completed),
                                       ],
                                     ),
                                   ),
@@ -446,9 +387,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
                                     title: 'Pending Requests',
                                     value: '$pending',
                                     color: Colors.lime.shade700,
-                                    backWidget: Center(
-                                      child: Text('Pending bookings: $pending', style: const TextStyle(color: Colors.white, fontSize: 16)),
-                                    ),
+                                    backWidget: Center(child: Text('Pending: $pending', style: const TextStyle(color: Colors.white, fontSize: 16))),
                                   ),
                                   DashboardFlipCard(
                                     title: 'Revenue',
@@ -457,8 +396,8 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
                                     backWidget: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        infoText('Total Revenue', totalRevenue),
-                                        infoText('Net Revenue', netRevenue),
+                                        _infoText('Total Revenue', totalRevenue),
+                                        _infoText('Net Revenue', netRevenue),
                                       ],
                                     ),
                                   ),
@@ -468,11 +407,15 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
                                     color: Colors.purple.shade700,
                                     backWidget: const Center(child: Text('Users (no data)', style: TextStyle(color: Colors.white))),
                                   ),
-                                  DashboardFlipCard(
-                                    title: 'Reviews',
-                                    value: '0',
-                                    color: Colors.orange.shade700,
-                                    backWidget: const Center(child: Text('Reviews (no data)', style: TextStyle(color: Colors.white))),
+                                  // Clickable Reviews Card in Grid
+                                  InkWell(
+                                    onTap: () => _onMenuClick('Reviews'),
+                                    child: DashboardFlipCard(
+                                      title: 'Reviews',
+                                      value: 'View',
+                                      color: Colors.orange.shade700,
+                                      backWidget: const Center(child: Text('Click to view feedback', style: TextStyle(color: Colors.white))),
+                                    ),
                                   ),
                                   DashboardFlipCard(
                                     title: 'Misc',
@@ -496,9 +439,16 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
       ),
     );
   }
+
+  Widget _infoText(String label, dynamic value) {
+    final val = value is double ? value.toStringAsFixed(2) : value.toString();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Text('$label : $val', style: const TextStyle(color: Colors.white, fontSize: 16)),
+    );
+  }
 }
 
-// ======== Dashboard Side Menu ================
 class _SideMenuItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -509,11 +459,12 @@ class _SideMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool isDesktop = MediaQuery.of(context).size.width >= 800;
     return Tooltip(
       message: title,
       child: ListTile(
         leading: Icon(icon, color: Colors.green.shade900),
-        title: collapsed ? null : Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: (collapsed && isDesktop) ? null : Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         hoverColor: Colors.green.shade100,
         onTap: onTap,
       ),
@@ -521,7 +472,6 @@ class _SideMenuItem extends StatelessWidget {
   }
 }
 
-// ================= Dashboard Flipping Card ======================
 class DashboardFlipCard extends StatelessWidget {
   final String title;
   final String value;
