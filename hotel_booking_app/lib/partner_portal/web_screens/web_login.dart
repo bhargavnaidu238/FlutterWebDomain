@@ -111,29 +111,13 @@ class _WebLoginPageState extends State<WebLoginPage> {
     final TextEditingController newPasswordController = TextEditingController();
     final TextEditingController confirmPasswordController = TextEditingController();
 
-    int currentStep = 1;
+    int currentStep = 1; // 1: Email, 2: OTP, 3: New Password
     bool showPassword = false;
     bool isApiLoading = false;
 
     int secondsRemaining = 60;
     bool canResend = false;
     Timer? timer;
-
-    Widget _dialogTextField(TextEditingController controller, String hint, IconData icon, {bool obscure = false}) {
-      return TextField(
-        controller: controller,
-        obscureText: obscure,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.greenAccent),
-          hintText: hint,
-          hintStyle: const TextStyle(color: Colors.white38),
-          filled: true,
-          fillColor: Colors.black26,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        ),
-      );
-    }
 
     await showDialog(
       context: context,
@@ -162,11 +146,11 @@ class _WebLoginPageState extends State<WebLoginPage> {
               });
             }
 
-            // STEP 1: SEND OTP (Reverted to JSON as required by Jackson)
+            // Step 1: Send OTP using 'user_email'
             Future<void> handleSendOtp() async {
-              final email = emailController.text.trim().toLowerCase();
-              if (email.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter your email")));
+              if (emailController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please enter your email")));
                 return;
               }
 
@@ -174,84 +158,92 @@ class _WebLoginPageState extends State<WebLoginPage> {
               try {
                 final res = await http.post(
                   Uri.parse('${ApiConfig.baseUrl}/send-email-otp'),
-                  headers: {'Content-Type': 'application/json'}, // Must be JSON
+                  headers: {'Content-Type': 'application/json'},
                   body: jsonEncode({
-                    'email': email,
-                    'type': 'forgot_password_otp' // Resetting to original type
+                    'user_email': emailController.text.trim().toLowerCase(),
+                    'type': 'forgotpassword'
                   }),
                 );
 
                 final data = jsonDecode(res.body);
+
                 if (res.statusCode == 200 && data['status'] == 'success') {
                   startTimer();
                   setDialogState(() => currentStep = 2);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? "Error")));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(data['message'] ?? "Error sending OTP")),
+                  );
                 }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Connection Error: $e")));
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Connection Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
             }
 
-            // STEP 2: VERIFY OTP
+            // Step 2: Verify OTP using 'user_email'
             Future<void> handleVerifyOtp() async {
-              final otp = otpController.text.trim();
-              if (otp.isEmpty) return;
-
+              if (otpController.text.isEmpty) return;
               setDialogState(() => isApiLoading = true);
               try {
                 final res = await http.post(
                   Uri.parse('${ApiConfig.baseUrl}/verify-email-otp'),
                   headers: {'Content-Type': 'application/json'},
                   body: jsonEncode({
-                    'email': emailController.text.trim().toLowerCase(),
-                    'otp': otp,
-                    'type': 'verify_otp' // Verification usually uses this type
+                    'user_email': emailController.text.trim().toLowerCase(),
+                    'otp': otpController.text.trim(),
+                    'type': 'forgotpassword'
                   }),
                 );
-
                 final data = jsonDecode(res.body);
                 if (res.statusCode == 200 && data['status'] == 'success') {
                   setDialogState(() => currentStep = 3);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? "Invalid OTP")));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(data['message'] ?? "Invalid OTP")));
                 }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
             }
 
-            // STEP 3: RESET PASSWORD
+            // Step 3: Reset Password using 'user_email'
             Future<void> handleResetPassword() async {
               final pwd = newPasswordController.text.trim();
               final confirmPwd = confirmPasswordController.text.trim();
 
               if (pwd.isEmpty || pwd != confirmPwd) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match!")));
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Passwords do not match!")));
                 return;
               }
 
               setDialogState(() => isApiLoading = true);
               try {
-                // Your Java code handleForgotPassword uses params.get(), which
-                // usually reads from URL parameters in a simple HttpExchange.
-                final uri = Uri.parse('${ApiConfig.baseUrl}/forgotpassword').replace(queryParameters: {
-                  'email': emailController.text.trim().toLowerCase(),
-                  'newPassword': pwd,
-                });
-
-                final res = await http.post(uri); // Sending params in URL
+                final res = await http.post(
+                  Uri.parse('${ApiConfig.baseUrl}/forgotpassword'),
+                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                  body: 'user_email=${Uri.encodeComponent(emailController.text.trim().toLowerCase())}&newPassword=${Uri.encodeComponent(pwd)}',
+                );
 
                 final data = jsonDecode(res.body);
                 if (res.statusCode == 200 && data['status'] == 'success') {
                   timer?.cancel();
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password updated successfully!")));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Password updated successfully!")));
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? "Reset failed")));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(data['message'] ?? "Reset failed")));
                 }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Reset Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
@@ -296,7 +288,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                               value: showPassword,
                               onChanged: (val) => setDialogState(() => showPassword = val!),
                               side: const BorderSide(color: Colors.white70),
-                              activeColor: Colors.greenAccent,
                             ),
                             const Text("Show Password", style: TextStyle(color: Colors.white70, fontSize: 12)),
                           ],
@@ -314,7 +305,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 if (isApiLoading)
                   const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   )
                 else
                   ElevatedButton(
