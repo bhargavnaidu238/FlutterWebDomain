@@ -65,14 +65,21 @@ class _WebLoginPageState extends State<WebLoginPage> {
       // ===================== SUCCESS LOGIN =====================
       if (res.statusCode == 200 && data['status'] == 'success') {
 
-        partnerDetails = Map<String, String>.from(data)
-          ..removeWhere((key, value) =>
-          key == 'status' || key == 'message');
+        // Ensure we extract the ID correctly from the server response
+        // Backend usually sends it as 'userId' or 'partner_id'
+        final String rawId = (data['userId'] ?? data['partner_id'] ?? '').toString();
 
+        partnerDetails = Map<String, String>.from(data.map((key, value) => MapEntry(key, value.toString())))
+          ..removeWhere((key, value) => key == 'status' || key == 'message');
+
+        // IMPORTANT: Add 'partner_id' explicitly to the map to match Dashboard requirements
+        partnerDetails['partner_id'] = rawId;
+
+        // Save to persistent LocalStorage via ApiService
         ApiService.saveAuthData(
           token: data['token'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
           email: email,
-          userId: partnerDetails['userId'] ?? '',
+          userId: rawId,
         );
 
         Navigator.pushNamedAndRemoveUntil(
@@ -336,10 +343,10 @@ class _WebLoginPageState extends State<WebLoginPage> {
           ),
         ),
         alignment: Alignment.center,
-        child: SingleChildScrollView( // Added for mobile keyboard/screen scroll
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 400), // Makes width responsive
+            constraints: const BoxConstraints(maxWidth: 400),
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
