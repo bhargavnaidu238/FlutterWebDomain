@@ -34,7 +34,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
   final TextEditingController aboutController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
 
-  // Updated variables for table structure
   double avgRating = 0.0;
   int totalReviews = 0;
 
@@ -85,7 +84,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
 
   void _populateExistingData() {
     final data = widget.hotelData!;
-
     controllers["hotel_name"]!.text = data['hotel_name']?.toString() ?? "";
     controllers["address"]!.text = data['address']?.toString() ?? "";
     controllers["city"]!.text = data['city']?.toString() ?? "";
@@ -94,16 +92,11 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     controllers["pincode"]!.text = data['pincode']?.toString() ?? "";
     controllers["total_rooms"]!.text = data['total_rooms']?.toString() ?? "0";
     controllers["hotel_contact"]!.text = data['hotel_contact']?.toString() ?? "";
-
     aboutController.text = data['about_this_property']?.toString() ?? "";
-
-    // Schema update
     avgRating = double.tryParse(data['avg_rating']?.toString() ?? "0.0") ?? 0.0;
     totalReviews = int.tryParse(data['total_reviews']?.toString() ?? "0") ?? 0;
-
     selectedHotelType = data['hotel_type'];
     selectedCustomization = data['customization'];
-
     String? loc = data['hotel_location'];
     if (loc != null && loc.contains(',')) {
       List<String> parts = loc.split(',');
@@ -111,10 +104,8 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       longitude = double.tryParse(parts[1]);
       locationController.text = "Lat: $latitude, Lng: $longitude";
     }
-
     _parseCsvToMap(data['amenities'], amenitySelected, amenities);
     _parseCsvToMap(data['policies'], policySelected, policies);
-
     List<String> savedRooms = data['room_type']?.toString().split(',') ?? [];
     List<String> savedPrices = data['room_price']?.toString().split(',') ?? [];
     for (int i = 0; i < savedRooms.length; i++) {
@@ -188,13 +179,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       _showSnack("Maximum 10 images allowed for $category");
       return;
     }
-
-    final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: true,
-        withData: true
-    );
-
+    final result = await FilePicker.platform.pickFiles(type: FileType.image, allowMultiple: true, withData: true);
     if (result != null) {
       setState(() {
         localImages.putIfAbsent(category, () => []);
@@ -220,13 +205,10 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       _showSnack("Please select location on map");
       return;
     }
-
     setState(() => isSaving = true);
-
     try {
       final selRooms = roomSelected.entries.where((e) => e.value).map((e) => e.key).toList();
       final selPrices = selRooms.map((r) => roomPrices[r]?.text.isEmpty ?? true ? "0" : roomPrices[r]!.text).toList();
-
       final Map<String, String> body = {
         'hotel_id': widget.hotelData?['hotel_id']?.toString() ?? '',
         'partner_id': widget.partnerId,
@@ -252,40 +234,28 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         'status': "Active",
         'hotel_images': widget.hotelData?['hotel_images']?.toString() ?? '',
       };
-
       Map<String, List<String>> imageMap = {};
       bool hasNewImages = false;
-
       for (var entry in localImages.entries) {
         String cat = entry.key;
         List<Uint8List> bytesList = entry.value;
-
         if (bytesList.isNotEmpty) {
           hasNewImages = true;
           List<String> encodedList = [];
-
-          for (var bytes in bytesList) {
-            encodedList.add(base64Encode(bytes));
-          }
+          for (var bytes in bytesList) { encodedList.add(base64Encode(bytes)); }
           imageMap[cat] = encodedList;
         }
       }
-
-      if (hasNewImages) {
-        body['images'] = jsonEncode(imageMap);
-      }
-
+      if (hasNewImages) { body['images'] = jsonEncode(imageMap); }
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/webaddhotels'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body,
       ).timeout(const Duration(seconds: 90));
-
       final result = jsonDecode(response.body);
       if (response.statusCode == 200 && result['status'] == 'success') {
         _showSnack(result['message']);
         if (mounted) {
-          // Changed to pushReplacement to ensure "Back" leads to Dashboard
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => ViewHotelsPage(partnerId: widget.partnerId)),
@@ -295,7 +265,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         _showSnack("Error: ${result['message']}");
       }
     } catch (e) {
-      _showSnack("Error: Payload may be too large for the server.");
+      _showSnack("Error: Server communication failed.");
     } finally {
       if (mounted) setState(() => isSaving = false);
     }
@@ -306,92 +276,81 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     return Scaffold(
       backgroundColor: const Color(0xFFB9F6CA),
       appBar: AppBar(backgroundColor: const Color(0xFF00C853), title: Text(widget.hotelData == null ? "Add Hotels" : "Edit Hotel"), elevation: 0),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(40),
-            child: Center(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 750, padding: const EdgeInsets.all(35),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Hotel Registration", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 25),
-                          DropdownButtonFormField<String>(value: selectedHotelType, decoration: _inputStyle("Hotel Type"), items: ['Hotel', 'Home Stays', 'Dormitory', 'Farm House','Lodge', 'Party Rooms', 'Resort', 'Villa'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) => setState(() => selectedHotelType = v), validator: (v) => v == null ? "Required" : null),
-                          const SizedBox(height: 15),
-                          DropdownButtonFormField<String>(value: selectedCustomization, decoration: _inputStyle("Customization"), items: ['Yes', 'No'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) => setState(() => selectedCustomization = v), validator: (v) => v == null ? "Required" : null),
-                          const SizedBox(height: 15),
-                          ...controllers.keys.map((k) => Padding(padding: const EdgeInsets.only(bottom: 12), child: TextFormField(controller: controllers[k], decoration: _inputStyle(k.replaceAll("_", " ")), validator: (v) => (v == null || v.isEmpty) ? "Required" : null))),
-
-                          TextFormField(controller: locationController, readOnly: true, decoration: _inputStyle("Location").copyWith(suffixIcon: const Icon(Icons.map)), onTap: () async {
-                            final res = await Navigator.push(context, MaterialPageRoute(builder: (_) => MapPickerPage(initialLat: latitude, initialLng: longitude)));
-                            if (res != null) setState(() { latitude = res['lat']; longitude = res['lng']; locationController.text = "Lat: ${latitude!.toStringAsFixed(3)}, Lng: ${longitude!.toStringAsFixed(3)}"; });
-                          }),
-
-                          const SizedBox(height: 25),
-                          _sectionHeader("Room Types", () => setState(() => showAddRoomField = !showAddRoomField)),
-                          if (showAddRoomField) _addInputRow(newRoomTypeCtrl, "Room Type Name", _addNewRoom),
-                          Wrap(spacing: 8, children: roomTypes.map((r) => FilterChip(label: Text(r), selected: roomSelected[r] ?? false, onSelected: (v) => setState(() => roomSelected[r] = v))).toList()),
-                          ...roomTypes.where((r) => roomSelected[r] == true).map((r) => Padding(padding: const EdgeInsets.only(top: 10), child: TextFormField(controller: roomPrices[r], decoration: _inputStyle("$r Price"), keyboardType: TextInputType.number, validator: (v) => (v == null || v.isEmpty) ? "Required" : null))),
-
-                          const SizedBox(height: 25),
-                          _sectionHeader("Amenities", () => setState(() => showAddAmenityField = !showAddAmenityField)),
-                          if (showAddAmenityField) _addInputRow(newAmenityCtrl, "Amenity", _addNewAmenity),
-                          Wrap(spacing: 8, children: amenities.map((a) => FilterChip(label: Text(a), selected: amenitySelected[a] ?? false, onSelected: (v) => setState(() => amenitySelected[a] = v))).toList()),
-
-                          const SizedBox(height: 25),
-                          _sectionHeader("Policies", () => setState(() => showAddPolicyField = !showAddPolicyField)),
-                          if (showAddPolicyField) _addInputRow(newPolicyCtrl, "Policy", _addNewPolicy),
-                          ...policies.map((p) => CheckboxListTile(title: Text(p, style: const TextStyle(fontSize: 13)), value: policySelected[p] ?? false, onChanged: (v) => setState(() => policySelected[p] = v!), dense: true, activeColor: Colors.green, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading)),
-
-                          const SizedBox(height: 25),
-                          SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => setState(() { showImageSections = !showImageSections; showImageSections ? _expandCtrl.forward() : _expandCtrl.reverse(); }), icon: const Icon(Icons.upload), label: const Text("Upload / Manage Images"), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00C853), foregroundColor: Colors.white, padding: const EdgeInsets.all(15)))),
-
-                          SizeTransition(sizeFactor: _expandAnim, child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Column(children: [
-                            ...dynamicCategories.map((c) => Column(children: [
-                              ListTile(title: Text(c, style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Limit: 10 images"), trailing: Text("${localImages[c]?.length ?? 0} / 10"), onTap: () => _pickImages(c)),
-                              if (localImages[c]?.isNotEmpty ?? false) SizedBox(height: 70, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: localImages[c]!.length, itemBuilder: (ctx, i) => _imageThumbnail(c, i))),
-                              const Divider(),
-                            ])),
-                          ]))),
-
-                          const SizedBox(height: 25),
-                          TextFormField(controller: aboutController, maxLines: 3, decoration: _inputStyle("About Property"), validator: (v) => (v == null || v.isEmpty) ? "Required" : null),
-                          const SizedBox(height: 20),
-                          _buildFooter(),
-                        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          bool isMobile = constraints.maxWidth < 900;
+          return Stack(
+            children: [
+              SingleChildScrollView(
+                padding: EdgeInsets.all(isMobile ? 15 : 40),
+                child: Center(
+                  child: Flex(
+                    direction: isMobile ? Axis.vertical : Axis.horizontal,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: isMobile ? constraints.maxWidth : 750,
+                        padding: const EdgeInsets.all(35),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Hotel Registration", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 25),
+                              DropdownButtonFormField<String>(value: selectedHotelType, decoration: _inputStyle("Hotel Type"), items: ['Hotel', 'Home Stays', 'Dormitory', 'Farm House','Lodge', 'Party Rooms', 'Resort', 'Villa'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) => setState(() => selectedHotelType = v), validator: (v) => v == null ? "Required" : null),
+                              const SizedBox(height: 15),
+                              DropdownButtonFormField<String>(value: selectedCustomization, decoration: _inputStyle("Customization"), items: ['Yes', 'No'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) => setState(() => selectedCustomization = v), validator: (v) => v == null ? "Required" : null),
+                              const SizedBox(height: 15),
+                              ...controllers.keys.map((k) => Padding(padding: const EdgeInsets.only(bottom: 12), child: TextFormField(controller: controllers[k], decoration: _inputStyle(k.replaceAll("_", " ")), validator: (v) => (v == null || v.isEmpty) ? "Required" : null))),
+                              TextFormField(controller: locationController, readOnly: true, decoration: _inputStyle("Location").copyWith(suffixIcon: const Icon(Icons.map)), onTap: () async {
+                                final res = await Navigator.push(context, MaterialPageRoute(builder: (_) => MapPickerPage(initialLat: latitude, initialLng: longitude)));
+                                if (res != null) setState(() { latitude = res['lat']; longitude = res['lng']; locationController.text = "Lat: ${latitude!.toStringAsFixed(3)}, Lng: ${longitude!.toStringAsFixed(3)}"; });
+                              }),
+                              const SizedBox(height: 25),
+                              _sectionHeader("Room Types", () => setState(() => showAddRoomField = !showAddRoomField)),
+                              if (showAddRoomField) _addInputRow(newRoomTypeCtrl, "Room Type Name", _addNewRoom),
+                              Wrap(spacing: 8, children: roomTypes.map((r) => FilterChip(label: Text(r), selected: roomSelected[r] ?? false, onSelected: (v) => setState(() => roomSelected[r] = v))).toList()),
+                              ...roomTypes.where((r) => roomSelected[r] == true).map((r) => Padding(padding: const EdgeInsets.only(top: 10), child: TextFormField(controller: roomPrices[r], decoration: _inputStyle("$r Price"), keyboardType: TextInputType.number, validator: (v) => (v == null || v.isEmpty) ? "Required" : null))),
+                              const SizedBox(height: 25),
+                              _sectionHeader("Amenities", () => setState(() => showAddAmenityField = !showAddAmenityField)),
+                              if (showAddAmenityField) _addInputRow(newAmenityCtrl, "Amenity", _addNewAmenity),
+                              Wrap(spacing: 8, children: amenities.map((a) => FilterChip(label: Text(a), selected: amenitySelected[a] ?? false, onSelected: (v) => setState(() => amenitySelected[a] = v))).toList()),
+                              const SizedBox(height: 25),
+                              _sectionHeader("Policies", () => setState(() => showAddPolicyField = !showAddPolicyField)),
+                              if (showAddPolicyField) _addInputRow(newPolicyCtrl, "Policy", _addNewPolicy),
+                              ...policies.map((p) => CheckboxListTile(title: Text(p, style: const TextStyle(fontSize: 13)), value: policySelected[p] ?? false, onChanged: (v) => setState(() => policySelected[p] = v!), dense: true, activeColor: Colors.green, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading)),
+                              const SizedBox(height: 25),
+                              SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => setState(() { showImageSections = !showImageSections; showImageSections ? _expandCtrl.forward() : _expandCtrl.reverse(); }), icon: const Icon(Icons.upload), label: const Text("Upload / Manage Images"), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00C853), foregroundColor: Colors.white, padding: const EdgeInsets.all(15)))),
+                              SizeTransition(sizeFactor: _expandAnim, child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Column(children: [
+                                ...dynamicCategories.map((c) => Column(children: [
+                                  ListTile(title: Text(c, style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Limit: 10 images"), trailing: Text("${localImages[c]?.length ?? 0} / 10"), onTap: () => _pickImages(c)),
+                                  if (localImages[c]?.isNotEmpty ?? false) SizedBox(height: 70, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: localImages[c]!.length, itemBuilder: (ctx, i) => _imageThumbnail(c, i))),
+                                  const Divider(),
+                                ])),
+                              ]))),
+                              const SizedBox(height: 25),
+                              TextFormField(controller: aboutController, maxLines: 3, decoration: _inputStyle("About Property"), validator: (v) => (v == null || v.isEmpty) ? "Required" : null),
+                              const SizedBox(height: 20),
+                              _buildFooter(),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      if (!isMobile) const SizedBox(width: 30),
+                      if (isMobile) const SizedBox(height: 30),
+                      _buildPreviewSidebar(isMobile ? constraints.maxWidth : 300),
+                    ],
                   ),
-                  const SizedBox(width: 30),
-                  _buildPreviewSidebar(),
-                ],
-              ),
-            ),
-          ),
-          if (isSaving)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(color: Colors.white),
-                    SizedBox(height: 20),
-                    Text("Processing Data & Uploading Images...", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                  ],
                 ),
               ),
-            ),
-        ],
+              if (isSaving)
+                Container(color: Colors.black54, child: const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(color: Colors.white), SizedBox(height: 20), Text("Saving Hotel...", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))]))),
+            ],
+          );
+        },
       ),
     );
   }
@@ -402,9 +361,14 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     ]);
   }
 
-  Widget _buildPreviewSidebar() {
-    return Column(children: [
-      Container(width: 300, padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  Widget _buildPreviewSidebar(double width) {
+    return Container(
+      width: width,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text("Live Preview", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+        const Divider(),
         Text(controllers["hotel_name"]!.text.isEmpty ? "Hotel Name" : controllers["hotel_name"]!.text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 5),
         Text("${controllers["address"]!.text} ${controllers["city"]!.text}", style: const TextStyle(color: Colors.grey, fontSize: 11)),
@@ -412,8 +376,8 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         Text("Avg Rating: $avgRating ⭐", style: const TextStyle(fontSize: 12)),
         Text("Total Reviews: $totalReviews", style: const TextStyle(fontSize: 12)),
         Text("Type: ${selectedHotelType ?? '-'}", style: const TextStyle(fontSize: 12)),
-      ])),
-    ]);
+      ]),
+    );
   }
 
   Widget _imageThumbnail(String c, int i) => Stack(children: [Container(margin: const EdgeInsets.only(right: 5), width: 60, height: 60, decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300)), child: Image.memory(localImages[c]![i], fit: BoxFit.cover)), Positioned(right: 0, child: GestureDetector(onTap: () => setState(() => localImages[c]!.removeAt(i)), child: const CircleAvatar(radius: 10, backgroundColor: Colors.red, child: Icon(Icons.close, size: 12, color: Colors.white))))]);
@@ -423,7 +387,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
   void _showSnack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 }
 
-// --- MAP PICKER ---
 class MapPickerPage extends StatefulWidget {
   final double? initialLat, initialLng;
   const MapPickerPage({this.initialLat, this.initialLng, Key? key}) : super(key: key);
