@@ -17,6 +17,7 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+// ================= FETCH SUPABASE CONFIG FROM BACKEND =================
 Future<void> _initializeSupabaseFromBackend() async {
   try {
     final response = await http.get(
@@ -25,11 +26,18 @@ Future<void> _initializeSupabaseFromBackend() async {
 
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body);
+
+      final String url = decoded['url'];
+      final String anonKey = decoded['anonKey'];
+
       await Supabase.initialize(
-        url: decoded['url'],
-        anonKey: decoded['anonKey'],
+        url: url,
+        anonKey: anonKey,
       );
+
       debugPrint("Supabase initialized successfully.");
+    } else {
+      debugPrint("Failed to fetch Supabase config.");
     }
   } catch (e) {
     debugPrint("Supabase initialization error: $e");
@@ -41,7 +49,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine the starting point based on persistent storage in ApiService
+    // Determine the starting point based on persistent storage
     final String initialRoute = ApiService.isLoggedIn() ? '/dashboard' : '/';
 
     return MaterialApp(
@@ -68,50 +76,63 @@ class MyApp extends StatelessWidget {
     final bool loggedIn = ApiService.isLoggedIn();
 
     switch (settings.name) {
+
+    // ================= LANDING PAGE =================
       case '/':
         return _noTransitionRoute(const LandingPage(), settings);
 
+    // ================= LOGIN PAGE =================
       case '/weblogin':
         return _noTransitionRoute(const WebLoginPage(), settings);
 
+    // ================= REGISTER PAGE =================
       case '/registerlogin':
         return _noTransitionRoute(const WebRegisterPage(), settings);
 
+    // ================= DASHBOARD (PROTECTED) =================
       case '/dashboard':
-      // 1. Guard against unauthenticated access
+      // 1. Check if user is logged in via ApiService (LocalStorage)
         if (!loggedIn) {
           debugPrint("Blocked unauthorized dashboard access.");
           return _noTransitionRoute(const WebLoginPage(), settings);
         }
 
-        // 2. Try to get arguments (this works during normal navigation)
+        // 2. Extract arguments
         final args = settings.arguments as Map<String, String>?;
 
         if (args != null) {
-          return _noTransitionRoute(WebDashboardPage(partnerDetails: args), settings);
+          // Normal navigation flow
+          return _noTransitionRoute(
+            WebDashboardPage(partnerDetails: args),
+            settings,
+          );
         } else {
-          // 3. REFRESH RECOVERY: Pull from ApiService (LocalStorage)
+          // 3. RECOVERY FLOW (Runs on Browser Refresh)
+          // Pulling directly from ApiService which we fixed to read LocalStorage
           final email = ApiService.getEmail();
           final userId = ApiService.getUserId();
 
           if (email == null || userId == null) {
+            debugPrint("Recovery failed: No data in LocalStorage.");
             return _noTransitionRoute(const WebLoginPage(), settings);
           }
 
-          // IMPORTANT: We must include 'Partner_ID' as a key because
-          // your WebDashboardPage code is looking specifically for it.
+          debugPrint("Browser refreshed: Re-hydrating state for $email");
+
+          // We pass the map using 'partner_id' (lowercase) to match your dashboard's requirements
           return _noTransitionRoute(
             WebDashboardPage(
               partnerDetails: {
                 "email": email,
                 "userId": userId,
-                "Partner_ID": userId, // Added this to fix your specific error
+                "partner_id": userId, // Re-hydrating with lowercase key
               },
             ),
             settings,
           );
         }
 
+    // ================= DEFAULT =================
       default:
         return _errorScreen("Route not found: ${settings.name}");
     }
@@ -124,7 +145,11 @@ class MyApp extends StatelessWidget {
         body: Center(
           child: Text(
             msg,
-            style: const TextStyle(color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.red,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
