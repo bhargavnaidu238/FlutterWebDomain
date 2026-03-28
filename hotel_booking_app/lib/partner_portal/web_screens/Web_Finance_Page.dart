@@ -18,6 +18,13 @@ class _FinancePageState extends State<FinancePage> {
   bool bankExpanded = false;
   bool isPayoutLoading = false;
 
+  // --- NEW STATE VARIABLES ---
+  bool isEditingBank = false;
+  bool obscureAccount = true;
+  bool obscureIfsc = true;
+  bool obscurePan = true;
+  final _bankFormKey = GlobalKey<FormState>();
+
   Map<String, dynamic> financeData = {};
   List<Map<String, dynamic>> transactions = [];
   List<Map<String, dynamic>> filteredBookings = [];
@@ -65,29 +72,21 @@ class _FinancePageState extends State<FinancePage> {
     setState(() => isLoading = true);
     try {
       final res = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/getPartnerFinance?partner_id=${widget
-            .partnerId}'),
+        Uri.parse('${ApiConfig.baseUrl}/getPartnerFinance?partner_id=${widget.partnerId}'),
       );
       if (res.statusCode == 200 && res.body.isNotEmpty) {
         final data = jsonDecode(res.body);
         setState(() {
           financeData = Map<String, dynamic>.from(data ?? {});
-          // Populate controllers & local dropdowns with safe defaults
-          accountHolderController.text =
-              financeData['account_holder_name']?.toString() ?? '';
+          accountHolderController.text = financeData['account_holder_name']?.toString() ?? '';
           bankNameController.text = financeData['bank_name']?.toString() ?? '';
-          accountNumberController.text =
-              financeData['account_number']?.toString() ?? '';
+          accountNumberController.text = financeData['account_number']?.toString() ?? '';
           ifscController.text = financeData['ifsc_swift']?.toString() ?? '';
           panController.text = financeData['pan_tax_id']?.toString() ?? '';
-          selectedAccountType =
-              financeData['account_type']?.toString() ?? selectedAccountType;
-          selectedPayoutType =
-              financeData['payout_type']?.toString() ?? selectedPayoutType;
-          autoPayout = (financeData['auto_payout'] == true ||
-              financeData['auto_payout']?.toString() == '1');
-          filteredBookings = _applyBookingFilters(
-              List<Map<String, dynamic>>.from(financeData['Bookings'] ?? []));
+          selectedAccountType = financeData['account_type']?.toString() ?? selectedAccountType;
+          selectedPayoutType = financeData['payout_type']?.toString() ?? selectedPayoutType;
+          autoPayout = (financeData['auto_payout'] == true || financeData['auto_payout']?.toString() == '1');
+          filteredBookings = _applyBookingFilters(List<Map<String, dynamic>>.from(financeData['Bookings'] ?? []));
         });
       }
     } catch (e) {
@@ -100,38 +99,24 @@ class _FinancePageState extends State<FinancePage> {
   Future<void> fetchTransactions() async {
     try {
       final res = await http.get(
-        Uri.parse(
-            '${ApiConfig.baseUrl}/getPartnerTransactions?partner_id=${widget
-                .partnerId}'),
+        Uri.parse('${ApiConfig.baseUrl}/getPartnerTransactions?partner_id=${widget.partnerId}'),
       );
-
       if (res.statusCode == 200 && res.body.isNotEmpty) {
         final decoded = jsonDecode(res.body);
-
         List txList = [];
-
-        // Case 1: backend returns {"transactions":[]}
         if (decoded is Map && decoded["transactions"] is List) {
           txList = decoded["transactions"];
-        }
-
-        // Case 2: backend returns {"data":[]}
-        else if (decoded is Map && decoded["data"] is List) {
+        } else if (decoded is Map && decoded["data"] is List) {
           txList = decoded["data"];
-        }
-
-        // Case 3: backend returns plain list []
-        else if (decoded is List) {
+        } else if (decoded is List) {
           txList = decoded;
         }
-
         setState(() {
           transactions = List<Map<String, dynamic>>.from(txList);
           txPage = 1;
         });
       }
     } catch (e) {
-
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("fetchTransactions ERROR: $e")));
     }
   }
@@ -158,21 +143,28 @@ class _FinancePageState extends State<FinancePage> {
     return '₹$fixed';
   }
 
-  List<Map<String, dynamic>> _applyBookingFilters(
-      List<Map<String, dynamic>> bookings) {
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  void _copyToClipboard(String text, String label) {
+    if (text.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: text));
+    _showSnack("$label copied to clipboard");
+  }
+
+  List<Map<String, dynamic>> _applyBookingFilters(List<Map<String, dynamic>> bookings) {
     var list = bookings;
     if (bookingDateRange == "30") {
-      final cutoff = DateTime.now().subtract(Duration(days: 30));
+      final cutoff = DateTime.now().subtract(const Duration(days: 30));
       list = list.where((b) {
-        final dt = _tryParseDate(
-            b['Booking_Date'] ?? b['Check_In'] ?? b['Transaction_Date']);
+        final dt = _tryParseDate(b['Booking_Date'] ?? b['Check_In'] ?? b['Transaction_Date']);
         return dt != null && dt.isAfter(cutoff);
       }).map((b) => Map<String, dynamic>.from(b)).toList();
     } else if (bookingDateRange == "90") {
-      final cutoff = DateTime.now().subtract(Duration(days: 90));
+      final cutoff = DateTime.now().subtract(const Duration(days: 90));
       list = list.where((b) {
-        final dt = _tryParseDate(
-            b['Booking_Date'] ?? b['Check_In'] ?? b['Transaction_Date']);
+        final dt = _tryParseDate(b['Booking_Date'] ?? b['Check_In'] ?? b['Transaction_Date']);
         return dt != null && dt.isAfter(cutoff);
       }).map((b) => Map<String, dynamic>.from(b)).toList();
     } else {
@@ -180,12 +172,7 @@ class _FinancePageState extends State<FinancePage> {
     }
 
     if (selectedBookingFilter != "All") {
-      list = list
-          .where((b) =>
-      (b['Booking_Status'] ?? '').toString().toLowerCase() ==
-          selectedBookingFilter.toLowerCase())
-          .map((b) => Map<String, dynamic>.from(b))
-          .toList();
+      list = list.where((b) => (b['Booking_Status'] ?? '').toString().toLowerCase() == selectedBookingFilter.toLowerCase()).map((b) => Map<String, dynamic>.from(b)).toList();
     }
     return list;
   }
@@ -194,73 +181,96 @@ class _FinancePageState extends State<FinancePage> {
     if (x == null) return null;
     try {
       if (x is DateTime) return x;
-      final s = x.toString();
-      return DateTime.parse(s);
+      return DateTime.parse(x.toString());
+    } catch (_) { return null; }
+  }
+
+  // ---------- Update Bank Details Logic ----------
+  void _confirmUpdateBankDetails() {
+    if (_bankFormKey.currentState!.validate()) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Confirm Save"),
+          content: const Text("Are you sure you want to save these bank details?"),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                updateBankDetails();
+              },
+              child: const Text("Confirm"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> updateBankDetails() async {
+    final body = {
+      'partner_id': widget.partnerId,
+      'Account_Holder_Name': accountHolderController.text.trim(),
+      'Bank_Name': bankNameController.text.trim(),
+      'Account_Number': accountNumberController.text.trim(),
+      'IFSC_SWIFT': ifscController.text.trim(),
+      'Account_Type': selectedAccountType,
+      'PAN_Tax_ID': panController.text.trim(),
+      'Payout_Type': selectedPayoutType,
+      'auto_payout': autoPayout ? '1' : '0',
+    };
+
+    try {
+      final res = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/updateBankDetails'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: body,
+      );
+      final data = jsonDecode(res.body);
+      _showSnack(data['message']?.toString() ?? "Update complete");
+
+      if (data['status'] == 'success') {
+        setState(() => isEditingBank = false); // Disable editing on success
+        fetchFinanceData();
+      }
     } catch (e) {
-      try {
-        final s = x.toString();
-        if (s.contains('-') || s.contains('/')) {
-          final sep = s.contains('-') ? '-' : '/';
-          final parts = s.split(sep);
-          if (parts.length >= 3) {
-            final d = int.tryParse(parts[0]);
-            final m = int.tryParse(parts[1]);
-            final y = int.tryParse(parts[2]);
-            if (d != null && m != null && y != null) return DateTime(y, m, d);
-          }
-        }
-      } catch (_) {}
-      return null;
+      _showSnack("Network Error: $e");
     }
   }
 
   // ---------- UI Helper Widgets ----------
-  Widget buildFinanceCard(String title, String value, Color color,
-      {IconData? icon}) {
+  Widget buildFinanceCard(String title, String value, Color color, {IconData? icon}) {
     double parsedValue = 0;
     bool isPercent = value.contains('%');
     if (isPercent) {
-      parsedValue =
-          double.tryParse(value.replaceAll('%', '').replaceAll(',', '')) ?? 0;
+      parsedValue = double.tryParse(value.replaceAll('%', '').replaceAll(',', '')) ?? 0;
     } else {
-      parsedValue =
-          double.tryParse(value.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0;
+      parsedValue = double.tryParse(value.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0;
     }
     return Container(
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))
-        ],
+        color: color, borderRadius: BorderRadius.circular(12),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (icon != null) ...[
-            Icon(icon, color: Colors.white70, size: 32),
-            const SizedBox(width: 12),
-          ],
+          if (icon != null) ...[Icon(icon, color: Colors.white70, size: 32), const SizedBox(width: 12)],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(
-                    color: Colors.white70, fontSize: 14)),
+                Text(title, style: const TextStyle(color: Colors.white70, fontSize: 14)),
                 const SizedBox(height: 8),
                 TweenAnimationBuilder<double>(
                   tween: Tween<double>(begin: 0, end: parsedValue),
                   duration: const Duration(milliseconds: 800),
                   builder: (context, val, child) {
-                    final display = isPercent
-                        ? '${val.toStringAsFixed(2)}%'
-                        : _formatCurrency(val);
-                    return Text(display,
-                        style: const TextStyle(color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold));
+                    final display = isPercent ? '${val.toStringAsFixed(2)}%' : _formatCurrency(val);
+                    return Text(display, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold));
                   },
                 )
               ],
@@ -271,294 +281,82 @@ class _FinancePageState extends State<FinancePage> {
     );
   }
 
-  Widget buildTextField(TextEditingController controller, String label,
-      {bool isNumber = false}) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.green.shade900, width: 2),
-          borderRadius: BorderRadius.circular(12),
+  // New Secure Field Builder
+  Widget _buildSecureField({
+    required TextEditingController controller,
+    required String label,
+    required bool isObscured,
+    required VoidCallback onToggle,
+    bool isNumber = false,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: controller,
+        enabled: isEditingBank,
+        obscureText: isObscured,
+        validator: validator,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.white70),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.12),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          prefixIcon: IconButton(
+            icon: const Icon(Icons.copy, size: 18, color: Colors.white70),
+            onPressed: () => _copyToClipboard(controller.text, label),
+          ),
+          suffixIcon: IconButton(
+            icon: Icon(isObscured ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
+            onPressed: onToggle,
+          ),
         ),
       ),
-      style: const TextStyle(color: Colors.white),
     );
   }
 
   Widget _statusChip(String text) {
     final t = text.toLowerCase();
     Color bg = Colors.grey;
-    Color fg = Colors.white;
-    if (t.contains('paid') || t.contains('success') ||
-        t.contains('completed')) {
-      bg = Colors.green.shade700;
-    } else if (t.contains('pending') || t.contains('processing')) {
-      bg = Colors.orange.shade700;
-    } else if (t.contains('failed') || t.contains('cancel')) {
-      bg = Colors.red.shade700;
-    } else if (t.contains('confirmed')) {
-      bg = Colors.blue.shade700;
-    }
+    if (t.contains('paid') || t.contains('success') || t.contains('completed')) { bg = Colors.green.shade700; }
+    else if (t.contains('pending') || t.contains('processing')) { bg = Colors.orange.shade700; }
+    else if (t.contains('failed') || t.contains('cancel')) { bg = Colors.red.shade700; }
+    else if (t.contains('confirmed')) { bg = Colors.blue.shade700; }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-          color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(
-          text, style: TextStyle(color: fg, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
     );
   }
 
-  // ---------- Update Bank Details ----------
-  Future<void> updateBankDetails() async {
-    // Synchronized keys with Java Backend (Case Sensitive)
-    final body = {
-      'partner_id': widget.partnerId,
-      'Account_Holder_Name': accountHolderController.text.trim(),
-      'Bank_Name': bankNameController.text.trim(),
-      'Account_Number': accountNumberController.text.trim(),
-      'IFSC_SWIFT': ifscController.text.trim(),
-      'Account_Type': selectedAccountType, // e.g., "Savings"
-      'PAN_Tax_ID': panController.text.trim(),
-      'Payout_Type': selectedPayoutType,   // e.g., "Daily"
-      // 'auto_payout' isn't in your current Java table schema,
-      // but keeping it here if you add it later.
-      'auto_payout': autoPayout ? '1' : '0',
-    };
-
-    try {
-      final res = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/updateBankDetails'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: body,
-      );
-
-      final data = jsonDecode(res.body);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message']?.toString() ?? "Update complete")),
-      );
-
-      if (data['status'] == 'success') fetchFinanceData();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Network Error: $e")),
-      );
-    }
-  }
-
-  // ---------- Request Payout ----------
-  Future<void> requestPayout() async {
-    double pending = _parseDouble(
-        financeData['pending_payout'] ?? financeData['PendingPayout'] ?? 0);
-
-    // 1. Validation Checks
-    if (payoutAmountController.text.trim().isEmpty) {
-      _showSnack("Please enter withdrawal amount");
-      return;
-    }
-
-    double? requestedAmount = double.tryParse(payoutAmountController.text.trim());
-    if (requestedAmount == null) {
-      _showSnack("Invalid amount entered");
-      return;
-    }
-
-    if (requestedAmount > pending) {
-      _showSnack("Requested amount cannot exceed available pending ${_formatCurrency(pending)}");
-      return;
-    }
-
-    if (requestedAmount < minimumWithdrawal) {
-      _showSnack("Minimum withdrawal is ${_formatCurrency(minimumWithdrawal)}");
-      return;
-    }
-
-    // 2. Start Loading State
-    setState(() => isPayoutLoading = true);
-
-    final body = {
-      'partner_id': widget.partnerId,
-      'amount': requestedAmount.toString(),
-      'comments': commentsController.text.trim().isEmpty
-          ? "User Requested Payment"
-          : commentsController.text.trim(),
-    };
-
-    try {
-      final res = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/requestPayout'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: body,
-      ).timeout(const Duration(seconds: 15)); // Added timeout for better UX
-
-      // 3. SECURE JSON DECODING
-      // Only decode if the server actually sent JSON
-      if (res.headers['content-type']?.contains('application/json') ?? false) {
-        final data = jsonDecode(res.body);
-
-        if (res.statusCode == 200 && data['status'] == 'success') {
-          _showSuccessDialog(requestedAmount);
-          fetchFinanceData();
-          fetchTransactions();
-          commentsController.clear();
-          payoutAmountController.clear();
-        } else {
-          _showSnack(data['message'] ?? "Server rejected the request");
-        }
-      } else {
-        // If we got here, the backend probably crashed with a 500 error and sent raw text
-        _showSnack("Server Error (${res.statusCode}): Please check backend logs.");
-        print("Raw Server Response: ${res.body}");
-      }
-    } catch (e) {
-      _showSnack("Connection Error: $e");
-    } finally {
-      if (mounted) setState(() => isPayoutLoading = false);
-    }
-  }
-
-// Helper to keep the main function clean
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
-
-  void _showSuccessDialog(double amount) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Column(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 60),
-            SizedBox(height: 10),
-            Text("Request Submitted"),
-          ],
-        ),
-        content: Text(
-          "Your request for ${_formatCurrency(amount)} was successful.\n\nA confirmation email has been sent to your registered ID.",
-          textAlign: TextAlign.center,
-        ),
-        actions: [
-          Center(
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
-              child: const Text("Got it", style: TextStyle(color: Colors.white)),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  // ---------- Transactions: CSV Export ----------
+  // ---------- Transactions: Table & Export ----------
   Future<void> exportTransactionsCSV() async {
-    if (transactions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("No transactions to export")));
-      return;
-    }
-
+    if (transactions.isEmpty) { _showSnack("No transactions to export"); return; }
     final cols = <String>{};
-    for (var t in transactions)
-      cols.addAll(t.keys);
+    for (var t in transactions) cols.addAll(t.keys);
     final headers = cols.toList();
-
     final buffer = StringBuffer();
     buffer.writeln(headers.join(','));
     for (var t in transactions) {
       final row = headers.map((h) {
         final v = t[h];
         final s = v == null ? '' : v.toString().replaceAll('"', '""');
-        if (s.contains(',') || s.contains('\n')) return '"$s"';
-        return s;
+        return (s.contains(',') || s.contains('\n')) ? '"$s"' : s;
       }).join(',');
       buffer.writeln(row);
     }
-
     await Clipboard.setData(ClipboardData(text: buffer.toString()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text("CSV copied to clipboard (paste into a file).")),
-    );
-  }
-
-  // ---------- UI Builders for Tables ----------
-  Widget buildBookingsTable() {
-    if (filteredBookings.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(12),
-        child: Text("No bookings found", style: TextStyle(color: Colors.white)),
-      );
-    }
-
-    final columns = <String>{};
-    for (var b in filteredBookings) {
-      columns.addAll(b.keys);
-    }
-
-    final headers = columns.toList();
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        headingRowColor: MaterialStateProperty.all(Colors.green.shade700),
-        headingTextStyle: const TextStyle(
-            color: Colors.white, fontWeight: FontWeight.bold),
-        dataRowHeight: 60,
-        columns: headers
-            .map((key) =>
-            DataColumn(
-                label: Text(key, style: const TextStyle(color: Colors.white))))
-            .toList(),
-        rows: filteredBookings.map((b) {
-          final status = (b['booking_status'] ?? b['Status'] ?? '').toString();
-          return DataRow(
-            color: MaterialStateProperty.resolveWith<Color?>((states) {
-              final s = status.toLowerCase();
-              if (s.contains('completed'))
-                return Colors.green.withOpacity(0.18);
-              if (s.contains('pending')) return Colors.orange.withOpacity(0.18);
-              if (s.contains('confirmed')) return Colors.blue.withOpacity(0.18);
-              if (s.contains('cancel')) return Colors.red.withOpacity(0.18);
-              return Colors.grey.withOpacity(0.08);
-            }),
-            cells: headers.map((key) {
-              String value = b[key]?.toString() ?? '';
-              if (key.toLowerCase() == 'booking_status' ||
-                  key.toLowerCase() == 'status') {
-                return DataCell(_statusChip(value));
-              }
-              return DataCell(Text(value, style: const TextStyle(color: Colors
-                  .white)));
-            }).toList(),
-          );
-        }).toList(),
-      ),
-    );
+    _showSnack("CSV copied to clipboard.");
   }
 
   Widget buildTransactionsTable() {
-    if (transactions.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(12),
-        child: Text(
-            "No transactions found", style: TextStyle(color: Colors.white)),
-      );
-    }
-
+    if (transactions.isEmpty) return const Padding(padding: EdgeInsets.all(12), child: Text("No transactions found", style: TextStyle(color: Colors.white)));
     final columns = <String>{};
-    for (var tx in transactions) {
-      columns.addAll(tx.keys);
-    }
-    final headers = headersFromSet(columns);
-
+    for (var tx in transactions) columns.addAll(tx.keys);
+    final headers = columns.toList();
     final totalPages = max(1, (transactions.length / txPageSize).ceil());
     final start = (txPage - 1) * txPageSize;
     final end = min(start + txPageSize, transactions.length);
@@ -571,29 +369,13 @@ class _FinancePageState extends State<FinancePage> {
           scrollDirection: Axis.horizontal,
           child: DataTable(
             headingRowColor: MaterialStateProperty.all(Colors.green.shade700),
-            headingTextStyle: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold),
-            columns: headers
-                .map((key) =>
-                DataColumn(label: Text(key, style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold))))
-                .toList(),
+            headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            columns: headers.map((key) => DataColumn(label: Text(key))).toList(),
             rows: pageItems.map((tx) {
               return DataRow(
                 cells: headers.map((key) {
                   String value = tx[key]?.toString() ?? '';
-                  Color textColor = Colors.white;
-                  if (key.toLowerCase() == 'status') {
-                    final v = value.toLowerCase();
-                    if (v.contains('paid') || v.contains('success'))
-                      textColor = Colors.greenAccent;
-                    else if (v.contains('pending'))
-                      textColor = Colors.yellowAccent;
-                    else if (v.contains('failed') || v.contains('fail'))
-                      textColor = Colors.redAccent;
-                  }
-                  return DataCell(Text(
-                      value, style: TextStyle(color: textColor)));
+                  return DataCell(Text(value, style: const TextStyle(color: Colors.white)));
                 }).toList(),
               );
             }).toList(),
@@ -603,45 +385,21 @@ class _FinancePageState extends State<FinancePage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Showing ${start + 1} - $end of ${transactions.length}",
-                style: const TextStyle(color: Colors.white70)),
+            Text("Showing ${start + 1} - $end of ${transactions.length}", style: const TextStyle(color: Colors.white70)),
             Row(
               children: [
-                IconButton(
-                  onPressed: txPage > 1 ? () => setState(() => txPage--) : null,
-                  icon: const Icon(Icons.chevron_left, color: Colors.white),
-                ),
-                Text("$txPage / $totalPages",
-                    style: const TextStyle(color: Colors.white)),
-                IconButton(
-                  onPressed: txPage < totalPages ? () =>
-                      setState(() => txPage++) : null,
-                  icon: const Icon(Icons.chevron_right, color: Colors.white),
-                ),
+                IconButton(onPressed: txPage > 1 ? () => setState(() => txPage--) : null, icon: const Icon(Icons.chevron_left, color: Colors.white)),
+                Text("$txPage / $totalPages", style: const TextStyle(color: Colors.white)),
+                IconButton(onPressed: txPage < totalPages ? () => setState(() => txPage++) : null, icon: const Icon(Icons.chevron_right, color: Colors.white)),
                 const SizedBox(width: 8),
                 DropdownButton<int>(
                   dropdownColor: Colors.green.shade700,
                   value: txPageSize,
-                  items: [5, 10, 25, 50]
-                      .map((s) =>
-                      DropdownMenuItem(value: s,
-                          child: Text("$s",
-                              style: const TextStyle(color: Colors.white))))
-                      .toList(),
-                  onChanged: (v) {
-                    if (v != null) setState(() {
-                      txPageSize = v;
-                      txPage = 1;
-                    });
-                  },
+                  items: [5, 10, 25, 50].map((s) => DropdownMenuItem(value: s, child: Text("$s", style: const TextStyle(color: Colors.white)))).toList(),
+                  onChanged: (v) { if (v != null) setState(() { txPageSize = v; txPage = 1; }); },
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: exportTransactionsCSV,
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade800),
-                  child: const Text("Export CSV"),
-                ),
+                ElevatedButton(onPressed: exportTransactionsCSV, style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade800), child: const Text("Export CSV")),
               ],
             ),
           ],
@@ -650,202 +408,208 @@ class _FinancePageState extends State<FinancePage> {
     );
   }
 
-  List<String> headersFromSet(Set<String> set) {
-    // Keep stable order when rendering headers
-    return set.toList();
+  // ---------- Bookings Table ----------
+  Widget buildBookingsTable() {
+    if (filteredBookings.isEmpty) return const Padding(padding: EdgeInsets.all(12), child: Text("No bookings found", style: TextStyle(color: Colors.white)));
+    final columns = <String>{};
+    for (var b in filteredBookings) columns.addAll(b.keys);
+    final headers = columns.toList();
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        headingRowColor: MaterialStateProperty.all(Colors.green.shade700),
+        headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        columns: headers.map((key) => DataColumn(label: Text(key))).toList(),
+        rows: filteredBookings.map((b) {
+          return DataRow(
+            cells: headers.map((key) {
+              String value = b[key]?.toString() ?? '';
+              if (key.toLowerCase() == 'booking_status' || key.toLowerCase() == 'status') { return DataCell(_statusChip(value)); }
+              return DataCell(Text(value, style: const TextStyle(color: Colors.white)));
+            }).toList(),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ---------- Request Payout Logic ----------
+  Future<void> requestPayout() async {
+    double pending = _parseDouble(financeData['pending_payout'] ?? financeData['PendingPayout'] ?? 0);
+    if (payoutAmountController.text.trim().isEmpty) { _showSnack("Please enter withdrawal amount"); return; }
+    double? requestedAmount = double.tryParse(payoutAmountController.text.trim());
+    if (requestedAmount == null) { _showSnack("Invalid amount entered"); return; }
+    if (requestedAmount > pending) { _showSnack("Requested amount cannot exceed available pending ${_formatCurrency(pending)}"); return; }
+    if (requestedAmount < minimumWithdrawal) { _showSnack("Minimum withdrawal is ${_formatCurrency(minimumWithdrawal)}"); return; }
+
+    setState(() => isPayoutLoading = true);
+    final body = {
+      'partner_id': widget.partnerId,
+      'amount': requestedAmount.toString(),
+      'comments': commentsController.text.trim().isEmpty ? "User Requested Payment" : commentsController.text.trim(),
+    };
+
+    try {
+      final res = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/requestPayout'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: body,
+      ).timeout(const Duration(seconds: 15));
+
+      if (res.headers['content-type']?.contains('application/json') ?? false) {
+        final data = jsonDecode(res.body);
+        if (res.statusCode == 200 && data['status'] == 'success') {
+          _showSuccessDialog(requestedAmount);
+          fetchFinanceData(); fetchTransactions();
+          commentsController.clear(); payoutAmountController.clear();
+        } else { _showSnack(data['message'] ?? "Server rejected the request"); }
+      } else { _showSnack("Server Error (${res.statusCode})"); }
+    } catch (e) { _showSnack("Connection Error: $e"); }
+    finally { if (mounted) setState(() => isPayoutLoading = false); }
+  }
+
+  void _showSuccessDialog(double amount) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Column(children: [Icon(Icons.check_circle, color: Colors.green, size: 60), SizedBox(height: 10), Text("Request Submitted")]),
+        content: Text("Your request for ${_formatCurrency(amount)} was successful.", textAlign: TextAlign.center),
+        actions: [Center(child: ElevatedButton(onPressed: () => Navigator.pop(context), style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]), child: const Text("Got it", style: TextStyle(color: Colors.white))))],
+      ),
+    );
   }
 
   // ---------- Build ----------
   @override
   Widget build(BuildContext context) {
-    final pending = _parseDouble(
-        financeData['pending_payout'] ?? financeData['PendingPayout'] ?? 0);
-    final totalRevenue = _parseDouble(
-        financeData['total_revenue'] ?? financeData['TotalRevenue'] ?? 0);
-    final netRevenue = _parseDouble(
-        financeData['net_revenue'] ?? financeData['NetRevenue'] ?? 0);
-    final paidPayout = _parseDouble(
-        financeData['paid_payout'] ?? financeData['PaidPayout'] ?? 0);
-    final commission = _parseDouble(financeData['commission_percentage'] ??
-        financeData['CommissionPercentage'] ?? 0);
-    final lastPayoutDateRaw = financeData['last_payout_date'] ??
-        financeData['LastPayoutDate'];
-    String lastPayoutDate = '';
-    try {
-      final dt = _tryParseDate(lastPayoutDateRaw);
-      if (dt != null) lastPayoutDate = dt.toLocal().toString().split(' ')[0];
-    } catch (_) {}
-
+    final pending = _parseDouble(financeData['pending_payout'] ?? 0);
+    final totalRevenue = _parseDouble(financeData['total_revenue'] ?? 0);
+    final netRevenue = _parseDouble(financeData['net_revenue'] ?? 0);
+    final paidPayout = _parseDouble(financeData['paid_payout'] ?? 0);
+    final commission = _parseDouble(financeData['commission_percentage'] ?? 0);
     final balancePayout = netRevenue - paidPayout;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Partner Finance"),
-        backgroundColor: Colors.green.shade700,
-      ),
+      appBar: AppBar(title: const Text("Partner Finance"), backgroundColor: Colors.green.shade700),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF00C853), Color(0xFFB2FF59)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00C853), Color(0xFFB2FF59)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
         padding: const EdgeInsets.all(16),
-        child: isLoading
-            ? const Center(
-            child: CircularProgressIndicator(color: Colors.white))
-            : RefreshIndicator(
-          onRefresh: () async {
-            await fetchFinanceData();
-            await fetchTransactions();
-          },
+        child: isLoading ? const Center(child: CircularProgressIndicator(color: Colors.white)) : RefreshIndicator(
+          onRefresh: () async { await fetchFinanceData(); await fetchTransactions(); },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Summary", style: TextStyle(color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold)),
+                const Text("Summary", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
                 LayoutBuilder(builder: (context, constraints) {
-                  final spacing = 16.0;
-                  final totalSpacing = spacing * 2; // left/right rough
-                  final cardWidth = max(
-                      240.0, (constraints.maxWidth - totalSpacing) / 3 - 12);
+                  final cardWidth = max(240.0, (constraints.maxWidth - 32) / 3 - 12);
                   return Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                    spacing: 8, runSpacing: 8,
                     children: [
-                      SizedBox(width: cardWidth, child: buildFinanceCard(
-                          "Total Revenue", _formatCurrency(totalRevenue),
-                          Colors.blueAccent, icon: Icons.show_chart)),
-                      SizedBox(width: cardWidth, child: buildFinanceCard(
-                          "Commission %", "${commission.toStringAsFixed(2)}%",
-                          Colors.deepPurple, icon: Icons.monetization_on)),
-                      SizedBox(width: cardWidth, child: buildFinanceCard(
-                          "Net Revenue", _formatCurrency(netRevenue),
-                          Colors.green.shade700,
-                          icon: Icons.account_balance_wallet)),
-                      SizedBox(width: cardWidth, child: buildFinanceCard(
-                          "Pending Payout", _formatCurrency(pending),
-                          Colors.orange.shade700, icon: Icons.schedule)),
-                      SizedBox(width: cardWidth, child: buildFinanceCard(
-                          "Last Paid Payout", _formatCurrency(paidPayout),
-                          Colors.redAccent, icon: Icons.calendar_today)),
-                      SizedBox(width: cardWidth, child: buildFinanceCard(
-                          "Balance Payout", _formatCurrency(balancePayout),
-                          Colors.teal.shade700, icon: Icons.account_balance)),
+                      SizedBox(width: cardWidth, child: buildFinanceCard("Total Revenue", _formatCurrency(totalRevenue), Colors.blueAccent, icon: Icons.show_chart)),
+                      SizedBox(width: cardWidth, child: buildFinanceCard("Commission %", "${commission.toStringAsFixed(2)}%", Colors.deepPurple, icon: Icons.monetization_on)),
+                      SizedBox(width: cardWidth, child: buildFinanceCard("Net Revenue", _formatCurrency(netRevenue), Colors.green.shade700, icon: Icons.account_balance_wallet)),
+                      SizedBox(width: cardWidth, child: buildFinanceCard("Pending Payout", _formatCurrency(pending), Colors.orange.shade700, icon: Icons.schedule)),
+                      SizedBox(width: cardWidth, child: buildFinanceCard("Last Paid Payout", _formatCurrency(paidPayout), Colors.redAccent, icon: Icons.calendar_today)),
+                      SizedBox(width: cardWidth, child: buildFinanceCard("Balance Payout", _formatCurrency(balancePayout), Colors.teal.shade700, icon: Icons.account_balance)),
                     ],
                   );
                 }),
                 const SizedBox(height: 20),
 
+                // --- BANK SECTION ---
                 Card(
                   color: Colors.white.withOpacity(0.12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: ExpansionTile(
                     initiallyExpanded: bankExpanded,
-                    onExpansionChanged: (val) =>
-                        setState(() => bankExpanded = val),
-                    title: const Text("Update Bank Details",
-                        style: TextStyle(color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold)),
+                    onExpansionChanged: (val) => setState(() => bankExpanded = val),
+                    title: const Text("Bank Details", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    trailing: TextButton.icon(
+                      icon: Icon(isEditingBank ? Icons.cancel : Icons.edit, color: Colors.white),
+                      label: Text(isEditingBank ? "Cancel" : "Edit", style: const TextStyle(color: Colors.white)),
+                      onPressed: () => setState(() => isEditingBank = !isEditingBank),
+                    ),
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            buildTextField(
-                                accountHolderController, "Account Holder Name"),
-                            const SizedBox(height: 12),
-                            buildTextField(bankNameController, "Bank Name"),
-                            const SizedBox(height: 12),
-                            buildTextField(
-                                accountNumberController, "Account Number",
-                                isNumber: true),
-                            const SizedBox(height: 12),
-                            buildTextField(ifscController, "IFSC / SWIFT"),
-                            const SizedBox(height: 12),
-                            // Account Type Dropdown (ensure visible items)
-                            DropdownButtonFormField<String>(
-                              value: selectedAccountType,
-                              dropdownColor: Colors.white,
-                              decoration: InputDecoration(
-                                labelText: "Account Type",
-                                filled: true,
-                                fillColor: Colors.white.withOpacity(0.12),
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+                        child: Form(
+                          key: _bankFormKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextFormField(
+                                controller: accountHolderController,
+                                enabled: isEditingBank,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(labelText: "Account Holder Name", labelStyle: const TextStyle(color: Colors.white70), filled: true, fillColor: Colors.white.withOpacity(0.12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                               ),
-                              style: const TextStyle(color: Colors.black),
-                              items: accountTypeOptions
-                                  .map((v) =>
-                                  DropdownMenuItem(value: v,
-                                      child: Text(v, style: const TextStyle(
-                                          color: Colors.black))))
-                                  .toList(),
-                              onChanged: (v) {
-                                if (v != null) setState(() =>
-                                selectedAccountType = v);
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            buildTextField(panController, "PAN / Tax ID"),
-                            const SizedBox(height: 12),
-                            // Payout Type Dropdown (fixed visibility)
-                            DropdownButtonFormField<String>(
-                              value: selectedPayoutType,
-                              dropdownColor: Colors.white,
-                              decoration: InputDecoration(
-                                labelText: "Payout Type",
-                                filled: true,
-                                fillColor: Colors.white.withOpacity(0.12),
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+                              const SizedBox(height: 12),
+                              TextFormField(
+                                controller: bankNameController,
+                                enabled: isEditingBank,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(labelText: "Bank Name", labelStyle: const TextStyle(color: Colors.white70), filled: true, fillColor: Colors.white.withOpacity(0.12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                               ),
-                              style: const TextStyle(color: Colors.black),
-                              items: payoutTypeOptions
-                                  .map((v) =>
-                                  DropdownMenuItem(value: v,
-                                      child: Text(v, style: const TextStyle(
-                                          color: Colors.black))))
-                                  .toList(),
-                              onChanged: (v) {
-                                if (v != null) setState(() =>
-                                selectedPayoutType = v);
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text("Auto Payout",
-                                        style: TextStyle(color: Colors.white)),
-                                    const SizedBox(width: 12),
-                                    Switch(
-                                      value: autoPayout,
-                                      onChanged: (v) =>
-                                          setState(() => autoPayout = v),
-                                      activeColor: Colors.greenAccent,
-                                    ),
-                                  ],
-                                ),
-                                ElevatedButton(
-                                  onPressed: updateBankDetails,
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green.shade800),
-                                  child: const Text("Save Bank Details"),
-                                ),
-                              ],
-                            ),
-                          ],
+                              const SizedBox(height: 12),
+                              _buildSecureField(
+                                controller: accountNumberController,
+                                label: "Account Number",
+                                isObscured: obscureAccount,
+                                isNumber: true,
+                                onToggle: () => setState(() => obscureAccount = !obscureAccount),
+                              ),
+                              _buildSecureField(
+                                controller: ifscController,
+                                label: "IFSC / SWIFT",
+                                isObscured: obscureIfsc,
+                                validator: (v) => RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$').hasMatch(v?.toUpperCase() ?? "") ? null : "Invalid IFSC Format",
+                                onToggle: () => setState(() => obscureIfsc = !obscureIfsc),
+                              ),
+                              _buildSecureField(
+                                controller: panController,
+                                label: "PAN / Tax ID",
+                                isObscured: obscurePan,
+                                validator: (v) => RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(v?.toUpperCase() ?? "") ? null : "Invalid PAN Format",
+                                onToggle: () => setState(() => obscurePan = !obscurePan),
+                              ),
+                              const SizedBox(height: 12),
+                              DropdownButtonFormField<String>(
+                                value: selectedAccountType,
+                                dropdownColor: Colors.green.shade800,
+                                decoration: InputDecoration(labelText: "Account Type", labelStyle: const TextStyle(color: Colors.white70), filled: true, fillColor: Colors.white.withOpacity(0.12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                                style: const TextStyle(color: Colors.white),
+                                items: accountTypeOptions.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                                onChanged: isEditingBank ? (v) => setState(() => selectedAccountType = v!) : null,
+                              ),
+                              const SizedBox(height: 12),
+                              DropdownButtonFormField<String>(
+                                value: selectedPayoutType,
+                                dropdownColor: Colors.green.shade800,
+                                decoration: InputDecoration(labelText: "Payout Type", labelStyle: const TextStyle(color: Colors.white70), filled: true, fillColor: Colors.white.withOpacity(0.12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                                style: const TextStyle(color: Colors.white),
+                                items: payoutTypeOptions.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                                onChanged: isEditingBank ? (v) => setState(() => selectedPayoutType = v!) : null,
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(children: [const Text("Auto Payout", style: TextStyle(color: Colors.white)), Switch(value: autoPayout, onChanged: isEditingBank ? (v) => setState(() => autoPayout = v) : null, activeColor: Colors.greenAccent)]),
+                                  ElevatedButton(
+                                    onPressed: isEditingBank ? _confirmUpdateBankDetails : null,
+                                    style: ElevatedButton.styleFrom(backgroundColor: isEditingBank ? Colors.green.shade800 : Colors.grey),
+                                    child: const Text("Save Changes"),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -853,155 +617,35 @@ class _FinancePageState extends State<FinancePage> {
                 ),
                 const SizedBox(height: 20),
 
+                // --- PAYOUT REQUEST SECTION ---
                 Card(
                   color: Colors.white.withOpacity(0.12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Request Payout", style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold)),
+                        const Text("Request Payout", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 12),
-                        Text("Available Balance: ${_formatCurrency(pending)}",
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 16)),
+                        Text("Available: ${_formatCurrency(pending)}", style: const TextStyle(color: Colors.white70)),
                         const SizedBox(height: 12),
-                        TextFormField(
-                          controller: payoutAmountController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: "Enter Amount",
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.12),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          style: const TextStyle(color: Colors.white),
-                        ),
+                        TextFormField(controller: payoutAmountController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: "Amount", filled: true, fillColor: Colors.white.withOpacity(0.12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
                         const SizedBox(height: 12),
-                        TextFormField(
-                          controller: commentsController,
-                          maxLines: 3,
-                          decoration: InputDecoration(
-                            labelText: "Comments (optional)",
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.12),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          style: const TextStyle(color: Colors.white),
-                        ),
+                        TextFormField(controller: commentsController, maxLines: 2, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: "Comments", filled: true, fillColor: Colors.white.withOpacity(0.12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
                         const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: requestPayout,
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green.shade800),
-                          child: const Text("Submit Payout Request"),
-                        ),
+                        ElevatedButton(onPressed: isPayoutLoading ? null : requestPayout, style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade800), child: isPayoutLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text("Submit Request")),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Transactions", style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold)),
-                    Row(children: [
-                      IconButton(
-                        onPressed: fetchTransactions,
-                        icon: const Icon(Icons.refresh, color: Colors.white),
-                      ),
-                      const SizedBox(width: 8),
-                    ])
-                  ],
-                ),
-                const SizedBox(height: 12),
+                // --- TABLES SECTION ---
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Transactions", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)), IconButton(onPressed: fetchTransactions, icon: const Icon(Icons.refresh, color: Colors.white))]),
                 buildTransactionsTable(),
                 const SizedBox(height: 20),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Bookings", style: TextStyle(color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold)),
-                    Row(
-                      children: [
-                        DropdownButton<String>(
-                          value: selectedBookingFilter,
-                          dropdownColor: Colors.green.shade700,
-                          items: [
-                            "All",
-                            "Confirmed",
-                            "Pending",
-                            "Completed",
-                            "Cancelled"
-                          ]
-                              .map((e) =>
-                              DropdownMenuItem(value: e,
-                                  child: Text(e, style: const TextStyle(
-                                      color: Colors.white))))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v != null) setState(() {
-                              selectedBookingFilter = v;
-                              filteredBookings = _applyBookingFilters(
-                                  List<Map<String, dynamic>>.from(
-                                      financeData['Bookings'] ?? []));
-                            });
-                          },
-                        ),
-                        const SizedBox(width: 12),
-                        DropdownButton<String>(
-                          value: bookingDateRange,
-                          dropdownColor: Colors.green.shade700,
-                          items: [
-                            DropdownMenuItem(value: "All",
-                                child: Text("All", style: const TextStyle(
-                                    color: Colors.white))),
-                            DropdownMenuItem(value: "30",
-                                child: Text("Last 30d", style: const TextStyle(
-                                    color: Colors.white))),
-                            DropdownMenuItem(value: "90",
-                                child: Text("Last 90d", style: const TextStyle(
-                                    color: Colors.white))),
-                          ],
-                          onChanged: (v) {
-                            if (v != null) setState(() {
-                              bookingDateRange = v;
-                              filteredBookings = _applyBookingFilters(
-                                  List<Map<String, dynamic>>.from(
-                                      financeData['Bookings'] ?? []));
-                            });
-                          },
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              filteredBookings = _applyBookingFilters(
-                                  List<Map<String, dynamic>>.from(
-                                      financeData['Bookings'] ?? []));
-                            });
-                          },
-                          icon: const Icon(Icons.filter_list, color: Colors
-                              .white),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Bookings", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)), DropdownButton<String>(value: selectedBookingFilter, dropdownColor: Colors.green.shade700, items: ["All", "Confirmed", "Pending", "Completed", "Cancelled"].map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white)))).toList(), onChanged: (v) { if (v != null) setState(() { selectedBookingFilter = v; filteredBookings = _applyBookingFilters(List<Map<String, dynamic>>.from(financeData['Bookings'] ?? [])); }); })]),
                 buildBookingsTable(),
                 const SizedBox(height: 40),
               ],
