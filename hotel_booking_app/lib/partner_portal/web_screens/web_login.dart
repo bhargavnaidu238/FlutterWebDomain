@@ -119,6 +119,23 @@ class _WebLoginPageState extends State<WebLoginPage> {
     bool canResend = false;
     Timer? timer;
 
+    // Helper widget to maintain your specific design
+    Widget _dialogTextField(TextEditingController controller, String hint, IconData icon, {bool obscure = false}) {
+      return TextField(
+        controller: controller,
+        obscureText: obscure,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: Colors.greenAccent),
+          hintText: hint,
+          hintStyle: const TextStyle(color: Colors.white38),
+          filled: true,
+          fillColor: Colors.black26,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        ),
+      );
+    }
+
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -147,7 +164,8 @@ class _WebLoginPageState extends State<WebLoginPage> {
             }
 
             Future<void> handleSendOtp() async {
-              if (emailController.text.isEmpty) {
+              final email = emailController.text.trim().toLowerCase();
+              if (email.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Please enter your email")));
                 return;
@@ -159,8 +177,8 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   Uri.parse('${ApiConfig.baseUrl}/send-email-otp'),
                   headers: {'Content-Type': 'application/json'},
                   body: jsonEncode({
-                    'email': emailController.text.trim().toLowerCase(),
-                    'type': 'forgot_password_otp'
+                    'email': email,
+                    'type': 'forgot_password' // Consistent type
                   }),
                 );
 
@@ -183,7 +201,9 @@ class _WebLoginPageState extends State<WebLoginPage> {
             }
 
             Future<void> handleVerifyOtp() async {
-              if (otpController.text.isEmpty) return;
+              final otp = otpController.text.trim();
+              if (otp.isEmpty) return;
+
               setDialogState(() => isApiLoading = true);
               try {
                 final res = await http.post(
@@ -191,8 +211,8 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   headers: {'Content-Type': 'application/json'},
                   body: jsonEncode({
                     'email': emailController.text.trim().toLowerCase(),
-                    'otp': otpController.text.trim(),
-                    'type': 'verify_otp'
+                    'otp': otp,
+                    'type': 'forgot_password' // Matches the sending type
                   }),
                 );
                 final data = jsonDecode(res.body);
@@ -202,6 +222,9 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(data['message'] ?? "Invalid OTP")));
                 }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
@@ -279,6 +302,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                               value: showPassword,
                               onChanged: (val) => setDialogState(() => showPassword = val!),
                               side: const BorderSide(color: Colors.white70),
+                              activeColor: Colors.greenAccent,
                             ),
                             const Text("Show Password", style: TextStyle(color: Colors.white70, fontSize: 12)),
                           ],
@@ -294,7 +318,10 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
                 ),
                 if (isApiLoading)
-                  const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: CircularProgressIndicator(color: Colors.white))
+                  const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  )
                 else
                   ElevatedButton(
                     onPressed: currentStep == 1 ? handleSendOtp : currentStep == 2 ? handleVerifyOtp : handleResetPassword,
@@ -310,7 +337,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
           },
         );
       },
-    );
+    ).then((_) => timer?.cancel()); // Ensure timer is killed if dialog is dismissed via clicking outside
   }
 
   Widget _dialogTextField(TextEditingController controller, String label, IconData icon, {bool obscure = false}) {
