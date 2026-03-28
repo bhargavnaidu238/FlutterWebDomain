@@ -24,6 +24,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
   }
 
   Future<void> fetchHotels() async {
+    if (!mounted) return;
     setState(() => isLoading = true);
     hotels.clear();
 
@@ -42,7 +43,6 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
 
-            // Adjusted mapping to match new avg_rating and total_reviews columns
             hotels.add({
               "hotel_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',
@@ -72,11 +72,13 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error fetching hotels: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error fetching hotels: $e")),
+        );
+      }
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -91,7 +93,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
     setState(() {
       if (value == true) selectedHotels.add(hotelId);
       else selectedHotels.remove(hotelId);
-      selectAll = selectedHotels.length == hotels.length;
+      selectAll = selectedHotels.length == hotels.length && hotels.isNotEmpty;
     });
   }
 
@@ -105,7 +107,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
         content: Text("Delete ${selectedHotels.length} hotel(s)?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
         ],
       ),
     ) ?? false;
@@ -134,166 +136,191 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
   }
 
   Widget buildHotelRow(Map<String, String> hotel) {
-    String fullAddress =
-        "${hotel['address']}, ${hotel['city']}, ${hotel['state']}, ${hotel['country']} - ${hotel['pincode']}";
+    String fullAddress = "${hotel['address']}, ${hotel['city']}, ${hotel['state']} - ${hotel['pincode']}";
     bool isSelected = selectedHotels.contains(hotel['hotel_id']);
 
     return Card(
-      color: Colors.white.withOpacity(0.1),
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      color: Colors.white.withOpacity(0.15),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Checkbox(
-              value: isSelected,
-              onChanged: (v) => toggleHotelSelection(hotel['hotel_id']!, v),
-              activeColor: Colors.green.shade900,
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(hotel['hotel_name'] ?? 'Unnamed', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(height: 4),
-                  Text(fullAddress, style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text("Rooms: ${hotel['total_rooms'] ?? '0'} | Price: ₹${hotel['room_price'] ?? '0'}", style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text("Hotel Type: ${hotel['hotel_type'] ?? ''}", style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text("Amenities: ${hotel['amenities'] ?? ''}", style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text("About This Hotel: ${hotel['about_this_property'] ?? ''}",
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text("Status: ${hotel['status'] ?? ''}", style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Wrap( // Use Wrap for mobile compatibility
-                    spacing: 15,
-                    runSpacing: 4,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.star, color: Colors.amber.shade300, size: 18),
-                          const SizedBox(width: 4),
-                          Text("${hotel['avg_rating']} (${hotel['total_reviews']} reviews)", style: const TextStyle(color: Colors.white70)),
-                        ],
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.phone, color: Colors.white70, size: 18),
-                          const SizedBox(width: 4),
-                          Text(hotel['hotel_contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+      child: InkWell(
+        onTap: () => toggleHotelSelection(hotel['hotel_id']!, !isSelected),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Checkbox(
+                value: isSelected,
+                onChanged: (v) => toggleHotelSelection(hotel['hotel_id']!, v),
+                activeColor: Colors.green.shade900,
+                side: const BorderSide(color: Colors.white),
               ),
-            ),
-          ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(hotel['hotel_name'] ?? 'Unnamed', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 6),
+                    _infoRow(Icons.business, "Type: ${hotel['hotel_type']}"),
+                    _infoRow(Icons.location_on, fullAddress),
+                    _infoRow(Icons.king_bed, "Rooms: ${hotel['total_rooms']} | Price: ₹${hotel['room_price']}"),
+                    _infoRow(Icons.check_circle, "Status: ${hotel['status']}"),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: Colors.amber.shade300, size: 18),
+                        const SizedBox(width: 4),
+                        Text("${hotel['avg_rating']} (${hotel['total_reviews']} reviews)", style: const TextStyle(color: Colors.white)),
+                        const SizedBox(width: 15),
+                        const Icon(Icons.phone, color: Colors.white70, size: 18),
+                        const SizedBox(width: 4),
+                        Text(hotel['hotel_contact'] ?? "N/A", style: const TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: Colors.white70),
+          const SizedBox(width: 6),
+          Expanded(child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 13))),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    bool isSmallScreen = screenWidth < 600;
+
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF00C853), Color(0xFFB2FF59)],
+            colors: [Color(0xFF00C853), Color(0xFF64DD17)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            // Responsive Header
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
-                  const SizedBox(width: 8),
-                  const Text("View Hotels", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(width: 20),
-                  ElevatedButton.icon(
-                    onPressed: selectedHotels.length == 1
-                        ? () {
-                      final hotel = hotels.firstWhere((h) => h['hotel_id'] == selectedHotels[0]);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AddHotelsPage(partnerId: widget.partnerId, hotelData: hotel),
-                        ),
-                      ).then((value) {
-                        fetchHotels();
-                        selectedHotels.clear();
-                        selectAll = false;
-                      });
-                    }
-                        : null,
-                    icon: const Icon(Icons.edit, size: 20),
-                    label: const Text("Edit"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.white24,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton.icon(
-                    onPressed: selectedHotels.isNotEmpty ? confirmDelete : null,
-                    icon: const Icon(Icons.delete_forever, size: 20),
-                    label: const Text("Delete"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent.withOpacity(0.8),
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: widget.partnerId))),
-                    icon: const Icon(Icons.add, size: 20),
-                    label: const Text("Add Hotel"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 24),
+            child: Column(
               children: [
-                Checkbox(value: selectAll, onChanged: toggleSelectAll, activeColor: Colors.green.shade900),
-                const Text("Select All", style: TextStyle(color: Colors.white, fontSize: 16)),
+                // Header with Responsive Buttons
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
+                        Text("View Hotels", style: TextStyle(fontSize: isSmallScreen ? 20 : 26, fontWeight: FontWeight.bold, color: Colors.white)),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _actionButton(
+                          onPressed: selectedHotels.length == 1 ? _handleEdit : null,
+                          icon: Icons.edit,
+                          label: "Edit",
+                        ),
+                        const SizedBox(width: 8),
+                        _actionButton(
+                          onPressed: selectedHotels.isNotEmpty ? confirmDelete : null,
+                          icon: Icons.delete,
+                          label: "Delete",
+                          color: Colors.redAccent.withOpacity(0.8),
+                        ),
+                        const SizedBox(width: 8),
+                        _actionButton(
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: widget.partnerId))).then((_) => fetchHotels()),
+                          icon: Icons.add,
+                          label: "Add",
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: selectAll,
+                      onChanged: toggleSelectAll,
+                      activeColor: Colors.green.shade900,
+                      side: const BorderSide(color: Colors.white),
+                    ),
+                    const Text("Select All", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                    const Spacer(),
+                    if (selectedHotels.isNotEmpty)
+                      Text("${selectedHotels.length} Selected", style: const TextStyle(color: Colors.white70)),
+                  ],
+                ),
+                const Divider(color: Colors.white24),
+                Expanded(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                      : hotels.isEmpty
+                      ? const Center(child: Text("No hotels found.", style: TextStyle(color: Colors.white, fontSize: 18)))
+                      : ListView.builder(
+                    itemCount: hotels.length,
+                    itemBuilder: (context, i) => buildHotelRow(hotels[i]),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                  : hotels.isEmpty
-                  ? const Center(child: Text("No hotels found.", style: TextStyle(color: Colors.white, fontSize: 18)))
-                  : ListView.builder(
-                itemCount: hotels.length,
-                itemBuilder: (context, i) => buildHotelRow(hotels[i]),
-              ),
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _handleEdit() {
+    final hotel = hotels.firstWhere((h) => h['hotel_id'] == selectedHotels[0]);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddHotelsPage(partnerId: widget.partnerId, hotelData: hotel),
+      ),
+    ).then((value) {
+      fetchHotels();
+      selectedHotels.clear();
+      selectAll = false;
+    });
+  }
+
+  Widget _actionButton({required VoidCallback? onPressed, required IconData icon, required String label, Color? color}) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color ?? Colors.white.withOpacity(0.2),
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: Colors.white10,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
