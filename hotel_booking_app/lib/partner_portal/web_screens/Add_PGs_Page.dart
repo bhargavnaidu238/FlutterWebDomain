@@ -36,7 +36,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     "Total Four Sharing Rooms", "Total Five Sharing Rooms", "PG Contact"
   ];
 
-  // Dynamic Selection Lists
   List<String> roomTypeOptions = ['Single Sharing', 'Double Sharing', 'Three Sharing', 'Four Sharing', 'Five Sharing'];
   Map<String, bool> roomTypeSelected = {};
   Map<String, TextEditingController> roomPriceControllers = {};
@@ -47,13 +46,11 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
   List<String> policyOptions = ['Couple Friendly', 'Alcohol Allowed', 'Guest Should Display Govt ID\'s', 'Non-Refundable', 'Refundable'];
   Map<String, bool> policySelected = {};
 
-  // Controllers for "Add New" fields
   final TextEditingController newRoomTypeCtrl = TextEditingController();
   final TextEditingController newAmenityCtrl = TextEditingController();
   final TextEditingController newPolicyCtrl = TextEditingController();
 
   final TextEditingController aboutController = TextEditingController();
-  final TextEditingController ratingController = TextEditingController(text: '0.0');
   final TextEditingController locationController = TextEditingController();
 
   final Map<String, List<Uint8List>> localImages = {};
@@ -67,14 +64,11 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     super.initState();
     _expandCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     _expandAnim = CurvedAnimation(parent: _expandCtrl, curve: Curves.easeInOut);
-
     _initData();
   }
 
   void _initData() {
     for (var f in fields) controllers[f] = TextEditingController();
-
-    // Initialize maps
     for (var rt in roomTypeOptions) {
       roomTypeSelected[rt] = false;
       roomPriceControllers[rt] = TextEditingController(text: "0");
@@ -90,7 +84,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
 
   void _populateExistingData() {
     final data = widget.pgData!;
-
     controllers["PG Name"]?.text = data['pg_name']?.toString() ?? '';
     controllers["Address"]?.text = data['address']?.toString() ?? '';
     controllers["City"]?.text = data['city']?.toString() ?? '';
@@ -106,9 +99,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
 
     selectedPGType = data['pg_type'];
     aboutController.text = (data['about_this_pg'] ?? data['about_this_property'] ?? '').toString();
-    ratingController.text = (data['rating'] ?? '0.0').toString();
 
-    // Location
     if ((data['hotel_location'] ?? '').contains(',')) {
       final parts = data['hotel_location']!.split(',');
       latitude = double.tryParse(parts[0]);
@@ -116,7 +107,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
       locationController.text = "Lat: ${latitude!.toStringAsFixed(3)}, Lng: ${longitude!.toStringAsFixed(3)}";
     }
 
-    // Dynamic Lists Parsing
     _parseCsvToMap(data['amenities'], amenitySelected, amenityOptions);
     _parseCsvToMap(data['policies'], policySelected, policyOptions);
 
@@ -236,7 +226,8 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         'available_rooms': controllers["Total Double Sharing Rooms"]!.text,
         'amenities': amenitySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
         'policies': policySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
-        'rating': ratingController.text,
+        'avg_rating': widget.pgData?['avg_rating']?.toString() ?? '0.0', // Rating removed from UI input
+        'total_reviews': widget.pgData?['total_reviews']?.toString() ?? '0',
         'pg_contact': controllers["PG Contact"]!.text,
         'about_this_pg': aboutController.text,
         'hotel_location': "$latitude,$longitude",
@@ -272,20 +263,25 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    bool isMobile = screenWidth < 800;
+
     return Scaffold(
       backgroundColor: Colors.greenAccent.shade100,
       appBar: AppBar(backgroundColor: Colors.greenAccent.shade700, title: const Text("Add Paying Guest")),
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.all(40),
+            padding: EdgeInsets.all(isMobile ? 15 : 40),
             child: Center(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Wrap( // Changed to Wrap for mobile compatibility
+                alignment: WrapAlignment.center,
+                spacing: 30,
+                runSpacing: 20,
                 children: [
                   Container(
-                    width: 750, padding: const EdgeInsets.all(35),
+                    width: isMobile ? screenWidth * 0.95 : 750,
+                    padding: EdgeInsets.all(isMobile ? 20 : 35),
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)]),
                     child: Form(
                       key: _formKey,
@@ -329,14 +325,21 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
 
                           const SizedBox(height: 25),
                           TextFormField(controller: aboutController, maxLines: 3, decoration: _inputStyle("About This Property")),
-                          const SizedBox(height: 20),
-                          _buildFooter(),
+                          const SizedBox(height: 25),
+                          SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                  onPressed: isSaving ? null : savePG,
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent.shade700, foregroundColor: Colors.white),
+                                  child: const Text("Save PG", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))
+                              )
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 30),
-                  _buildPreviewSidebar(),
+                  if (!isMobile) _buildPreviewSidebar(), // Only show sidebar on desktop or as a separate section
                 ],
               ),
             ),
@@ -347,11 +350,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     );
   }
 
-  // --- Helpers & UI widgets ---
-
   Widget _buildLoadingOverlay() => Container(color: Colors.black54, child: const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(color: Colors.white), SizedBox(height: 20), Text("Processing PG Data...", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))])));
-
-  Widget _buildFooter() => Row(children: [Expanded(child: TextFormField(controller: ratingController, decoration: _inputStyle("Rating (0.0-5.0)"))), const SizedBox(width: 15), SizedBox(height: 50, width: 150, child: ElevatedButton(onPressed: isSaving ? null : savePG, style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent.shade700, foregroundColor: Colors.white), child: const Text("Save PG")))]);
 
   Widget _buildPreviewSidebar() => Container(width: 300, padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(controllers["PG Name"]!.text.isEmpty ? "PG Name" : controllers["PG Name"]!.text, style: const TextStyle(fontWeight: FontWeight.bold)), const Divider(), Text("Type: ${selectedPGType ?? '-'}"), Text("Location Selected: ${latitude != null ? 'Yes' : 'No'}")]));
 
@@ -376,13 +375,11 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     newAmenityCtrl.dispose();
     newPolicyCtrl.dispose();
     aboutController.dispose();
-    ratingController.dispose();
     locationController.dispose();
     super.dispose();
   }
 }
 
-// -------------------- MAP PICKER ---------------------
 class MapPickerPage extends StatefulWidget {
   final double? initialLat;
   final double? initialLng;
@@ -395,10 +392,8 @@ class MapPickerPage extends StatefulWidget {
 class _MapPickerPageState extends State<MapPickerPage> {
   late CameraPosition _initialPosition;
   LatLng? pickedLocation;
-
   final TextEditingController latController = TextEditingController();
   final TextEditingController lngController = TextEditingController();
-
   GoogleMapController? _mapController;
 
   @override
@@ -417,7 +412,6 @@ class _MapPickerPageState extends State<MapPickerPage> {
       lat = widget.initialLat ?? 20.5937;
       lng = widget.initialLng ?? 78.9629;
     }
-
     setState(() {
       pickedLocation = LatLng(lat, lng);
       _initialPosition = CameraPosition(target: pickedLocation!, zoom: 15);
