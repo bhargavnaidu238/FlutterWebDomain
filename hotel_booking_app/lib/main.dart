@@ -10,11 +10,13 @@ import 'services/api_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase (this also helps restore Supabase auth session if used)
   await _initializeSupabaseFromBackend();
+
   runApp(const MyApp());
 }
 
-// ================= FETCH SUPABASE CONFIG FROM BACKEND =================
 Future<void> _initializeSupabaseFromBackend() async {
   try {
     final response = await http.get(
@@ -23,18 +25,11 @@ Future<void> _initializeSupabaseFromBackend() async {
 
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body);
-
-      final String url = decoded['url'];
-      final String anonKey = decoded['anonKey'];
-
       await Supabase.initialize(
-        url: url,
-        anonKey: anonKey,
+        url: decoded['url'],
+        anonKey: decoded['anonKey'],
       );
-
       debugPrint("Supabase initialized successfully.");
-    } else {
-      debugPrint("Failed to fetch Supabase config.");
     }
   } catch (e) {
     debugPrint("Supabase initialization error: $e");
@@ -46,19 +41,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determine the starting point based on persistent storage
+    final String initialRoute = ApiService.isLoggedIn() ? '/dashboard' : '/';
+
     return MaterialApp(
       title: "Hotel Booking App",
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.indigo),
-
-      // ================= AUTO CHECK LOGIN ON APP START =================
-      initialRoute: ApiService.isLoggedIn() ? '/dashboard' : '/',
-
+      initialRoute: initialRoute,
       onGenerateRoute: _generateRoute,
     );
   }
 
-  // ================== NO TRANSITION ROUTE ==================
   Route<dynamic> _noTransitionRoute(Widget page, RouteSettings settings) {
     return PageRouteBuilder(
       settings: settings,
@@ -68,39 +62,38 @@ class MyApp extends StatelessWidget {
     );
   }
 
-  // ================== ROUTE GENERATOR ==================
   Route<dynamic> _generateRoute(RouteSettings settings) {
+    // Always check fresh state from ApiService (which now reads localStorage)
     final bool loggedIn = ApiService.isLoggedIn();
 
     switch (settings.name) {
-
-    // ================= LANDING PAGE =================
       case '/':
         return _noTransitionRoute(const LandingPage(), settings);
 
-    // ================= LOGIN PAGE =================
       case '/weblogin':
         return _noTransitionRoute(const WebLoginPage(), settings);
 
-    // ================= REGISTER PAGE =================
       case '/registerlogin':
         return _noTransitionRoute(const WebRegisterPage(), settings);
 
-    // ================= DASHBOARD (PROTECTED) =================
       case '/dashboard':
-
         if (!loggedIn) {
-          debugPrint("Blocked unauthorized dashboard access.");
           return _noTransitionRoute(const WebLoginPage(), settings);
         }
 
+        // Handle arguments or recovery from refresh
         final args = settings.arguments as Map<String, String>?;
 
-        if (args == null) {
+        if (args != null) {
+          return _noTransitionRoute(WebDashboardPage(partnerDetails: args), settings);
+        } else {
+          // RECOVERY LOGIC: If args are null (happens on refresh),
+          // pull directly from our persisted ApiService
           final email = ApiService.getEmail();
           final userId = ApiService.getUserId();
 
           if (email == null || userId == null) {
+            debugPrint("Session data missing on refresh, redirecting to login.");
             return _noTransitionRoute(const WebLoginPage(), settings);
           }
 
@@ -115,31 +108,15 @@ class MyApp extends StatelessWidget {
           );
         }
 
-        return _noTransitionRoute(
-          WebDashboardPage(partnerDetails: args),
-          settings,
-        );
-
-    // ================= DEFAULT =================
       default:
         return _errorScreen("Route not found: ${settings.name}");
     }
   }
 
-  // ================= ERROR SCREEN =================
   MaterialPageRoute _errorScreen(String msg) {
     return MaterialPageRoute(
       builder: (_) => Scaffold(
-        body: Center(
-          child: Text(
-            msg,
-            style: const TextStyle(
-              color: Colors.red,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
+        body: Center(child: Text(msg, style: const TextStyle(color: Colors.red))),
       ),
     );
   }

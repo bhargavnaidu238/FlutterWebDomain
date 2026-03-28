@@ -30,13 +30,13 @@ class ApiConfig {
 
 /// ================== MAIN API SERVICE ==================
 class ApiService {
-
   /// ================= AUTH STORAGE KEYS =================
   static const String _tokenKey = "auth_token";
   static const String _emailKey = "auth_email";
   static const String _userIdKey = "auth_userId";
 
   /// ================= AUTH STORAGE =================
+  /// Saves data to browser localStorage to persist across refreshes.
   static void saveAuthData({
     required String token,
     required String email,
@@ -47,11 +47,16 @@ class ApiService {
     html.window.localStorage[_userIdKey] = userId;
   }
 
+  /// These getters read directly from localStorage to handle browser refreshes
   static String? getToken() => html.window.localStorage[_tokenKey];
   static String? getEmail() => html.window.localStorage[_emailKey];
   static String? getUserId() => html.window.localStorage[_userIdKey];
 
-  static bool isLoggedIn() => getToken() != null;
+  /// Checks if a valid token exists in storage
+  static bool isLoggedIn() {
+    final token = getToken();
+    return token != null && token.isNotEmpty;
+  }
 
   static void logout() {
     html.window.localStorage.remove(_tokenKey);
@@ -60,9 +65,7 @@ class ApiService {
   }
 
   /// ================= EMAIL OTP =================
-
   static Future<Map<String, dynamic>> sendEmailOtp(String email) async {
-
     final url = Uri.parse('${ApiConfig.baseUrl}/send-email-otp');
 
     try {
@@ -77,7 +80,6 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-
     } catch (e) {
       print("❌ Send OTP Error: $e");
     }
@@ -89,7 +91,6 @@ class ApiService {
     required String email,
     required String otp,
   }) async {
-
     final url = Uri.parse('${ApiConfig.baseUrl}/verify-email-otp');
 
     try {
@@ -105,7 +106,6 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-
     } catch (e) {
       print("❌ Verify OTP Error: $e");
     }
@@ -124,7 +124,6 @@ class ApiService {
     required String password,
     required String consent,
   }) async {
-
     final url = Uri.parse('${ApiConfig.baseUrl}/register');
 
     final body = jsonEncode({
@@ -156,7 +155,6 @@ class ApiService {
     required String email,
     required String password,
   }) async {
-
     final url = Uri.parse('${ApiConfig.baseUrl}/login');
 
     final body = jsonEncode({
@@ -174,11 +172,11 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-
         final token =
             data['token'] ?? DateTime.now().millisecondsSinceEpoch.toString();
         final userId = data['userId']?.toString() ?? '';
 
+        // Persist data immediately upon successful login
         saveAuthData(
           token: token,
           email: email,
@@ -194,7 +192,6 @@ class ApiService {
       }
 
       return {"error": data['error'] ?? "login_failed"};
-
     } catch (e) {
       print('🚨 Login Error: $e');
       return {"error": "connection_error"};
@@ -206,9 +203,7 @@ class ApiService {
     required String email,
     required String mobile,
   }) async {
-
-    final url = Uri.parse(
-        '${ApiConfig.baseUrl}/app/forgot-password/verify');
+    final url = Uri.parse('${ApiConfig.baseUrl}/app/forgot-password/verify');
 
     try {
       final response = await http.post(
@@ -234,9 +229,7 @@ class ApiService {
     required String email,
     required String newPassword,
   }) async {
-
-    final url = Uri.parse(
-        '${ApiConfig.baseUrl}/app/forgot-password/change');
+    final url = Uri.parse('${ApiConfig.baseUrl}/app/forgot-password/change');
 
     try {
       final response = await http.post(
@@ -249,7 +242,6 @@ class ApiService {
       );
 
       return {"success": response.statusCode == 200};
-
     } catch (e) {
       print('❌ Change Password Error: $e');
       return {"success": false};
@@ -261,7 +253,6 @@ class ApiService {
     required String currentPassword,
     required String newPassword,
   }) async {
-
     final url = Uri.parse('${ApiConfig.baseUrl}/app/change-password');
 
     try {
@@ -279,7 +270,6 @@ class ApiService {
         final data = jsonDecode(response.body);
         return data['success'] == true;
       }
-
     } catch (e) {
       print('❌ Change Password (Profile) Error: $e');
     }
@@ -299,11 +289,9 @@ class ApiService {
 
 /// ================= PROFILE SERVICE =================
 class ProfileApiService {
-
   static Future<Map<String, dynamic>?> fetchProfile({
     required String email,
   }) async {
-
     final url = Uri.parse(
       '${ApiConfig.baseUrl}/profile?email=${Uri.encodeComponent(email)}',
     );
@@ -311,9 +299,7 @@ class ProfileApiService {
     try {
       final response = await http.get(url);
 
-      if (response.statusCode == 200 &&
-          response.body.isNotEmpty) {
-
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
         final data = jsonDecode(response.body);
 
         return {
@@ -325,7 +311,6 @@ class ProfileApiService {
           "address": data['address'] ?? '',
         };
       }
-
     } catch (e) {
       print('🚨 FetchProfile Error: $e');
     }
@@ -341,7 +326,6 @@ class ProfileApiService {
     required String phone,
     required String address,
   }) async {
-
     final url = Uri.parse('${ApiConfig.baseUrl}/profile');
 
     try {
@@ -359,7 +343,6 @@ class ProfileApiService {
       );
 
       return response.statusCode == 200;
-
     } catch (e) {
       print('🚨 UpdateProfile Error: $e');
       return false;
@@ -371,7 +354,6 @@ class ProfileApiService {
     required String userId,
     required String status,
   }) async {
-
     final url = Uri.parse('${ApiConfig.baseUrl}/profile');
 
     try {
@@ -386,7 +368,6 @@ class ProfileApiService {
       );
 
       return response.statusCode == 200;
-
     } catch (e) {
       print('❌ Deactivate Error: $e');
       return false;
