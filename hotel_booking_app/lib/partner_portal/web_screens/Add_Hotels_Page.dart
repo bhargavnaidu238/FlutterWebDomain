@@ -32,8 +32,11 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
   final TextEditingController newAmenityCtrl = TextEditingController();
   final TextEditingController newPolicyCtrl = TextEditingController();
   final TextEditingController aboutController = TextEditingController();
-  final TextEditingController ratingController = TextEditingController(text: '0.0');
   final TextEditingController locationController = TextEditingController();
+
+  // New variables for updated table structure
+  double avgRating = 0.0;
+  int totalReviews = 0;
 
   String? selectedHotelType;
   String? selectedCustomization;
@@ -93,7 +96,11 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     controllers["hotel_contact"]!.text = data['hotel_contact']?.toString() ?? "";
 
     aboutController.text = data['about_this_property']?.toString() ?? "";
-    ratingController.text = data['rating']?.toString() ?? "0.0";
+
+    // Updated to new rating columns
+    avgRating = double.tryParse(data['avg_rating']?.toString() ?? "0.0") ?? 0.0;
+    totalReviews = int.tryParse(data['total_reviews']?.toString() ?? "0") ?? 0;
+
     selectedHotelType = data['hotel_type'];
     selectedCustomization = data['customization'];
 
@@ -206,7 +213,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
 
   Future<void> saveHotel() async {
     if (!_formKey.currentState!.validate()) {
-      _showSnack("All fields are mandatory except Rating");
+      _showSnack("All fields are mandatory");
       return;
     }
     if (latitude == null) {
@@ -237,7 +244,9 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         'available_rooms': controllers["total_rooms"]!.text,
         'amenities': amenitySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
         'policies': policySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
-        'rating': ratingController.text,
+        // Sent as 0 since partner cannot set ratings manually
+        'avg_rating': avgRating.toString(),
+        'total_reviews': totalReviews.toString(),
         'hotel_contact': controllers["hotel_contact"]!.text,
         'about_this_property': aboutController.text,
         'hotel_location': "$latitude,$longitude",
@@ -302,14 +311,16 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.all(40),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
             child: Center(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Wrap( // Changed to Wrap for Mobile Web Compatibility
+                alignment: WrapAlignment.center,
+                spacing: 30,
+                runSpacing: 30,
                 children: [
                   Container(
-                    width: 750, padding: const EdgeInsets.all(35),
+                    width: MediaQuery.of(context).size.width > 850 ? 750 : MediaQuery.of(context).size.width * 0.9,
+                    padding: const EdgeInsets.all(35),
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
                     child: Form(
                       key: _formKey,
@@ -364,7 +375,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
                       ),
                     ),
                   ),
-                  const SizedBox(width: 30),
                   _buildPreviewSidebar(),
                 ],
               ),
@@ -390,24 +400,40 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
   }
 
   Widget _buildFooter() {
-    return Row(children: [
-      Expanded(child: TextFormField(controller: ratingController, decoration: _inputStyle("Rating (0.0-5.0)"), keyboardType: TextInputType.number)),
-      const SizedBox(width: 15),
-      SizedBox(height: 50, width: 150, child: ElevatedButton(onPressed: isSaving ? null : saveHotel, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00C853), foregroundColor: Colors.white), child: isSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text("Save Hotel"))),
-    ]);
+    return Center( // Center aligned for better mobile view
+      child: SizedBox(
+          height: 50,
+          width: 200,
+          child: ElevatedButton(
+              onPressed: isSaving ? null : saveHotel,
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00C853), foregroundColor: Colors.white),
+              child: isSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text("Save Hotel")
+          )
+      ),
+    );
   }
 
   Widget _buildPreviewSidebar() {
-    return Column(children: [
-      Container(width: 300, padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(controllers["hotel_name"]!.text.isEmpty ? "Hotel Name" : controllers["hotel_name"]!.text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(height: 5),
-        Text("${controllers["address"]!.text} ${controllers["city"]!.text} ${controllers["state"]!.text}", style: const TextStyle(color: Colors.grey, fontSize: 11)),
-        const Divider(),
-        Text("Rating: ${ratingController.text}", style: const TextStyle(fontSize: 12)),
-        Text("Type: ${selectedHotelType ?? '-'}", style: const TextStyle(fontSize: 12)),
-      ])),
-    ]);
+    return Container(
+        width: 300,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)]),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Live Preview", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+              const Divider(),
+              Text(controllers["hotel_name"]!.text.isEmpty ? "Hotel Name" : controllers["hotel_name"]!.text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 5),
+              Text("${controllers["address"]!.text} ${controllers["city"]!.text} ${controllers["state"]!.text}", style: const TextStyle(color: Colors.grey, fontSize: 11)),
+              const Divider(),
+              Text("Avg Rating: $avgRating ⭐", style: const TextStyle(fontSize: 12)),
+              Text("Total Reviews: $totalReviews", style: const TextStyle(fontSize: 12)),
+              Text("Type: ${selectedHotelType ?? '-'}", style: const TextStyle(fontSize: 12)),
+            ]
+        )
+    );
   }
 
   Widget _imageThumbnail(String c, int i) => Stack(children: [Container(margin: const EdgeInsets.only(right: 5), width: 60, height: 60, decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300)), child: Image.memory(localImages[c]![i], fit: BoxFit.cover)), Positioned(right: 0, child: GestureDetector(onTap: () => setState(() => localImages[c]!.removeAt(i)), child: const CircleAvatar(radius: 10, backgroundColor: Colors.red, child: Icon(Icons.close, size: 12, color: Colors.white))))]);
@@ -444,12 +470,15 @@ class _MapPickerPageState extends State<MapPickerPage> {
     return Scaffold(
       appBar: AppBar(title: const Text("Pick Location"), backgroundColor: Colors.green),
       body: _loc == null ? const Center(child: CircularProgressIndicator()) : Column(children: [
-        Padding(padding: const EdgeInsets.all(10), child: Row(children: [
-          Expanded(child: TextField(controller: latC, decoration: const InputDecoration(labelText: "Lat"))),
-          const SizedBox(width: 10),
-          Expanded(child: TextField(controller: lngC, decoration: const InputDecoration(labelText: "Lng"))),
-          ElevatedButton(onPressed: () => Navigator.pop(context, {'lat': _loc!.latitude, 'lng': _loc!.longitude}), child: const Text("Done"))
-        ])),
+        Padding(padding: const EdgeInsets.all(10), child: Wrap( // Changed to Wrap for mobile web
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            SizedBox(width: 150, child: TextField(controller: latC, decoration: const InputDecoration(labelText: "Lat"))),
+            SizedBox(width: 150, child: TextField(controller: lngC, decoration: const InputDecoration(labelText: "Lng"))),
+            ElevatedButton(onPressed: () => Navigator.pop(context, {'lat': _loc!.latitude, 'lng': _loc!.longitude}), child: const Text("Done"))
+          ],
+        )),
         Expanded(child: GoogleMap(initialCameraPosition: CameraPosition(target: _loc!, zoom: 14), onMapCreated: (c) => _mc = c, onTap: (l) => setState(() { _loc = l; latC.text = l.latitude.toString(); lngC.text = l.longitude.toString(); }), markers: {Marker(markerId: const MarkerId("m"), position: _loc!)}))
       ]),
     );
