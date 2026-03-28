@@ -42,6 +42,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
 
+            // Adjusted mapping to match new avg_rating and total_reviews columns
             hotels.add({
               "hotel_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',
@@ -59,12 +60,13 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
               "room_price": cols.length > 13 ? cols[13] : '0',
               "amenities": cols.length > 14 ? cols[14] : '',
               "policies": cols.length > 15 ? cols[15] : '',
-              "rating": cols.length > 16 ? cols[16] : '0.0',
-              "hotel_contact": cols.length > 17 ? cols[17] : '',
-              "about_this_property": cols.length > 18 ? cols[18] : '',
-              "hotel_images": cols.length > 19 ? cols[19] : '',
-              "customization": cols.length > 20 ? cols[20] : 'No',
-              "status": cols.length > 21 ? cols[21] : '',
+              "hotel_contact": cols.length > 16 ? cols[16] : '',
+              "about_this_property": cols.length > 17 ? cols[17] : '',
+              "hotel_images": cols.length > 18 ? cols[18] : '',
+              "customization": cols.length > 19 ? cols[19] : 'No',
+              "status": cols.length > 20 ? cols[20] : '',
+              "avg_rating": cols.length > 21 ? cols[21] : '0.0',
+              "total_reviews": cols.length > 22 ? cols[22] : '0',
             });
           }
         }
@@ -143,6 +145,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Checkbox(
               value: isSelected,
@@ -170,15 +173,26 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
                   const SizedBox(height: 4),
                   Text("Status: ${hotel['status'] ?? ''}", style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap( // Use Wrap for mobile compatibility
+                    spacing: 15,
+                    runSpacing: 4,
                     children: [
-                      Icon(Icons.star, color: Colors.amber.shade300, size: 18),
-                      const SizedBox(width: 4),
-                      Text(hotel['rating'] ?? "0.0", style: const TextStyle(color: Colors.white70)),
-                      const SizedBox(width: 15),
-                      Icon(Icons.phone, color: Colors.white70, size: 18),
-                      const SizedBox(width: 4),
-                      Text(hotel['hotel_contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star, color: Colors.amber.shade300, size: 18),
+                          const SizedBox(width: 4),
+                          Text("${hotel['avg_rating']} (${hotel['total_reviews']} reviews)", style: const TextStyle(color: Colors.white70)),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.phone, color: Colors.white70, size: 18),
+                          const SizedBox(width: 4),
+                          Text(hotel['hotel_contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
+                        ],
+                      ),
                     ],
                   ),
                 ],
@@ -204,57 +218,61 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            Row(
-              children: [
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
-                const SizedBox(width: 8),
-                const Text("View Hotels", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: selectedHotels.length == 1
-                      ? () {
-                    final hotel = hotels.firstWhere((h) => h['hotel_id'] == selectedHotels[0]);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddHotelsPage(partnerId: widget.partnerId, hotelData: hotel),
-                      ),
-                    ).then((value) {
-                      fetchHotels();
-                      selectedHotels.clear();
-                      selectAll = false;
-                    });
-                  }
-                      : null,
-                  icon: const Icon(Icons.edit, size: 20),
-                  label: const Text("Edit"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.white24,
+            // Responsive Header
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
+                  const SizedBox(width: 8),
+                  const Text("View Hotels", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const SizedBox(width: 20),
+                  ElevatedButton.icon(
+                    onPressed: selectedHotels.length == 1
+                        ? () {
+                      final hotel = hotels.firstWhere((h) => h['hotel_id'] == selectedHotels[0]);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AddHotelsPage(partnerId: widget.partnerId, hotelData: hotel),
+                        ),
+                      ).then((value) {
+                        fetchHotels();
+                        selectedHotels.clear();
+                        selectAll = false;
+                      });
+                    }
+                        : null,
+                    icon: const Icon(Icons.edit, size: 20),
+                    label: const Text("Edit"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.white24,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton.icon(
-                  onPressed: selectedHotels.isNotEmpty ? confirmDelete : null,
-                  icon: const Icon(Icons.delete_forever, size: 20),
-                  label: const Text("Delete"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent.withOpacity(0.8),
-                    foregroundColor: Colors.white,
+                  const SizedBox(width: 10),
+                  ElevatedButton.icon(
+                    onPressed: selectedHotels.isNotEmpty ? confirmDelete : null,
+                    icon: const Icon(Icons.delete_forever, size: 20),
+                    label: const Text("Delete"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent.withOpacity(0.8),
+                      foregroundColor: Colors.white,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: widget.partnerId))),
-                  icon: const Icon(Icons.add, size: 20),
-                  label: const Text("Add Hotel"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    foregroundColor: Colors.white,
+                  const SizedBox(width: 10),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: widget.partnerId))),
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text("Add Hotel"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                      foregroundColor: Colors.white,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             Row(
