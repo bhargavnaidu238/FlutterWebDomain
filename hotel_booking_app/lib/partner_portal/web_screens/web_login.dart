@@ -119,7 +119,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
     bool canResend = false;
     Timer? timer;
 
-    // Internal helper for consistent text fields
     Widget _dialogTextField(TextEditingController controller, String hint, IconData icon, {bool obscure = false}) {
       return TextField(
         controller: controller,
@@ -163,7 +162,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
               });
             }
 
-            // STEP 1: SEND OTP
+            // STEP 1: SEND OTP (Reverted to JSON as required by Jackson)
             Future<void> handleSendOtp() async {
               final email = emailController.text.trim().toLowerCase();
               if (email.isEmpty) {
@@ -173,14 +172,13 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
               setDialogState(() => isApiLoading = true);
               try {
-                // Changed to Form URL Encoded to match your backend's expected param handling
                 final res = await http.post(
                   Uri.parse('${ApiConfig.baseUrl}/send-email-otp'),
-                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                  body: {
+                  headers: {'Content-Type': 'application/json'}, // Must be JSON
+                  body: jsonEncode({
                     'email': email,
-                    'type': 'forgot_password'
-                  },
+                    'type': 'forgot_password_otp' // Resetting to original type
+                  }),
                 );
 
                 final data = jsonDecode(res.body);
@@ -188,7 +186,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   startTimer();
                   setDialogState(() => currentStep = 2);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? "Error sending OTP")));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? "Error")));
                 }
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Connection Error: $e")));
@@ -206,12 +204,12 @@ class _WebLoginPageState extends State<WebLoginPage> {
               try {
                 final res = await http.post(
                   Uri.parse('${ApiConfig.baseUrl}/verify-email-otp'),
-                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                  body: {
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode({
                     'email': emailController.text.trim().toLowerCase(),
                     'otp': otp,
-                    'type': 'forgot_password'
-                  },
+                    'type': 'verify_otp' // Verification usually uses this type
+                  }),
                 );
 
                 final data = jsonDecode(res.body);
@@ -220,14 +218,12 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? "Invalid OTP")));
                 }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
             }
 
-            // STEP 3: RESET PASSWORD (Matches your Java handleForgotPassword exactly)
+            // STEP 3: RESET PASSWORD
             Future<void> handleResetPassword() async {
               final pwd = newPasswordController.text.trim();
               final confirmPwd = confirmPasswordController.text.trim();
@@ -239,15 +235,14 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
               setDialogState(() => isApiLoading = true);
               try {
-                final res = await http.post(
-                  Uri.parse('${ApiConfig.baseUrl}/forgotpassword'),
-                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                  // Key fix: Sending as Map in body automatically encodes as application/x-www-form-urlencoded
-                  body: {
-                    'email': emailController.text.trim().toLowerCase(),
-                    'newPassword': pwd,
-                  },
-                );
+                // Your Java code handleForgotPassword uses params.get(), which
+                // usually reads from URL parameters in a simple HttpExchange.
+                final uri = Uri.parse('${ApiConfig.baseUrl}/forgotpassword').replace(queryParameters: {
+                  'email': emailController.text.trim().toLowerCase(),
+                  'newPassword': pwd,
+                });
+
+                final res = await http.post(uri); // Sending params in URL
 
                 final data = jsonDecode(res.body);
                 if (res.statusCode == 200 && data['status'] == 'success') {
@@ -257,8 +252,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? "Reset failed")));
                 }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
