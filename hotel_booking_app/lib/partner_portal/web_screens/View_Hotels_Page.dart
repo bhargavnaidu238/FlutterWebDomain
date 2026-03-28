@@ -24,6 +24,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
   }
 
   Future<void> fetchHotels() async {
+    if (!mounted) return;
     setState(() => isLoading = true);
     hotels.clear();
 
@@ -59,22 +60,24 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
               "room_price": cols.length > 13 ? cols[13] : '0',
               "amenities": cols.length > 14 ? cols[14] : '',
               "policies": cols.length > 15 ? cols[15] : '',
-              "hotel_contact": cols.length > 16 ? cols[16] : '',
-              "about_this_property": cols.length > 17 ? cols[17] : '',
-              "hotel_images": cols.length > 18 ? cols[18] : '',
-              "customization": cols.length > 19 ? cols[19] : 'No',
-              "status": cols.length > 20 ? cols[20] : '',
-              "avg_rating": cols.length > 21 ? cols[21] : '0.0',
+              "avg_rating": cols.length > 16 ? cols[16] : '0.0', // Updated from rating to avg_rating
+              "hotel_contact": cols.length > 17 ? cols[17] : '',
+              "about_this_property": cols.length > 18 ? cols[18] : '',
+              "hotel_images": cols.length > 19 ? cols[19] : '',
+              "customization": cols.length > 20 ? cols[20] : 'No',
+              "status": cols.length > 21 ? cols[21] : '',
             });
           }
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error fetching hotels: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error fetching hotels: $e")),
+        );
+      }
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -87,9 +90,12 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
 
   void toggleHotelSelection(String hotelId, bool? value) {
     setState(() {
-      if (value == true) selectedHotels.add(hotelId);
-      else selectedHotels.remove(hotelId);
-      selectAll = selectedHotels.length == hotels.length;
+      if (value == true) {
+        if (!selectedHotels.contains(hotelId)) selectedHotels.add(hotelId);
+      } else {
+        selectedHotels.remove(hotelId);
+      }
+      selectAll = selectedHotels.length == hotels.length && hotels.isNotEmpty;
     });
   }
 
@@ -119,19 +125,25 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
       );
 
       fetchHotels();
-      selectedHotels.clear();
-      selectAll = false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Hotels deleted successfully.")),
-      );
+      setState(() {
+        selectedHotels.clear();
+        selectAll = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Hotels deleted successfully.")),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error deleting: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error deleting: $e")),
+        );
+      }
     }
   }
 
-  Widget buildHotelRow(Map<String, String> hotel) {
+  Widget buildHotelRow(Map<String, String> hotel, bool isMobile) {
     String fullAddress =
         "${hotel['address']}, ${hotel['city']}, ${hotel['state']}, ${hotel['country']} - ${hotel['pincode']}";
     bool isSelected = selectedHotels.contains(hotel['hotel_id']);
@@ -143,6 +155,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Checkbox(
               value: isSelected,
@@ -153,32 +166,45 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(hotel['hotel_name'] ?? 'Unnamed', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(hotel['hotel_name'] ?? 'Unnamed',
+                      style: TextStyle(fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 4),
-                  Text(fullAddress, style: const TextStyle(color: Colors.white70)),
+                  Text(fullAddress, style: const TextStyle(color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 4),
-                  Text("Rooms: ${hotel['total_rooms'] ?? '0'} | Price: ₹${hotel['room_price'] ?? '0'}", style: const TextStyle(color: Colors.white70)),
+                  Text("Rooms: ${hotel['total_rooms'] ?? '0'} | Price: ₹${hotel['room_price'] ?? '0'}", style: const TextStyle(color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 4),
-                  Text("Hotel Type: ${hotel['hotel_type'] ?? ''}", style: const TextStyle(color: Colors.white70)),
+                  Text("Hotel Type: ${hotel['hotel_type'] ?? ''}", style: const TextStyle(color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 4),
-                  Text("Amenities: ${hotel['amenities'] ?? ''}", style: const TextStyle(color: Colors.white70)),
+                  Text("Amenities: ${hotel['amenities'] ?? ''}", style: const TextStyle(color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 4),
-                  Text("About This Hotel: ${hotel['about_this_property'] ?? ''}",
+                  Text("About: ${hotel['about_this_property'] ?? ''}",
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white70)),
+                      style: const TextStyle(color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 4),
-                  Text("Status: ${hotel['status'] ?? ''}", style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Row(
+                  Text("Status: ${hotel['status'] ?? ''}", style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 15,
+                    runSpacing: 5,
                     children: [
-                      Icon(Icons.star, color: Colors.amber.shade300, size: 18),
-                      const SizedBox(width: 4),
-                      Text(hotel['avg_rating'] ?? "0.0", style: const TextStyle(color: Colors.white70)),
-                      const SizedBox(width: 15),
-                      Icon(Icons.phone, color: Colors.white70, size: 18),
-                      const SizedBox(width: 4),
-                      Text(hotel['hotel_contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star, color: Colors.amber.shade300, size: 18),
+                          const SizedBox(width: 4),
+                          // Displaying avg_rating here
+                          Text(hotel['avg_rating'] ?? "0.0", style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.phone, color: Colors.white70, size: 18),
+                          const SizedBox(width: 4),
+                          Text(hotel['hotel_contact'] ?? "N/A", style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                        ],
+                      ),
                     ],
                   ),
                 ],
@@ -192,6 +218,9 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isMobile = screenWidth < 700;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -201,58 +230,76 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
             end: Alignment.bottomRight,
           ),
         ),
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 12 : 24),
         child: Column(
           children: [
-            Row(
+            // Responsive Header
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              alignment: WrapAlignment.spaceBetween,
               children: [
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
-                const SizedBox(width: 8),
-                const Text("View Hotels", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: selectedHotels.length == 1
-                      ? () {
-                    final hotel = hotels.firstWhere((h) => h['hotel_id'] == selectedHotels[0]);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddHotelsPage(partnerId: widget.partnerId, hotelData: hotel),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
+                    const SizedBox(width: 4),
+                    Text("View Hotels", style: TextStyle(fontSize: isMobile ? 20 : 26, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ],
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: selectedHotels.length == 1
+                          ? () {
+                        final hotel = hotels.firstWhere((h) => h['hotel_id'] == selectedHotels[0]);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddHotelsPage(partnerId: widget.partnerId, hotelData: hotel),
+                          ),
+                        ).then((value) {
+                          fetchHotels();
+                          setState(() {
+                            selectedHotels.clear();
+                            selectAll = false;
+                          });
+                        });
+                      }
+                          : null,
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text("Edit"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.white24,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
-                    ).then((value) {
-                      fetchHotels();
-                      selectedHotels.clear();
-                      selectAll = false;
-                    });
-                  }
-                      : null,
-                  icon: const Icon(Icons.edit, size: 20),
-                  label: const Text("Edit"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.white24,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton.icon(
-                  onPressed: selectedHotels.isNotEmpty ? confirmDelete : null,
-                  icon: const Icon(Icons.delete_forever, size: 20),
-                  label: const Text("Delete"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent.withOpacity(0.8),
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: widget.partnerId))),
-                  icon: const Icon(Icons.add, size: 20),
-                  label: const Text("Add Hotel"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    foregroundColor: Colors.white,
-                  ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: selectedHotels.isNotEmpty ? confirmDelete : null,
+                      icon: const Icon(Icons.delete_forever, size: 18),
+                      label: const Text("Delete"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent.withOpacity(0.8),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: widget.partnerId))).then((_) => fetchHotels()),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text("Add"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -271,7 +318,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
                   ? const Center(child: Text("No hotels found.", style: TextStyle(color: Colors.white, fontSize: 18)))
                   : ListView.builder(
                 itemCount: hotels.length,
-                itemBuilder: (context, i) => buildHotelRow(hotels[i]),
+                itemBuilder: (context, i) => buildHotelRow(hotels[i], isMobile),
               ),
             ),
           ],
