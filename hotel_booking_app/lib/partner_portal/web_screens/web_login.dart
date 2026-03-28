@@ -108,7 +108,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
     bool showPassword = false;
     bool isApiLoading = false;
 
-    // Timer for Resend OTP (1 Minute)
     int secondsRemaining = 60;
     bool canResend = false;
     Timer? timer;
@@ -120,7 +119,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
 
-            // Function to start/restart the 1-minute countdown
             void startTimer() {
               setDialogState(() {
                 secondsRemaining = 60;
@@ -141,7 +139,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
               });
             }
 
-            // Step 1: Send OTP (with Email Validation Check)
             Future<void> handleSendOtp() async {
               if (emailController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -166,7 +163,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   startTimer();
                   setDialogState(() => currentStep = 2);
                 } else {
-                  // This will catch the 404 "email not registered" error from Java
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(data['message'] ?? "Error sending OTP")),
                   );
@@ -179,7 +175,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
               }
             }
 
-            // Step 2: Verify OTP
             Future<void> handleVerifyOtp() async {
               if (otpController.text.isEmpty) return;
               setDialogState(() => isApiLoading = true);
@@ -205,7 +200,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
               }
             }
 
-            // Step 3: Final Password Update
             Future<void> handleResetPassword() async {
               final pwd = newPasswordController.text.trim();
               final confirmPwd = confirmPasswordController.text.trim();
@@ -227,7 +221,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 final data = jsonDecode(res.body);
                 if (res.statusCode == 200 && data['status'] == 'success') {
                   timer?.cancel();
-                  Navigator.pop(context); // Close Dialog
+                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Password updated successfully!")));
                 } else {
@@ -248,41 +242,43 @@ class _WebLoginPageState extends State<WebLoginPage> {
               ),
               content: SizedBox(
                 width: 400,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (currentStep == 1) ...[
-                      const Text("Enter your registered email. We will send a 6-digit code to verify your identity.",
-                          style: TextStyle(color: Colors.white70), textAlign: TextAlign.center),
-                      const SizedBox(height: 20),
-                      _dialogTextField(emailController, "Registered Email", Icons.email),
-                    ] else if (currentStep == 2) ...[
-                      Text("We've sent a code to ${emailController.text}",
-                          style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center),
-                      const SizedBox(height: 20),
-                      _dialogTextField(otpController, "6-Digit OTP", Icons.security),
-                      const SizedBox(height: 10),
-                      TextButton(
-                        onPressed: canResend ? handleSendOtp : null,
-                        child: Text(canResend ? "Resend OTP" : "Resend in ${secondsRemaining}s",
-                            style: TextStyle(color: canResend ? Colors.white : Colors.white38, fontWeight: FontWeight.bold)),
-                      ),
-                    ] else if (currentStep == 3) ...[
-                      _dialogTextField(newPasswordController, "New Password", Icons.lock_outline, obscure: !showPassword),
-                      const SizedBox(height: 15),
-                      _dialogTextField(confirmPasswordController, "Confirm Password", Icons.lock_reset, obscure: !showPassword),
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: showPassword,
-                            onChanged: (val) => setDialogState(() => showPassword = val!),
-                            side: const BorderSide(color: Colors.white70),
-                          ),
-                          const Text("Show Password", style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        ],
-                      ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (currentStep == 1) ...[
+                        const Text("Enter your registered email. We will send a 6-digit code to verify your identity.",
+                            style: TextStyle(color: Colors.white70), textAlign: TextAlign.center),
+                        const SizedBox(height: 20),
+                        _dialogTextField(emailController, "Registered Email", Icons.email),
+                      ] else if (currentStep == 2) ...[
+                        Text("We've sent a code to ${emailController.text}",
+                            style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center),
+                        const SizedBox(height: 20),
+                        _dialogTextField(otpController, "6-Digit OTP", Icons.security),
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: canResend ? handleSendOtp : null,
+                          child: Text(canResend ? "Resend OTP" : "Resend in ${secondsRemaining}s",
+                              style: TextStyle(color: canResend ? Colors.white : Colors.white38, fontWeight: FontWeight.bold)),
+                        ),
+                      ] else if (currentStep == 3) ...[
+                        _dialogTextField(newPasswordController, "New Password", Icons.lock_outline, obscure: !showPassword),
+                        const SizedBox(height: 15),
+                        _dialogTextField(confirmPasswordController, "Confirm Password", Icons.lock_reset, obscure: !showPassword),
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: showPassword,
+                              onChanged: (val) => setDialogState(() => showPassword = val!),
+                              side: const BorderSide(color: Colors.white70),
+                            ),
+                            const Text("Show Password", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          ],
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               actions: [
@@ -310,7 +306,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
     );
   }
 
-// Helper Widget for UI consistency
   Widget _dialogTextField(TextEditingController controller, String label, IconData icon, {bool obscure = false}) {
     return TextField(
       controller: controller,
@@ -341,176 +336,176 @@ class _WebLoginPageState extends State<WebLoginPage> {
           ),
         ),
         alignment: Alignment.center,
-        child: Container(
-          width: 400,
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.green.withOpacity(0.3),
-                blurRadius: 30,
-                spreadRadius: 5,
-                offset: const Offset(0, 8),
-              ),
-            ],
-            backgroundBlendMode: BlendMode.overlay,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                height: 80,
-                width: 80,
-                decoration: BoxDecoration(
+        child: SingleChildScrollView( // Added for mobile keyboard/screen scroll
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400), // Makes width responsive
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
                   color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(50),
+                  width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.withOpacity(0.3),
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                  offset: const Offset(0, 8),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(50),
-                  child: Image.asset(
-                    "assets/LandingPageImages/Logo.png",
-                    fit: BoxFit.cover,
+              ],
+              backgroundBlendMode: BlendMode.overlay,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  height: 80,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(50),
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                "Login",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                        color: Colors.black45,
-                        blurRadius: 8)
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // EMAIL FIELD
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  labelStyle:
-                  const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(Icons.email,
-                      color: Colors.white70),
-                  filled: true,
-                  fillColor: Colors.white10,
-                  border: OutlineInputBorder(
-                    borderRadius:
-                    BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                style:
-                const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 15),
-
-              // PASSWORD FIELD
-              StatefulBuilder(
-                builder: (context, setStateSB) {
-                  return TextField(
-                    controller: passwordController,
-                    obscureText: !showPassword,
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      labelStyle:
-                      const TextStyle(color: Colors.white70),
-                      prefixIcon: const Icon(Icons.lock,
-                          color: Colors.white70),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                            showPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: Colors.white70),
-                        onPressed: () {
-                          setStateSB(() {
-                            showPassword = !showPassword;
-                          });
-                        },
-                      ),
-                      filled: true,
-                      fillColor: Colors.white10,
-                      border: OutlineInputBorder(
-                        borderRadius:
-                        BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(50),
+                    child: Image.asset(
+                      "assets/LandingPageImages/Logo.png",
+                      fit: BoxFit.cover,
                     ),
-                    style:
-                    const TextStyle(color: Colors.white),
-                  );
-                },
-              ),
-              const SizedBox(height: 25),
-
-              // LOGIN BUTTON
-              isLoading
-                  ? const CircularProgressIndicator(
-                  color: Colors.white)
-                  : ElevatedButton(
-                onPressed: login,
-                style: ElevatedButton.styleFrom(
-                  minimumSize:
-                  const Size(double.infinity, 48),
-                  backgroundColor:
-                  const Color(0xFF00C853),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                    BorderRadius.circular(12),
                   ),
-                  elevation: 8,
                 ),
-                child: const Text(
+                const SizedBox(height: 20),
+                const Text(
                   "Login",
                   style: TextStyle(
-                      fontSize: 18,
-                      fontWeight:
-                      FontWeight.bold),
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                          color: Colors.black45,
+                          blurRadius: 8)
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 30),
 
-              const SizedBox(height: 15),
+                TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: "Email",
+                    labelStyle:
+                    const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.email,
+                        color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white10,
+                    border: OutlineInputBorder(
+                      borderRadius:
+                      BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  style:
+                  const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 15),
 
-              Row(
-                mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: forgotPassword,
-                    child: const Text(
-                        "Forgot Password?",
-                        style: TextStyle(
-                            color: Colors.white70)),
+                StatefulBuilder(
+                  builder: (context, setStateSB) {
+                    return TextField(
+                      controller: passwordController,
+                      obscureText: !showPassword,
+                      decoration: InputDecoration(
+                        labelText: "Password",
+                        labelStyle:
+                        const TextStyle(color: Colors.white70),
+                        prefixIcon: const Icon(Icons.lock,
+                            color: Colors.white70),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                              showPassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.white70),
+                          onPressed: () {
+                            setStateSB(() {
+                              showPassword = !showPassword;
+                            });
+                          },
+                        ),
+                        filled: true,
+                        fillColor: Colors.white10,
+                        border: OutlineInputBorder(
+                          borderRadius:
+                          BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style:
+                      const TextStyle(color: Colors.white),
+                    );
+                  },
+                ),
+                const SizedBox(height: 25),
+
+                isLoading
+                    ? const CircularProgressIndicator(
+                    color: Colors.white)
+                    : ElevatedButton(
+                  onPressed: login,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize:
+                    const Size(double.infinity, 48),
+                    backgroundColor:
+                    const Color(0xFF00C853),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                      BorderRadius.circular(12),
+                    ),
+                    elevation: 8,
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) =>
-                            const WebRegisterPage()),
-                      );
-                    },
-                    child: const Text("Register",
-                        style: TextStyle(
-                            color: Colors.white70)),
+                  child: const Text(
+                    "Login",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight:
+                        FontWeight.bold),
                   ),
-                ],
-              ),
-            ],
+                ),
+
+                const SizedBox(height: 15),
+
+                Row(
+                  mainAxisAlignment:
+                  MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: forgotPassword,
+                      child: const Text(
+                          "Forgot Password?",
+                          style: TextStyle(
+                              color: Colors.white70)),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                              const WebRegisterPage()),
+                        );
+                      },
+                      child: const Text("Register",
+                          style: TextStyle(
+                              color: Colors.white70)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
