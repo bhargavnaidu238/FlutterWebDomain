@@ -62,24 +62,15 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
       final data = json.decode(res.body);
 
-      // ===================== SUCCESS LOGIN =====================
       if (res.statusCode == 200 && data['status'] == 'success') {
+        partnerDetails = Map<String, String>.from(data)
+          ..removeWhere((key, value) =>
+          key == 'status' || key == 'message');
 
-        // Ensure we extract the ID correctly from the server response
-        // Backend usually sends it as 'userId' or 'partner_id'
-        final String rawId = (data['userId'] ?? data['partner_id'] ?? '').toString();
-
-        partnerDetails = Map<String, String>.from(data.map((key, value) => MapEntry(key, value.toString())))
-          ..removeWhere((key, value) => key == 'status' || key == 'message');
-
-        // IMPORTANT: Add 'partner_id' explicitly to the map to match Dashboard requirements
-        partnerDetails['partner_id'] = rawId;
-
-        // Save to persistent LocalStorage via ApiService
         ApiService.saveAuthData(
           token: data['token'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
           email: email,
-          userId: rawId,
+          userId: partnerDetails['userId'] ?? '',
         );
 
         Navigator.pushNamedAndRemoveUntil(
@@ -106,13 +97,13 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
   // ===================== FORGOT PASSWORD =====================
   Future<void> forgotPassword() async {
-    final TextEditingController emailController = TextEditingController();
+    final TextEditingController forgotEmailController = TextEditingController();
     final TextEditingController otpController = TextEditingController();
     final TextEditingController newPasswordController = TextEditingController();
     final TextEditingController confirmPasswordController = TextEditingController();
 
     int currentStep = 1; // 1: Email, 2: OTP, 3: New Password
-    bool showPassword = false;
+    bool showPasswordForgot = false;
     bool isApiLoading = false;
 
     int secondsRemaining = 60;
@@ -146,9 +137,8 @@ class _WebLoginPageState extends State<WebLoginPage> {
               });
             }
 
-            // Step 1: Send OTP using 'user_email'
             Future<void> handleSendOtp() async {
-              if (emailController.text.isEmpty) {
+              if (forgotEmailController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Please enter your email")));
                 return;
@@ -160,8 +150,8 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   Uri.parse('${ApiConfig.baseUrl}/send-email-otp'),
                   headers: {'Content-Type': 'application/json'},
                   body: jsonEncode({
-                    'user_email': emailController.text.trim().toLowerCase(),
-                    'type': 'forgotpassword'
+                    'user_email': forgotEmailController.text.trim().toLowerCase(), // FIXED KEY
+                    'type': 'forgotpassword' // FIXED TYPE
                   }),
                 );
 
@@ -183,7 +173,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
               }
             }
 
-            // Step 2: Verify OTP using 'user_email'
             Future<void> handleVerifyOtp() async {
               if (otpController.text.isEmpty) return;
               setDialogState(() => isApiLoading = true);
@@ -192,9 +181,9 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   Uri.parse('${ApiConfig.baseUrl}/verify-email-otp'),
                   headers: {'Content-Type': 'application/json'},
                   body: jsonEncode({
-                    'user_email': emailController.text.trim().toLowerCase(),
+                    'user_email': forgotEmailController.text.trim().toLowerCase(), // FIXED KEY
                     'otp': otpController.text.trim(),
-                    'type': 'forgotpassword'
+                    'type': 'forgotpassword' // FIXED TYPE
                   }),
                 );
                 final data = jsonDecode(res.body);
@@ -204,15 +193,11 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(data['message'] ?? "Invalid OTP")));
                 }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
             }
 
-            // Step 3: Reset Password using 'user_email'
             Future<void> handleResetPassword() async {
               final pwd = newPasswordController.text.trim();
               final confirmPwd = confirmPasswordController.text.trim();
@@ -228,7 +213,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 final res = await http.post(
                   Uri.parse('${ApiConfig.baseUrl}/forgotpassword'),
                   headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                  body: 'user_email=${Uri.encodeComponent(emailController.text.trim().toLowerCase())}&newPassword=${Uri.encodeComponent(pwd)}',
+                  body: 'user_email=${Uri.encodeComponent(forgotEmailController.text.trim().toLowerCase())}&newPassword=${Uri.encodeComponent(pwd)}', // FIXED KEY
                 );
 
                 final data = jsonDecode(res.body);
@@ -241,9 +226,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(data['message'] ?? "Reset failed")));
                 }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Reset Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
@@ -266,9 +248,9 @@ class _WebLoginPageState extends State<WebLoginPage> {
                         const Text("Enter your registered email. We will send a 6-digit code to verify your identity.",
                             style: TextStyle(color: Colors.white70), textAlign: TextAlign.center),
                         const SizedBox(height: 20),
-                        _dialogTextField(emailController, "Registered Email", Icons.email),
+                        _dialogTextField(forgotEmailController, "Registered Email", Icons.email),
                       ] else if (currentStep == 2) ...[
-                        Text("We've sent a code to ${emailController.text}",
+                        Text("We've sent a code to ${forgotEmailController.text}",
                             style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center),
                         const SizedBox(height: 20),
                         _dialogTextField(otpController, "6-Digit OTP", Icons.security),
@@ -279,14 +261,14 @@ class _WebLoginPageState extends State<WebLoginPage> {
                               style: TextStyle(color: canResend ? Colors.white : Colors.white38, fontWeight: FontWeight.bold)),
                         ),
                       ] else if (currentStep == 3) ...[
-                        _dialogTextField(newPasswordController, "New Password", Icons.lock_outline, obscure: !showPassword),
+                        _dialogTextField(newPasswordController, "New Password", Icons.lock_outline, obscure: !showPasswordForgot),
                         const SizedBox(height: 15),
-                        _dialogTextField(confirmPasswordController, "Confirm Password", Icons.lock_reset, obscure: !showPassword),
+                        _dialogTextField(confirmPasswordController, "Confirm Password", Icons.lock_reset, obscure: !showPasswordForgot),
                         Row(
                           children: [
                             Checkbox(
-                              value: showPassword,
-                              onChanged: (val) => setDialogState(() => showPassword = val!),
+                              value: showPasswordForgot,
+                              onChanged: (val) => setDialogState(() => showPasswordForgot = val!),
                               side: const BorderSide(color: Colors.white70),
                             ),
                             const Text("Show Password", style: TextStyle(color: Colors.white70, fontSize: 12)),
@@ -303,10 +285,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                   child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
                 ),
                 if (isApiLoading)
-                  const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  )
+                  const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: CircularProgressIndicator(color: Colors.white))
                 else
                   ElevatedButton(
                     onPressed: currentStep == 1 ? handleSendOtp : currentStep == 2 ? handleVerifyOtp : handleResetPassword,
@@ -322,7 +301,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
           },
         );
       },
-    ).then((_) => timer?.cancel());
+    );
   }
 
   Widget _dialogTextField(TextEditingController controller, String label, IconData icon, {bool obscure = false}) {
@@ -342,7 +321,6 @@ class _WebLoginPageState extends State<WebLoginPage> {
     );
   }
 
-  // ===================== BUILD UI =====================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
