@@ -11,7 +11,7 @@ import 'services/api_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Supabase (this also helps restore Supabase auth session if used)
+  // Initialize Supabase from backend config
   await _initializeSupabaseFromBackend();
 
   runApp(const MyApp());
@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine the starting point based on persistent storage
+    // Determine the starting point based on persistent storage in ApiService
     final String initialRoute = ApiService.isLoggedIn() ? '/dashboard' : '/';
 
     return MaterialApp(
@@ -53,6 +53,7 @@ class MyApp extends StatelessWidget {
     );
   }
 
+  // ================== NO TRANSITION ROUTE ==================
   Route<dynamic> _noTransitionRoute(Widget page, RouteSettings settings) {
     return PageRouteBuilder(
       settings: settings,
@@ -62,8 +63,8 @@ class MyApp extends StatelessWidget {
     );
   }
 
+  // ================== ROUTE GENERATOR ==================
   Route<dynamic> _generateRoute(RouteSettings settings) {
-    // Always check fresh state from ApiService (which now reads localStorage)
     final bool loggedIn = ApiService.isLoggedIn();
 
     switch (settings.name) {
@@ -77,31 +78,34 @@ class MyApp extends StatelessWidget {
         return _noTransitionRoute(const WebRegisterPage(), settings);
 
       case '/dashboard':
+      // 1. Guard against unauthenticated access
         if (!loggedIn) {
+          debugPrint("Blocked unauthorized dashboard access.");
           return _noTransitionRoute(const WebLoginPage(), settings);
         }
 
-        // Handle arguments or recovery from refresh
+        // 2. Try to get arguments (this works during normal navigation)
         final args = settings.arguments as Map<String, String>?;
 
         if (args != null) {
           return _noTransitionRoute(WebDashboardPage(partnerDetails: args), settings);
         } else {
-          // RECOVERY LOGIC: If args are null (happens on refresh),
-          // pull directly from our persisted ApiService
+          // 3. REFRESH RECOVERY: Pull from ApiService (LocalStorage)
           final email = ApiService.getEmail();
           final userId = ApiService.getUserId();
 
           if (email == null || userId == null) {
-            debugPrint("Session data missing on refresh, redirecting to login.");
             return _noTransitionRoute(const WebLoginPage(), settings);
           }
 
+          // IMPORTANT: We must include 'Partner_ID' as a key because
+          // your WebDashboardPage code is looking specifically for it.
           return _noTransitionRoute(
             WebDashboardPage(
               partnerDetails: {
                 "email": email,
                 "userId": userId,
+                "Partner_ID": userId, // Added this to fix your specific error
               },
             ),
             settings,
@@ -113,10 +117,16 @@ class MyApp extends StatelessWidget {
     }
   }
 
+  // ================= ERROR SCREEN =================
   MaterialPageRoute _errorScreen(String msg) {
     return MaterialPageRoute(
       builder: (_) => Scaffold(
-        body: Center(child: Text(msg, style: const TextStyle(color: Colors.red))),
+        body: Center(
+          child: Text(
+            msg,
+            style: const TextStyle(color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+        ),
       ),
     );
   }
