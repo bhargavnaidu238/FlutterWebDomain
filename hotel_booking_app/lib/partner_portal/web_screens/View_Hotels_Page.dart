@@ -59,12 +59,12 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
               "room_price": cols.length > 13 ? cols[13] : '0',
               "amenities": cols.length > 14 ? cols[14] : '',
               "policies": cols.length > 15 ? cols[15] : '',
-              "rating": cols.length > 16 ? cols[16] : '0.0',
-              "hotel_contact": cols.length > 17 ? cols[17] : '',
-              "about_this_property": cols.length > 18 ? cols[18] : '',
-              "hotel_images": cols.length > 19 ? cols[19] : '',
-              "customization": cols.length > 20 ? cols[20] : 'No',
-              "status": cols.length > 21 ? cols[21] : '',
+              "hotel_contact": cols.length > 16 ? cols[16] : '',
+              "about_this_property": cols.length > 17 ? cols[17] : '',
+              "hotel_images": cols.length > 18 ? cols[18] : '',
+              "customization": cols.length > 19 ? cols[19] : 'No',
+              "status": cols.length > 20 ? cols[20] : '',
+              "avg_rating": cols.length > 21 ? cols[21] : '0.0',
             });
           }
         }
@@ -174,7 +174,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
                     children: [
                       Icon(Icons.star, color: Colors.amber.shade300, size: 18),
                       const SizedBox(width: 4),
-                      Text(hotel['rating'] ?? "0.0", style: const TextStyle(color: Colors.white70)),
+                      Text(hotel['avg_rating'] ?? "0.0", style: const TextStyle(color: Colors.white70)),
                       const SizedBox(width: 15),
                       Icon(Icons.phone, color: Colors.white70, size: 18),
                       const SizedBox(width: 4),

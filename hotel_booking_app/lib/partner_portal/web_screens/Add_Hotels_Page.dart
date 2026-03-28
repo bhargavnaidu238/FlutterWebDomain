@@ -93,7 +93,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     controllers["hotel_contact"]!.text = data['hotel_contact']?.toString() ?? "";
 
     aboutController.text = data['about_this_property']?.toString() ?? "";
-    ratingController.text = data['rating']?.toString() ?? "0.0";
+    ratingController.text = data['avg_rating']?.toString() ?? "0.0";
     selectedHotelType = data['hotel_type'];
     selectedCustomization = data['customization'];
 

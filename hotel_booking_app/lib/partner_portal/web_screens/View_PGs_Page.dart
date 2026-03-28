@@ -62,11 +62,11 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
               "room_price": cols.length > 17 ? cols[17] : '0',
               "amenities": cols.length > 18 ? cols[18] : '',
               "policies": cols.length > 19 ? cols[19] : '',
-              "rating": cols.length > 20 ? cols[20] : '0.0',
-              "pg_contact": cols.length > 21 ? cols[21] : '',
-              "about_this_pg": cols.length > 22 ? cols[22] : '',
-              "pg_images": cols.length > 23 ? cols[23] : '',
-              "status": cols.length > 24 ? cols[24] : '',
+              "pg_contact": cols.length > 20 ? cols[20] : '',
+              "about_this_pg": cols.length > 21 ? cols[21] : '',
+              "pg_images": cols.length > 22 ? cols[22] : '',
+              "status": cols.length > 23 ? cols[23] : '',
+              "avg_rating": cols.length > 24 ? cols[24] : '0.0',
               "total_Rooms": cols.length > 25 ? cols[25] : '0',
             });
           }
@@ -186,7 +186,7 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
                     children: [
                       Icon(Icons.star, color: Colors.amber.shade300, size: 18),
                       const SizedBox(width: 4),
-                      Text(pg['rating'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
+                      Text(pg['avg_rating'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
                       const SizedBox(width: 15),
                       Icon(Icons.phone, color: Colors.white70, size: 18),
                       const SizedBox(width: 4),

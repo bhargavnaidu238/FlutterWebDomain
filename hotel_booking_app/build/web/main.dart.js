@@ -100412,12 +100412,12 @@ b2=J.aw(h)>12?J.T(h,12):"0"
 b3=J.aw(h)>13?J.T(h,13):"0"
 b4=J.aw(h)>14?J.T(h,14):""
 b5=J.aw(h)>15?J.T(h,15):""
-b6=J.aw(h)>16?J.T(h,16):"0.0"
+b6=J.aw(h)>16?J.T(h,16):""
 b7=J.aw(h)>17?J.T(h,17):""
 b8=J.aw(h)>18?J.T(h,18):""
-b9=J.aw(h)>19?J.T(h,19):""
-c0=J.aw(h)>20?J.T(h,20):"No"
-f.push(A.P(["hotel_id",a,"partner_id",a0,"hotel_name",a2,"hotel_type",a3,"room_type",a4,"address",a5,"city",a6,"state",a7,"country",a8,"pincode",a9,"hotel_location",b0,"total_rooms",b1,"available_rooms",b2,"room_price",b3,"amenities",b4,"policies",b5,"rating",b6,"hotel_contact",b7,"about_this_property",b8,"hotel_images",b9,"customization",c0,"status",J.aw(h)>21?J.T(h,21):""],d,d))}}}o.push(5)
+b9=J.aw(h)>19?J.T(h,19):"No"
+c0=J.aw(h)>20?J.T(h,20):""
+f.push(A.P(["hotel_id",a,"partner_id",a0,"hotel_name",a2,"hotel_type",a3,"room_type",a4,"address",a5,"city",a6,"state",a7,"country",a8,"pincode",a9,"hotel_location",b0,"total_rooms",b1,"available_rooms",b2,"room_price",b3,"amenities",b4,"policies",b5,"hotel_contact",b6,"about_this_property",b7,"hotel_images",b8,"customization",b9,"status",c0,"avg_rating",J.aw(h)>21?J.T(h,21):"0.0"],d,d))}}}o.push(5)
 s=4
 break
 case 3:q=2
@@ -100488,7 +100488,7 @@ i=A.a2("About This Hotel: "+(i==null?"":i),2,B.bu,m,B.ax,m,m)
 s=a.h(0,"status")
 s=A.a2("Status: "+(s==null?"":s),m,m,m,B.ax,m,m)
 r=A.eD(B.oq,m,m,B.mZ,m,m,m,m,m,m,m,18,m,m)
-q=a.h(0,"rating")
+q=a.h(0,"avg_rating")
 q=A.a2(q==null?"0.0":q,m,m,m,B.ax,m,m)
 p=A.eD(B.hO,m,m,B.R,m,m,m,m,m,m,m,18,m,m)
 o=a.h(0,"hotel_contact")
@@ -100629,12 +100629,12 @@ b6=J.aw(h)>16?J.T(h,16):"0"
 b7=J.aw(h)>17?J.T(h,17):"0"
 b8=J.aw(h)>18?J.T(h,18):""
 b9=J.aw(h)>19?J.T(h,19):""
-c0=J.aw(h)>20?J.T(h,20):"0.0"
+c0=J.aw(h)>20?J.T(h,20):""
 c1=J.aw(h)>21?J.T(h,21):""
 c2=J.aw(h)>22?J.T(h,22):""
 c3=J.aw(h)>23?J.T(h,23):""
-c4=J.aw(h)>24?J.T(h,24):""
-f.push(A.P(["pg_id",a,"partner_id",a0,"pg_name",a2,"pg_type",a3,"room_type",a4,"address",a5,"city",a6,"state",a7,"country",a8,"pincode",a9,"total_single_sharing_rooms",b0,"total_double_sharing_rooms",b1,"total_three_sharing_rooms",b2,"total_four_sharing_rooms",b3,"total_five_sharing_rooms",b4,"hotel_location",b5,"available_rooms",b6,"room_price",b7,"amenities",b8,"policies",b9,"rating",c0,"pg_contact",c1,"about_this_pg",c2,"pg_images",c3,"status",c4,"total_Rooms",J.aw(h)>25?J.T(h,25):"0"],d,d))}}}o.push(5)
+c4=J.aw(h)>24?J.T(h,24):"0.0"
+f.push(A.P(["pg_id",a,"partner_id",a0,"pg_name",a2,"pg_type",a3,"room_type",a4,"address",a5,"city",a6,"state",a7,"country",a8,"pincode",a9,"total_single_sharing_rooms",b0,"total_double_sharing_rooms",b1,"total_three_sharing_rooms",b2,"total_four_sharing_rooms",b3,"total_five_sharing_rooms",b4,"hotel_location",b5,"available_rooms",b6,"room_price",b7,"amenities",b8,"policies",b9,"pg_contact",c0,"about_this_pg",c1,"pg_images",c2,"status",c3,"avg_rating",c4,"total_Rooms",J.aw(h)>25?J.T(h,25):"0"],d,d))}}}o.push(5)
 s=4
 break
 case 3:q=2
@@ -100705,7 +100705,7 @@ k=A.a2("Amenities: "+(k==null?"":k),m,m,m,B.ax,m,m)
 i=a.h(0,"status")
 i=A.a2("Status: "+(i==null?"":i),m,m,m,B.ax,m,m)
 r=A.eD(B.oq,m,m,B.mZ,m,m,m,m,m,m,m,18,m,m)
-q=a.h(0,"rating")
+q=a.h(0,"avg_rating")
 q=A.a2(q==null?"N/A":q,m,m,m,B.ax,m,m)
 p=A.eD(B.hO,m,m,B.R,m,m,m,m,m,m,m,18,m,m)
 o=a.h(0,"pg_contact")
@@ -102103,7 +102103,7 @@ s=q.h(d,"about_this_property")
 s=s==null?h:J.aL(s)
 if(s==null)s=""
 i.at.saV(0,s)
-s=q.h(d,"rating")
+s=q.h(d,"avg_rating")
 s=s==null?h:J.aL(s)
 if(s==null)s="0.0"
 i.ax.saV(0,s)
