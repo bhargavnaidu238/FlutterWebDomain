@@ -93,7 +93,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     controllers["hotel_contact"]!.text = data['hotel_contact']?.toString() ?? "";
 
     aboutController.text = data['about_this_property']?.toString() ?? "";
-    // Updated to use avg_rating from table
+    // Priority to avg_rating as per new table schema
     ratingController.text = data['avg_rating']?.toString() ?? data['rating']?.toString() ?? "0.0";
     selectedHotelType = data['hotel_type'];
     selectedCustomization = data['customization'];
@@ -221,29 +221,30 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       final selRooms = roomSelected.entries.where((e) => e.value).map((e) => e.key).toList();
       final selPrices = selRooms.map((r) => roomPrices[r]?.text.isEmpty ?? true ? "0" : roomPrices[r]!.text).toList();
 
+      // FIXED: Ordered Body Map to match Backend expectation and prevent "Active" -> Numeric error
       final Map<String, String> body = {
         'hotel_id': widget.hotelData?['hotel_id']?.toString() ?? '',
         'partner_id': widget.partnerId,
         'hotel_name': controllers["hotel_name"]!.text,
         'hotel_type': selectedHotelType ?? 'Hotel',
-        'customization': selectedCustomization ?? 'No',
         'room_type': selRooms.isEmpty ? 'Standard' : selRooms.join(','),
-        'room_price': selPrices.isEmpty ? '0' : selPrices.join(','),
         'address': controllers["address"]!.text,
         'city': controllers["city"]!.text,
         'state': controllers["state"]!.text,
         'country': controllers["country"]!.text,
         'pincode': controllers["pincode"]!.text,
+        'hotel_location': "$latitude,$longitude",
         'total_rooms': controllers["total_rooms"]!.text,
         'available_rooms': controllers["total_rooms"]!.text,
+        'room_price': selPrices.isEmpty ? '0' : selPrices.join(','),
         'amenities': amenitySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
         'policies': policySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
-        'avg_rating': ratingController.text, // Sending as avg_rating
+        'avg_rating': ratingController.text, // Mapped to numeric avg_rating in DB
         'hotel_contact': controllers["hotel_contact"]!.text,
         'about_this_property': aboutController.text,
-        'hotel_location': "$latitude,$longitude",
-        'status': "Active",
         'hotel_images': widget.hotelData?['hotel_images']?.toString() ?? '',
+        'customization': selectedCustomization ?? 'No',
+        'status': "Active",
       };
 
       Map<String, List<String>> imageMap = {};
@@ -405,7 +406,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
           width: isMobile ? double.infinity : 250,
           child: TextFormField(
             controller: ratingController,
-            readOnly: true, // Rating disabled for creator
+            readOnly: true,
             decoration: _inputStyle("Avg Rating (System)").copyWith(fillColor: Colors.grey.shade100),
           ),
         ),

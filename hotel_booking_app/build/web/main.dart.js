@@ -102210,34 +102210,34 @@ a3=m.e
 a6=a3.h(0,"hotel_name").a.a
 a7=m.ch
 if(a7==null)a7="Hotel"
-a8=m.CW
-if(a8==null)a8="No"
-a9=J.aw(l)===0?"Standard":J.NJ(l,",")
-b0=J.aw(k)===0?"0":J.NJ(k,",")
-b1=a3.h(0,"address").a.a
-b2=a3.h(0,"city").a.a
-b3=a3.h(0,"state").a.a
-b4=a3.h(0,"country").a.a
-b5=a3.h(0,"pincode").a.a
+a8=J.aw(l)===0?"Standard":J.NJ(l,",")
+a9=a3.h(0,"address").a.a
+b0=a3.h(0,"city").a.a
+b1=a3.h(0,"state").a.a
+b2=a3.h(0,"country").a.a
+b3=a3.h(0,"pincode").a.a
+b4=m.cx
+b5=m.cy
 b6=a3.h(0,"total_rooms").a.a
 b7=a3.h(0,"total_rooms").a.a
-b8=m.fx
-b9=A.p(b8).i("ct<1,2>")
-b9=new A.c8(new A.av(new A.ct(b8,b9),new A.axf(),b9.i("av<q.E>")),new A.axg(),b9.i("c8<q.E,m>")).bj(0,",")
-b8=m.go
-c0=A.p(b8).i("ct<1,2>")
-c0=new A.c8(new A.av(new A.ct(b8,c0),new A.axh(),c0.i("av<q.E>")),new A.axi(),c0.i("c8<q.E,m>")).bj(0,",")
-b8=m.ax.a.a
+b8=J.aw(k)===0?"0":J.NJ(k,",")
+b9=m.fx
+c0=A.p(b9).i("ct<1,2>")
+c0=new A.c8(new A.av(new A.ct(b9,c0),new A.axf(),c0.i("av<q.E>")),new A.axg(),c0.i("c8<q.E,m>")).bj(0,",")
+b9=m.go
+c1=A.p(b9).i("ct<1,2>")
+c1=new A.c8(new A.av(new A.ct(b9,c1),new A.axh(),c1.i("av<q.E>")),new A.axi(),c1.i("c8<q.E,m>")).bj(0,",")
+b9=m.ax.a.a
 a3=a3.h(0,"hotel_contact").a.a
-c1=m.at.a.a
-c2=m.cx
-c3=m.cy
-c4=m.a.d
-if(c4==null)c4=null
-else{c4=J.U(c4,"hotel_images")
-c4=c4==null?null:J.aK(c4)}if(c4==null)c4=""
+c2=m.at.a.a
+c3=m.a.d
+if(c3==null)c3=null
+else{c3=J.U(c3,"hotel_images")
+c3=c3==null?null:J.aK(c3)}if(c3==null)c3=""
+c4=m.CW
+if(c4==null)c4="No"
 c5=t.N
-j=A.P(["hotel_id",a1,"partner_id",a2,"hotel_name",a6,"hotel_type",a7,"customization",a8,"room_type",a9,"room_price",b0,"address",b1,"city",b2,"state",b3,"country",b4,"pincode",b5,"total_rooms",b6,"available_rooms",b7,"amenities",b9,"policies",c0,"avg_rating",b8,"hotel_contact",a3,"about_this_property",c1,"hotel_location",A.l(c2)+","+A.l(c3),"status","Active","hotel_images",c4],c5,c5)
+j=A.P(["hotel_id",a1,"partner_id",a2,"hotel_name",a6,"hotel_type",a7,"room_type",a8,"address",a9,"city",b0,"state",b1,"country",b2,"pincode",b3,"hotel_location",A.l(b4)+","+A.l(b5),"total_rooms",b6,"available_rooms",b7,"room_price",b8,"amenities",c0,"policies",c1,"avg_rating",b9,"hotel_contact",a3,"about_this_property",c2,"hotel_images",c3,"customization",c4,"status","Active"],c5,c5)
 i=A.r(c5,t.yp)
 h=!1
 for(a1=m.id,a1=new A.ct(a1,A.p(a1).i("ct<1,2>")).gan(0),a2=t.s;a1.v();){a3=a1.d
