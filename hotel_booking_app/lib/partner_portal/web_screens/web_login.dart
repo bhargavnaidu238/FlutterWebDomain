@@ -111,7 +111,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
     final TextEditingController newPasswordController = TextEditingController();
     final TextEditingController confirmPasswordController = TextEditingController();
 
-    int currentStep = 1; // 1: Email, 2: OTP, 3: New Password
+    int currentStep = 1;
     bool showPassword = false;
     bool isApiLoading = false;
 
@@ -119,7 +119,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
     bool canResend = false;
     Timer? timer;
 
-    // Helper widget to maintain your specific design
+    // Internal helper for consistent text fields
     Widget _dialogTextField(TextEditingController controller, String hint, IconData icon, {bool obscure = false}) {
       return TextField(
         controller: controller,
@@ -163,43 +163,41 @@ class _WebLoginPageState extends State<WebLoginPage> {
               });
             }
 
+            // STEP 1: SEND OTP
             Future<void> handleSendOtp() async {
               final email = emailController.text.trim().toLowerCase();
               if (email.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Please enter your email")));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter your email")));
                 return;
               }
 
               setDialogState(() => isApiLoading = true);
               try {
+                // Changed to Form URL Encoded to match your backend's expected param handling
                 final res = await http.post(
                   Uri.parse('${ApiConfig.baseUrl}/send-email-otp'),
-                  headers: {'Content-Type': 'application/json'},
-                  body: jsonEncode({
+                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                  body: {
                     'email': email,
-                    'type': 'forgot_password' // Consistent type
-                  }),
+                    'type': 'forgot_password'
+                  },
                 );
 
                 final data = jsonDecode(res.body);
-
                 if (res.statusCode == 200 && data['status'] == 'success') {
                   startTimer();
                   setDialogState(() => currentStep = 2);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(data['message'] ?? "Error sending OTP")),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? "Error sending OTP")));
                 }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Connection Error: $e")));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Connection Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
             }
 
+            // STEP 2: VERIFY OTP
             Future<void> handleVerifyOtp() async {
               final otp = otpController.text.trim();
               if (otp.isEmpty) return;
@@ -208,35 +206,34 @@ class _WebLoginPageState extends State<WebLoginPage> {
               try {
                 final res = await http.post(
                   Uri.parse('${ApiConfig.baseUrl}/verify-email-otp'),
-                  headers: {'Content-Type': 'application/json'},
-                  body: jsonEncode({
+                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                  body: {
                     'email': emailController.text.trim().toLowerCase(),
                     'otp': otp,
-                    'type': 'forgot_password' // Matches the sending type
-                  }),
+                    'type': 'forgot_password'
+                  },
                 );
+
                 final data = jsonDecode(res.body);
                 if (res.statusCode == 200 && data['status'] == 'success') {
                   setDialogState(() => currentStep = 3);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(data['message'] ?? "Invalid OTP")));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? "Invalid OTP")));
                 }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Error: $e")));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
             }
 
+            // STEP 3: RESET PASSWORD (Matches your Java handleForgotPassword exactly)
             Future<void> handleResetPassword() async {
               final pwd = newPasswordController.text.trim();
               final confirmPwd = confirmPasswordController.text.trim();
 
               if (pwd.isEmpty || pwd != confirmPwd) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Passwords do not match!")));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match!")));
                 return;
               }
 
@@ -245,19 +242,23 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 final res = await http.post(
                   Uri.parse('${ApiConfig.baseUrl}/forgotpassword'),
                   headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                  body: 'email=${Uri.encodeComponent(emailController.text.trim().toLowerCase())}&newPassword=${Uri.encodeComponent(pwd)}',
+                  // Key fix: Sending as Map in body automatically encodes as application/x-www-form-urlencoded
+                  body: {
+                    'email': emailController.text.trim().toLowerCase(),
+                    'newPassword': pwd,
+                  },
                 );
 
                 final data = jsonDecode(res.body);
                 if (res.statusCode == 200 && data['status'] == 'success') {
                   timer?.cancel();
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Password updated successfully!")));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password updated successfully!")));
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(data['message'] ?? "Reset failed")));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? "Reset failed")));
                 }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
               } finally {
                 setDialogState(() => isApiLoading = false);
               }
@@ -320,7 +321,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 if (isApiLoading)
                   const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   )
                 else
                   ElevatedButton(
@@ -337,7 +338,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
           },
         );
       },
-    ).then((_) => timer?.cancel()); // Ensure timer is killed if dialog is dismissed via clicking outside
+    ).then((_) => timer?.cancel());
   }
 
   Widget _dialogTextField(TextEditingController controller, String label, IconData icon, {bool obscure = false}) {
