@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'add_PGs_page.dart';
+import 'Add_PGs_page.dart'; // Ensure the filename matches your project
 import 'package:hotel_booking_app/services/api_service.dart';
 
 class ViewPGsPage extends StatefulWidget {
@@ -24,6 +24,7 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
   }
 
   Future<void> fetchPgs() async {
+    if (!mounted) return;
     setState(() => isLoading = true);
     pgs.clear();
 
@@ -41,6 +42,8 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
           List<String> rows = dataPart.trim().split("\n");
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
+            // Adjusted indexing based on the new schema:
+            // avg_rating (20) and total_reviews (21)
             pgs.add({
               "pg_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',
@@ -62,26 +65,29 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
               "room_price": cols.length > 17 ? cols[17] : '0',
               "amenities": cols.length > 18 ? cols[18] : '',
               "policies": cols.length > 19 ? cols[19] : '',
-              "rating": cols.length > 20 ? cols[20] : '0.0',
-              "pg_contact": cols.length > 21 ? cols[21] : '',
-              "about_this_pg": cols.length > 22 ? cols[22] : '',
-              "pg_images": cols.length > 23 ? cols[23] : '',
-              "status": cols.length > 24 ? cols[24] : '',
-              "total_Rooms": cols.length > 25 ? cols[25] : '0',
+              "avg_rating": cols.length > 20 ? cols[20] : '0.0',
+              "total_reviews": cols.length > 21 ? cols[21] : '0',
+              "pg_contact": cols.length > 22 ? cols[22] : '',
+              "about_this_pg": cols.length > 23 ? cols[23] : '',
+              "pg_images": cols.length > 24 ? cols[24] : '',
+              "status": cols.length > 25 ? cols[25] : '',
+              "total_Rooms": _calculateTotalFromCols(cols),
             });
           }
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error fetching pgs: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error fetching pgs: $e")),
+        );
+      }
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
-  String _calculateTotal(List<String> cols) {
+  String _calculateTotalFromCols(List<String> cols) {
     try {
       if (cols.length < 15) return "0";
       int total = int.parse(cols[10]) + int.parse(cols[11]) + int.parse(cols[12]) + int.parse(cols[13]) + int.parse(cols[14]);
@@ -102,7 +108,7 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
     setState(() {
       if (value == true) selectedPGs.add(pgId);
       else selectedPGs.remove(pgId);
-      selectAll = selectedPGs.length == pgs.length;
+      selectAll = selectedPGs.length == pgs.length && pgs.isNotEmpty;
     });
   }
 
@@ -116,7 +122,7 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
         content: Text("Delete ${selectedPGs.length} PG(s)?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
         ],
       ),
     ) ?? false;
@@ -138,7 +144,6 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("PGs deleted successfully.")),
       );
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error deleting: $e")),
@@ -147,147 +152,191 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
   }
 
   Widget buildPGRow(Map<String, String> pg) {
-    String fullAddress =
-        "${pg['address']}, ${pg['city']}, ${pg['state']}, ${pg['country']} - ${pg['pincode']}";
+    String fullAddress = "${pg['address']}, ${pg['city']}, ${pg['state']} - ${pg['pincode']}";
     bool isSelected = selectedPGs.contains(pg['pg_id']);
 
     return Card(
-      color: Colors.white.withOpacity(0.1),
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      color: Colors.white.withOpacity(0.15),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Checkbox(
-              value: isSelected,
-              onChanged: (v) => togglePGSelection(pg['pg_id']!, v),
-              activeColor: Colors.green.shade900,
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(pg['pg_name'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(height: 4),
-                  Text("PG Type: ${pg['pg_type'] ?? ''}", style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text(fullAddress, style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text("Room Types: ${pg['room_type'] ?? ''}", style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text("Total Rooms: ${pg['total_Rooms'] ?? '0'} | Price: ₹${pg['room_price'] ?? '0'}", style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text("Amenities: ${pg['amenities'] ?? ''}", style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text("Status: ${pg['status'] ?? ''}", style: const TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.star, color: Colors.amber.shade300, size: 18),
-                      const SizedBox(width: 4),
-                      Text(pg['rating'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
-                      const SizedBox(width: 15),
-                      Icon(Icons.phone, color: Colors.white70, size: 18),
-                      const SizedBox(width: 4),
-                      Text(pg['pg_contact'] ?? "N/A", style: const TextStyle(color: Colors.white70)),
-                    ],
-                  ),
-                ],
+      child: InkWell(
+        onTap: () => togglePGSelection(pg['pg_id']!, !isSelected),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Checkbox(
+                value: isSelected,
+                onChanged: (v) => togglePGSelection(pg['pg_id']!, v),
+                activeColor: Colors.green.shade900,
+                side: const BorderSide(color: Colors.white),
               ),
-            ),
-          ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(pg['pg_name'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 6),
+                    _infoRow(Icons.category, "Type: ${pg['pg_type']}"),
+                    _infoRow(Icons.location_on, fullAddress),
+                    _infoRow(Icons.hotel, "Total Rooms: ${pg['total_Rooms']} | ₹${pg['room_price']}"),
+                    _infoRow(Icons.check_circle, "Status: ${pg['status']}"),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: Colors.amber.shade300, size: 18),
+                        const SizedBox(width: 4),
+                        Text("${pg['avg_rating']} (${pg['total_reviews']} reviews)", style: const TextStyle(color: Colors.white)),
+                        const SizedBox(width: 15),
+                        const Icon(Icons.phone, color: Colors.white70, size: 18),
+                        const SizedBox(width: 4),
+                        Text(pg['pg_contact'] ?? "N/A", style: const TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: Colors.white70),
+          const SizedBox(width: 6),
+          Expanded(child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 13))),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    bool isSmallScreen = screenWidth < 600;
+
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF00C853), Color(0xFFB2FF59)],
+            colors: [Color(0xFF00C853), Color(0xFF64DD17)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Row(
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 24),
+            child: Column(
               children: [
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
-                const SizedBox(width: 8),
-                const Text("View PGs", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: selectedPGs.length == 1
-                      ? () {
-                    final pg = pgs.firstWhere((h) => h['pg_id'] == selectedPGs[0]);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddPGSPage(partnerId: widget.partnerId, pgData: pg),
-                      ),
-                    ).then((value) {
-                      fetchPgs();
-                      selectedPGs.clear();
-                      selectAll = false;
-                    });
-                  }
-                      : null,
-                  icon: const Icon(Icons.edit, size: 20),
-                  label: const Text("Edit"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.white24,
-                  ),
+                // Responsive Header
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
+                        Text("View PGs", style: TextStyle(fontSize: isSmallScreen ? 20 : 26, fontWeight: FontWeight.bold, color: Colors.white)),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _actionButton(
+                          onPressed: selectedPGs.length == 1 ? _handleEdit : null,
+                          icon: Icons.edit,
+                          label: "Edit",
+                        ),
+                        const SizedBox(width: 8),
+                        _actionButton(
+                          onPressed: selectedPGs.isNotEmpty ? confirmDelete : null,
+                          icon: Icons.delete,
+                          label: "Delete",
+                          color: Colors.redAccent.withOpacity(0.8),
+                        ),
+                        const SizedBox(width: 8),
+                        _actionButton(
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddPGSPage(partnerId: widget.partnerId))).then((_) => fetchPgs()),
+                          icon: Icons.add,
+                          label: "Add",
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                ElevatedButton.icon(
-                  onPressed: selectedPGs.isNotEmpty ? confirmDelete : null,
-                  icon: const Icon(Icons.delete_forever, size: 20),
-                  label: const Text("Delete"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent.withOpacity(0.8),
-                    foregroundColor: Colors.white,
-                  ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: selectAll,
+                      onChanged: toggleSelectAll,
+                      activeColor: Colors.green.shade900,
+                      side: const BorderSide(color: Colors.white),
+                    ),
+                    const Text("Select All", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                    const Spacer(),
+                    if (selectedPGs.isNotEmpty)
+                      Text("${selectedPGs.length} Selected", style: const TextStyle(color: Colors.white70)),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddPGSPage(partnerId: widget.partnerId))),
-                  icon: const Icon(Icons.add, size: 20),
-                  label: const Text("Add PG"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    foregroundColor: Colors.white,
+                const Divider(color: Colors.white24),
+                Expanded(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                      : pgs.isEmpty
+                      ? const Center(child: Text("No PG's found.", style: TextStyle(color: Colors.white, fontSize: 18)))
+                      : ListView.builder(
+                    itemCount: pgs.length,
+                    itemBuilder: (context, i) => buildPGRow(pgs[i]),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Checkbox(value: selectAll, onChanged: toggleSelectAll, activeColor: Colors.green.shade900),
-                const Text("Select All", style: TextStyle(color: Colors.white, fontSize: 16)),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                  : pgs.isEmpty
-                  ? const Center(child: Text("No PG's found.", style: TextStyle(color: Colors.white, fontSize: 18)))
-                  : ListView.builder(
-                itemCount: pgs.length,
-                itemBuilder: (context, i) => buildPGRow(pgs[i]),
-              ),
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _handleEdit() {
+    final pg = pgs.firstWhere((h) => h['pg_id'] == selectedPGs[0]);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddPGSPage(partnerId: widget.partnerId, pgData: pg),
+      ),
+    ).then((value) {
+      fetchPgs();
+      selectedPGs.clear();
+      selectAll = false;
+    });
+  }
+
+  Widget _actionButton({required VoidCallback? onPressed, required IconData icon, required String label, Color? color}) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color ?? Colors.white.withOpacity(0.2),
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: Colors.white10,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
