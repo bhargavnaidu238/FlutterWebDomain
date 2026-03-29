@@ -121,6 +121,8 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -128,12 +130,12 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
         ),
         alignment: Alignment.center,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
           child: Form(
             key: _formKey,
             child: Container(
-              padding: const EdgeInsets.all(40),
-              margin: const EdgeInsets.symmetric(horizontal: 60),
+              constraints: const BoxConstraints(maxWidth: 1000), // Limits width on Desktop
+              padding: EdgeInsets.all(screenWidth < 600 ? 20 : 40),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(20),
@@ -143,12 +145,13 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
                 children: [
                   const Text(
                     "Partner Registration",
+                    textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   const SizedBox(height: 30),
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      final width = constraints.maxWidth > 900 ? 380.0 : double.infinity;
+                      final width = constraints.maxWidth > 800 ? (constraints.maxWidth - 50) / 2 : double.infinity;
                       return Wrap(
                         spacing: 25,
                         runSpacing: 20,
@@ -201,9 +204,8 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   final TextEditingController otpController = TextEditingController();
   bool isLoading = false;
 
-  // Timer related variables
   Timer? _timer;
-  int _secondsRemaining = 60; // 1 Minute timer
+  int _secondsRemaining = 60;
   bool _canResend = false;
 
   @override
@@ -256,7 +258,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("OTP resent successfully")),
         );
-        _startTimer(); // Restart the 1-minute timer
+        _startTimer();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data['message'] ?? "Failed to resend OTP")),
@@ -343,63 +345,66 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           gradient: LinearGradient(colors: [Color(0xFF00C853), Color(0xFFB2FF59)]),
         ),
         alignment: Alignment.center,
-        child: Container(
-          width: 400,
-          padding: const EdgeInsets.all(40),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "OTP Verification",
-                style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: otpController,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontSize: 22),
-                decoration: InputDecoration(
-                  hintText: "Enter OTP",
-                  hintStyle: const TextStyle(color: Colors.white38),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.1),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white38),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            padding: const EdgeInsets.all(40),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "OTP Verification",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: otpController,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontSize: 22),
+                  decoration: InputDecoration(
+                    hintText: "Enter OTP",
+                    hintStyle: const TextStyle(color: Colors.white38),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.1),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white38),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 15),
-              // Resend OTP Section
-              GestureDetector(
-                onTap: _canResend ? resendOtp : null,
-                child: Text(
-                  _canResend
-                      ? "Resend Code"
-                      : "Resend in $_secondsRemaining s",
-                  style: TextStyle(
-                    color: _canResend ? Colors.white : Colors.white60,
-                    fontWeight: FontWeight.bold,
-                    decoration: _canResend ? TextDecoration.underline : TextDecoration.none,
+                const SizedBox(height: 15),
+                GestureDetector(
+                  onTap: _canResend ? resendOtp : null,
+                  child: Text(
+                    _canResend
+                        ? "Resend Code"
+                        : "Resend in $_secondsRemaining s",
+                    style: TextStyle(
+                      color: _canResend ? Colors.white : Colors.white60,
+                      fontWeight: FontWeight.bold,
+                      decoration: _canResend ? TextDecoration.underline : TextDecoration.none,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 30),
-              isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : ElevatedButton(
-                onPressed: verifyAndRegister,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00C853),
-                  minimumSize: const Size(double.infinity, 50),
+                const SizedBox(height: 30),
+                isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : ElevatedButton(
+                  onPressed: verifyAndRegister,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00C853),
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  child: const Text("Register", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
-                child: const Text("Register", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

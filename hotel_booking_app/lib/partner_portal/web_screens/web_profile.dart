@@ -35,18 +35,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
     super.initState();
     fetchProfile();
   }
-/*
-  String normalizeKey(String key) {
-    switch (key) {
-      case 'registration_date':
-        return 'Registration Date';
-      case 'gst_number':
-        return 'GST Number';
-      default:
-        return key.replaceAll("_", " ");
-    }
-  }
-*/
+
   Future<void> fetchProfile() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/webgetprofile');
@@ -212,7 +201,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
     );
   }
 
-  Widget buildMenuOption(ProfileMenuOption option, String title) {
+  Widget buildMenuOption(ProfileMenuOption option, String title, bool isMobile) {
     bool selected = selectedOption == option;
     return ListTile(
       selected: selected,
@@ -232,6 +221,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
         setState(() {
           selectedOption = option;
         });
+        if (isMobile) Navigator.pop(context); // Close drawer on mobile
       },
     );
   }
@@ -303,23 +293,25 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
       case ProfileMenuOption.deleteAccount:
         return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.warning, color: Colors.red, size: 80),
-                const SizedBox(height: 20),
-                const Text("Are you sure you want to delete your account?",
-                    style: TextStyle(fontSize: 18), textAlign: TextAlign.center),
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.delete),
-                  label: const Text("Delete Account"),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: deleteAccount,
-                ),
-              ],
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.warning, color: Colors.red, size: 80),
+                  const SizedBox(height: 20),
+                  const Text("Are you sure you want to delete your account?",
+                      style: TextStyle(fontSize: 18), textAlign: TextAlign.center),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.delete),
+                    label: const Text("Delete Account"),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: deleteAccount,
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -346,6 +338,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
               const SizedBox(height: 10),
               Text(
                 profileData["partner_name"] ?? "",
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green.shade900),
               ),
               const SizedBox(height: 30),
@@ -389,10 +382,14 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 800;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green.shade700,
-        leading: IconButton(
+        leading: isMobile
+            ? null // Let Scaffold handle drawer icon
+            : IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pushReplacement(
@@ -403,23 +400,52 @@ class _WebProfilePageState extends State<WebProfilePage> {
         ),
         title: const Text("My Profile"),
       ),
+      drawer: isMobile ? Drawer(
+        child: ListView(
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Colors.green.shade700),
+              child: const Center(
+                  child: Text("Profile Settings",
+                      style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold))
+              ),
+            ),
+            buildMenuOption(ProfileMenuOption.viewProfile, "View Profile", true),
+            buildMenuOption(ProfileMenuOption.editProfile, "Edit Profile", true),
+            buildMenuOption(ProfileMenuOption.changePassword, "Change Password", true),
+            buildMenuOption(ProfileMenuOption.deleteAccount, "Delete Account", true),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.arrow_back),
+              title: const Text("Back to Dashboard"),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => WebDashboardPage(partnerDetails: widget.partnerDetails)),
+                );
+              },
+            ),
+          ],
+        ),
+      ) : null,
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Row(
         children: [
-          Container(
-            width: 250,
-            color: Colors.green.shade50,
-            child: ListView(
-              children: [
-                const SizedBox(height: 20),
-                buildMenuOption(ProfileMenuOption.viewProfile, "View Profile"),
-                buildMenuOption(ProfileMenuOption.editProfile, "Edit Profile"),
-                buildMenuOption(ProfileMenuOption.changePassword, "Change Password"),
-                buildMenuOption(ProfileMenuOption.deleteAccount, "Delete Account"),
-              ],
+          if (!isMobile)
+            Container(
+              width: 250,
+              color: Colors.green.shade50,
+              child: ListView(
+                children: [
+                  const SizedBox(height: 20),
+                  buildMenuOption(ProfileMenuOption.viewProfile, "View Profile", false),
+                  buildMenuOption(ProfileMenuOption.editProfile, "Edit Profile", false),
+                  buildMenuOption(ProfileMenuOption.changePassword, "Change Password", false),
+                  buildMenuOption(ProfileMenuOption.deleteAccount, "Delete Account", false),
+                ],
+              ),
             ),
-          ),
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(20),
