@@ -16,6 +16,7 @@ class FinancePage extends StatefulWidget {
 class _FinancePageState extends State<FinancePage> {
   bool isLoading = true;
   bool bankExpanded = false;
+  bool isPayoutLoading = false;
 
   Map<String, dynamic> financeData = {};
   List<Map<String, dynamic>> transactions = [];
@@ -46,7 +47,7 @@ class _FinancePageState extends State<FinancePage> {
   final List<String> payoutTypeOptions = [
     "Daily",
     "Weekly",
-    "Fornight",
+    "Fortnight",
     "Monthly",
     "Quarterly"
   ];
@@ -314,32 +315,38 @@ class _FinancePageState extends State<FinancePage> {
 
   // ---------- Update Bank Details ----------
   Future<void> updateBankDetails() async {
+    // Synchronized keys with Java Backend (Case Sensitive)
     final body = {
       'partner_id': widget.partnerId,
-      'account_holder_name': accountHolderController.text.trim(),
-      'bank_name': bankNameController.text.trim(),
-      'account_number': accountNumberController.text.trim(),
-      'ifsc_swift': ifscController.text.trim(),
-      'pan_tax_id': panController.text.trim(),
-      'account_type': selectedAccountType,
-      'payout_type': selectedPayoutType,
+      'Account_Holder_Name': accountHolderController.text.trim(),
+      'Bank_Name': bankNameController.text.trim(),
+      'Account_Number': accountNumberController.text.trim(),
+      'IFSC_SWIFT': ifscController.text.trim(),
+      'Account_Type': selectedAccountType, // e.g., "Savings"
+      'PAN_Tax_ID': panController.text.trim(),
+      'Payout_Type': selectedPayoutType,   // e.g., "Daily"
+      // 'auto_payout' isn't in your current Java table schema,
+      // but keeping it here if you add it later.
       'auto_payout': autoPayout ? '1' : '0',
     };
+
     try {
       final res = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/updateBankDetails'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body,
       );
+
       final data = jsonDecode(res.body);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(data['message']?.toString() ?? "Update complete")),
+        SnackBar(content: Text(data['message']?.toString() ?? "Update complete")),
       );
+
       if (data['status'] == 'success') fetchFinanceData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(content: Text("Network Error: $e")),
       );
     }
   }
@@ -349,46 +356,37 @@ class _FinancePageState extends State<FinancePage> {
     double pending = _parseDouble(
         financeData['pending_payout'] ?? financeData['PendingPayout'] ?? 0);
 
-    // ❗ Block empty request
-    if (payoutAmountController.text
-        .trim()
-        .isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please enter withdrawal amount")),
-      );
+    // 1. Validation Checks
+    if (payoutAmountController.text.trim().isEmpty) {
+      _showSnack("Please enter withdrawal amount");
       return;
     }
 
-    double? requestedAmount = double.tryParse(
-        payoutAmountController.text.trim());
+    double? requestedAmount = double.tryParse(payoutAmountController.text.trim());
     if (requestedAmount == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Invalid amount entered")),
-      );
+      _showSnack("Invalid amount entered");
       return;
     }
 
     if (requestedAmount > pending) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(
-            "Requested amount cannot exceed available pending ${_formatCurrency(
-                pending)}")),
-      );
+      _showSnack("Requested amount cannot exceed available pending ${_formatCurrency(pending)}");
       return;
     }
 
     if (requestedAmount < minimumWithdrawal) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(
-            "Minimum withdrawal is ${_formatCurrency(minimumWithdrawal)}")),
-      );
+      _showSnack("Minimum withdrawal is ${_formatCurrency(minimumWithdrawal)}");
       return;
     }
+
+    // 2. Start Loading State
+    setState(() => isPayoutLoading = true);
 
     final body = {
       'partner_id': widget.partnerId,
       'amount': requestedAmount.toString(),
-      'comments': commentsController.text.trim(),
+      'comments': commentsController.text.trim().isEmpty
+          ? "User Requested Payment"
+          : commentsController.text.trim(),
     };
 
     try {
@@ -396,25 +394,67 @@ class _FinancePageState extends State<FinancePage> {
         Uri.parse('${ApiConfig.baseUrl}/requestPayout'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body,
-      );
+      ).timeout(const Duration(seconds: 15)); // Added timeout for better UX
 
-      final data = jsonDecode(res.body);
+      // 3. SECURE JSON DECODING
+      // Only decode if the server actually sent JSON
+      if (res.headers['content-type']?.contains('application/json') ?? false) {
+        final data = jsonDecode(res.body);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'] ?? "Error")),
-      );
-
-      if (data['status'] == 'success') {
-        fetchFinanceData();
-        fetchTransactions();
-        commentsController.clear();
-        payoutAmountController.clear();
+        if (res.statusCode == 200 && data['status'] == 'success') {
+          _showSuccessDialog(requestedAmount);
+          fetchFinanceData();
+          fetchTransactions();
+          commentsController.clear();
+          payoutAmountController.clear();
+        } else {
+          _showSnack(data['message'] ?? "Server rejected the request");
+        }
+      } else {
+        // If we got here, the backend probably crashed with a 500 error and sent raw text
+        _showSnack("Server Error (${res.statusCode}): Please check backend logs.");
+        print("Raw Server Response: ${res.body}");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      _showSnack("Connection Error: $e");
+    } finally {
+      if (mounted) setState(() => isPayoutLoading = false);
     }
+  }
+
+// Helper to keep the main function clean
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  void _showSuccessDialog(double amount) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Column(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 60),
+            SizedBox(height: 10),
+            Text("Request Submitted"),
+          ],
+        ),
+        content: Text(
+          "Your request for ${_formatCurrency(amount)} was successful.\n\nA confirmation email has been sent to your registered ID.",
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          Center(
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
+              child: const Text("Got it", style: TextStyle(color: Colors.white)),
+            ),
+          )
+        ],
+      ),
+    );
   }
 
   // ---------- Transactions: CSV Export ----------
