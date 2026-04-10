@@ -35,21 +35,38 @@ class ApiService {
   static const String _tokenKey = "auth_token";
   static const String _emailKey = "auth_email";
   static const String _userIdKey = "auth_userId";
+  // FIX: Added a key to store the full partner details JSON string
+  static const String _partnerDataKey = "partner_full_data";
 
   /// ================= AUTH STORAGE =================
   static void saveAuthData({
     required String token,
     required String email,
     required String userId,
+    Map<String, dynamic>? fullData, // FIX: Added optional parameter to capture full response
   }) {
     html.window.localStorage[_tokenKey] = token;
     html.window.localStorage[_emailKey] = email;
     html.window.localStorage[_userIdKey] = userId;
+
+    // FIX: Save the entire response as a JSON string to persist Partner_Details
+    if (fullData != null) {
+      html.window.localStorage[_partnerDataKey] = jsonEncode(fullData);
+    }
   }
 
   static String? getToken() => html.window.localStorage[_tokenKey];
   static String? getEmail() => html.window.localStorage[_emailKey];
   static String? getUserId() => html.window.localStorage[_userIdKey];
+
+  // FIX: Added helper to retrieve the full map on refresh
+  static Map<String, dynamic>? getPartnerFullData() {
+    final data = html.window.localStorage[_partnerDataKey];
+    if (data != null) {
+      return jsonDecode(data) as Map<String, dynamic>;
+    }
+    return null;
+  }
 
   static bool isLoggedIn() => getToken() != null;
 
@@ -57,6 +74,8 @@ class ApiService {
     html.window.localStorage.remove(_tokenKey);
     html.window.localStorage.remove(_emailKey);
     html.window.localStorage.remove(_userIdKey);
+    // FIX: Clear the full data on logout
+    html.window.localStorage.remove(_partnerDataKey);
   }
 
   /// ================= EMAIL OTP =================
@@ -179,10 +198,12 @@ class ApiService {
             data['token'] ?? DateTime.now().millisecondsSinceEpoch.toString();
         final userId = data['userId']?.toString() ?? '';
 
+        // FIX: Passed 'data' (the whole response) to saveAuthData to ensure persistency
         saveAuthData(
           token: token,
           email: email,
           userId: userId,
+          fullData: data,
         );
 
         return {

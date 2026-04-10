@@ -94,31 +94,39 @@ class MyApp extends StatelessWidget {
           return _noTransitionRoute(const WebLoginPage(), settings);
         }
 
-        final args = settings.arguments as Map<String, String>?;
+        final args = settings.arguments;
 
+        // FIX: If args are null (happens on refresh), recover from localStorage
         if (args == null) {
-          final email = ApiService.getEmail();
-          final userId = ApiService.getUserId();
+          final savedData = ApiService.getPartnerFullData();
 
-          if (email == null || userId == null) {
+          if (savedData == null) {
+            debugPrint("No saved partner data found. Redirecting to login.");
             return _noTransitionRoute(const WebLoginPage(), settings);
           }
 
           return _noTransitionRoute(
             WebDashboardPage(
-              partnerDetails: {
-                "email": email,
-                "userId": userId,
-              },
+              // FIX: Explicitly cast the Map<String, dynamic> to Map<String, String>
+              // to match WebDashboardPage's constructor requirement.
+              partnerDetails: savedData.map((key, value) => MapEntry(key, value.toString())),
             ),
             settings,
           );
         }
 
-        return _noTransitionRoute(
-          WebDashboardPage(partnerDetails: args),
-          settings,
-        );
+        // FIX: Handle cases where arguments are passed as Map<String, dynamic> from Navigator
+        if (args is Map) {
+          return _noTransitionRoute(
+            WebDashboardPage(
+              // FIX: Ensure types match the expected Map<String, String>
+              partnerDetails: args.map((key, value) => MapEntry(key.toString(), value.toString())),
+            ),
+            settings,
+          );
+        }
+
+        return _noTransitionRoute(const WebLoginPage(), settings);
 
     // ================= DEFAULT =================
       default:
