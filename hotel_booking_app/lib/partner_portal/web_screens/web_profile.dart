@@ -128,6 +128,37 @@ class _WebProfilePageState extends State<WebProfilePage> {
     }
   }
 
+  Future<void> _confirmDelete() async {
+    // Show the confirmation dialog
+    bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Delete Account"),
+          content: const Text(
+            "Are you sure you want to delete your account? This action cannot be reverted again.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // User clicked Cancel
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true), // User clicked Confirm
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text("Confirm"),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If the user confirmed, proceed with the deletion logic
+    if (shouldDelete == true) {
+      await deleteAccount();
+    }
+  }
+
   Future<void> deleteAccount() async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/webdeleteprofile');
