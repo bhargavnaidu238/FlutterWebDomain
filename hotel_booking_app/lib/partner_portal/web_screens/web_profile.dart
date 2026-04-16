@@ -306,33 +306,40 @@ class _WebProfilePageState extends State<WebProfilePage> {
                 children: [
                   const Icon(Icons.warning, color: Colors.red, size: 80),
                   const SizedBox(height: 20),
-                  const Text(
-                    "Are you sure you want to delete your account? This action cannot be reverted again.",
-                    style: TextStyle(fontSize: 18),
-                    textAlign: TextAlign.center,
-                  ),
+                  const Text("Are you sure you want to delete your account?",
+                      style: TextStyle(fontSize: 18), textAlign: TextAlign.center),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.close),
-                        label: const Text("Cancel"),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-                        onPressed: () {
-                          setState(() {
-                            selectedOption = ProfileMenuOption.viewProfile;
-                          });
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.delete),
+                    label: const Text("Delete Account"),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text("Confirm Deletion"),
+                            content: const Text(
+                              "Are you sure? You want to delete your account? which cannot be reverted again?",
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text("Cancel"),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  deleteAccount();
+                                },
+                                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                child: const Text("Confirm"),
+                              ),
+                            ],
+                          );
                         },
-                      ),
-                      const SizedBox(width: 20),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.delete),
-                        label: const Text("Confirm Delete"),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                        onPressed: deleteAccount,
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ],
               ),
