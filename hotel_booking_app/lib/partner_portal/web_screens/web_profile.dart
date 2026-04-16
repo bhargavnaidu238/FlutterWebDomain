@@ -136,16 +136,21 @@ class _WebProfilePageState extends State<WebProfilePage> {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: "email=${Uri.encodeComponent(widget.email.trim().toLowerCase())}",
       );
+
       final data = jsonDecode(res.body);
+
       if (data['status'] == 'success') {
-        showSnack("Account deleted (status set to Inactive)");
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (_) =>
-                  WebDashboardPage(partnerDetails: widget.partnerDetails)),
-        );
-        fetchProfile();
+        showSnack("Account deleted successfully.");
+
+        ApiService.logout();
+
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/weblogin',
+                (route) => false,
+          );
+        }
       } else {
         showSnack(data['message'] ?? "Delete failed");
       }
