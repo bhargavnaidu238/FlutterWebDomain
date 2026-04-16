@@ -49,15 +49,15 @@ class LandingPage extends StatelessWidget {
             children: [
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/weblogin'),
-                child: const Text("Login", style: TextStyle(color: Colors.white)),
+                child: const Text("Partner Login", style: TextStyle(color: Colors.white)),
               ),
               const SizedBox(width: 12),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
                 onPressed: () => Navigator.pushNamed(context, '/registerlogin'),
                 child: Text(
-                  "Register",
-                  style: TextStyle(color: Colors.green.shade700),
+                  "List Your Property",
+                  style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -90,28 +90,29 @@ class LandingPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Simplifying Hotel Management for You",
+                      "Grow Your Hotel Business with partner.com",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 36,
+                        fontSize: 42,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      "Manage bookings, increase revenue, and get real-time insights — all in one platform.",
-                      style: TextStyle(color: Colors.white70, fontSize: 20),
+                      "Join 5,000+ hotel partners worldwide. Increase your occupancy by up to 40% using our AI-driven booking engine and seamless property management tools.",
+                      style: TextStyle(color: Colors.white, fontSize: 20, height: 1.5),
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+                        elevation: 4,
                       ),
                       onPressed: () => Navigator.pushNamed(context, '/registerlogin'),
                       child: Text(
-                        "Get Started",
-                        style: TextStyle(color: Colors.green.shade700, fontSize: 18),
+                        "Start Growing Today",
+                        style: TextStyle(color: Colors.green.shade700, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -131,13 +132,13 @@ class LandingPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "Simplifying Hotel Management for You",
+                "Grow Your Hotel Business with partner.com",
                 style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               const Text(
-                "Manage bookings, increase revenue, and get real-time insights — all in one platform.",
-                style: TextStyle(color: Colors.white70, fontSize: 18),
+                "Join 5,000+ hotel partners. Increase occupancy by up to 40% with our automated tools.",
+                style: TextStyle(color: Colors.white, fontSize: 18, height: 1.4),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -148,7 +149,7 @@ class LandingPage extends StatelessWidget {
                 onPressed: () => Navigator.pushNamed(context, '/registerlogin'),
                 child: Text(
                   "Get Started",
-                  style: TextStyle(color: Colors.green.shade700, fontSize: 18),
+                  style: TextStyle(color: Colors.green.shade700, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 40),
@@ -167,10 +168,26 @@ class LandingPage extends StatelessWidget {
   // Offerings / Benefits Section
   Widget _offeringsSection() {
     final offerings = [
-      {"title": "Partner Hotel Management", "desc": "Easily manage all your hotels from one platform.", "icon": Icons.hotel},
-      {"title": "Real-Time Dashboard", "desc": "See bookings and revenue in real-time.", "icon": Icons.dashboard},
-      {"title": "Analytics & Insights", "desc": "Make data-driven decisions to increase revenue.", "icon": Icons.show_chart},
-      {"title": "Multi-Platform Access", "desc": "Web and mobile apps accessible anywhere.", "icon": Icons.devices},
+      {
+        "title": "Smart PMS",
+        "desc": "Automated room allocation and guest check-ins to reduce operational overhead.",
+        "icon": Icons.hotel_class
+      },
+      {
+        "title": "Revenue Manager",
+        "desc": "Dynamic pricing algorithms that adjust rates based on local demand and seasonality.",
+        "icon": Icons.payments
+      },
+      {
+        "title": "Global Distribution",
+        "desc": "Sync your inventory instantly across 200+ booking channels including Expedia & Booking.com.",
+        "icon": Icons.language
+      },
+      {
+        "title": "Guest Analytics",
+        "desc": "Detailed reporting on guest preferences to personalize their stay and earn 5-star reviews.",
+        "icon": Icons.analytics
+      },
     ];
 
     return Container(
@@ -180,37 +197,49 @@ class LandingPage extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            "Why Partner With Us",
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green.shade700),
+            "Powerful Features to Scale Your Property",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green.shade900),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 12),
+          const Text(
+            "Everything you need to manage your hospitality business efficiently.",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.black54),
+          ),
+          const SizedBox(height: 48),
           Wrap(
             spacing: 30,
             runSpacing: 30,
+            alignment: WrapAlignment.center,
             children: offerings.map((offer) {
               return Container(
-                width: 250,
-                padding: const EdgeInsets.all(20),
+                width: 280,
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: Colors.green.shade100, blurRadius: 10, offset: const Offset(0, 4))],
+                  boxShadow: [BoxShadow(color: Colors.green.shade100, blurRadius: 15, offset: const Offset(0, 8))],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(offer["icon"] as IconData, size: 48, color: Colors.green.shade700),
-                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Colors.green.shade50, shape: BoxShape.circle),
+                      child: Icon(offer["icon"] as IconData, size: 36, color: Colors.green.shade700),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
                       offer["title"] as String,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Text(
                       offer["desc"] as String,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14, color: Colors.black87),
+                      style: const TextStyle(fontSize: 14, color: Colors.black54, height: 1.5),
                     ),
                   ],
                 ),
@@ -225,9 +254,21 @@ class LandingPage extends StatelessWidget {
   // Testimonials Section
   Widget _testimonialsSection() {
     final testimonials = [
-      {"name": "Hotel XYZ", "feedback": "Partnering with this platform increased our bookings by 25%!" },
-      {"name": "Hotel ABC", "feedback": "The dashboard is super intuitive and helped us save time." },
-      {"name": "Hotel 123", "feedback": "Highly recommend to all hotels looking to streamline operations." },
+      {
+        "name": "The Grand Heritage",
+        "feedback": "Switching to partner.com reduced our double-booking errors to zero. The automated sync is a lifesaver!",
+        "location": "London, UK"
+      },
+      {
+        "name": "Urban Stay Boutique",
+        "feedback": "The revenue management tool suggested price increases during a local festival that boosted our profit by 30%.",
+        "location": "New York, USA"
+      },
+      {
+        "name": "Sunset Resort",
+        "feedback": "Outstanding support and an interface that even our junior staff mastered in just one afternoon.",
+        "location": "Bali, Indonesia"
+      },
     ];
 
     return Padding(
@@ -235,33 +276,41 @@ class LandingPage extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            "What Our Partners Say",
+            "Trusted by Owners Worldwide",
             style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green.shade700),
           ),
           const SizedBox(height: 40),
           Wrap(
             spacing: 30,
             runSpacing: 30,
+            alignment: WrapAlignment.center,
             children: testimonials.map((t) {
               return Container(
-                width: 280,
-                padding: const EdgeInsets.all(20),
+                width: 320,
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: Colors.green.shade100, blurRadius: 10, offset: const Offset(0, 4))],
+                  border: Border.all(color: Colors.green.shade100),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Icon(Icons.format_quote, color: Colors.green, size: 32),
+                    const SizedBox(height: 8),
                     Text(
-                      "\"${t['feedback']}\"",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.black87),
+                      "${t['feedback']}",
+                      style: const TextStyle(fontSize: 15, fontStyle: FontStyle.italic, color: Colors.black87, height: 1.4),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 20),
                     Text(
                       t['name']!,
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade700),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade900),
+                    ),
+                    Text(
+                      t['location']!,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -277,24 +326,47 @@ class LandingPage extends StatelessWidget {
   Widget _businessSection() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       margin: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.green.shade100, blurRadius: 10, offset: const Offset(0, 4))],
+        color: Colors.green.shade900,
+        borderRadius: BorderRadius.circular(24),
+        image: DecorationImage(
+          image: const NetworkImage('https://www.transparenttextures.com/patterns/carbon-fibre.png'),
+          opacity: 0.1,
+          repeat: ImageRepeat.repeat,
+        ),
       ),
       child: Column(
-        children: const [
-          Text(
-            "Want to do business with us?",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
-          ),
-          SizedBox(height: 12),
-          Text(
-            "📧 business@yourcompany.com\n📞 +91-99999-99999",
+        children: [
+          const Text(
+            "Ready to Optimize Your Property?",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16),
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            "Our partnership experts are available 24/7 to help you set up your account and maximize your revenue.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.email, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              const Text("partnerships@partner.com", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.phone, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              const Text("+91-800-PARTNER", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+            ],
           ),
         ],
       ),
@@ -304,6 +376,7 @@ class LandingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -313,24 +386,40 @@ class LandingPage extends StatelessWidget {
             _testimonialsSection(),
             _businessSection(),
             const SizedBox(height: 24),
+            const Text(
+              "Follow our community for industry tips:",
+              style: TextStyle(color: Colors.black54, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 16),
             Wrap(
               alignment: WrapAlignment.center,
               spacing: 22,
               runSpacing: 10,
               children: [
-                _socialIcon(FontAwesomeIcons.facebookF, Colors.blue, () {}),
-                _socialIcon(FontAwesomeIcons.instagram, Colors.pinkAccent, () {}),
-                _socialIcon(FontAwesomeIcons.xTwitter, Colors.lightBlueAccent, () {}),
-                _socialIcon(FontAwesomeIcons.linkedinIn, Colors.blueAccent, () {}),
-                _socialIcon(FontAwesomeIcons.youtube, Colors.red, () {}),
+                _socialIcon(FontAwesomeIcons.facebookF, const Color(0xFF1877F2), () {}),
+                _socialIcon(FontAwesomeIcons.instagram, const Color(0xFFE4405F), () {}),
+                _socialIcon(FontAwesomeIcons.xTwitter, const Color(0xFF000000), () {}),
+                _socialIcon(FontAwesomeIcons.linkedinIn, const Color(0xFF0A66C2), () {}),
+                _socialIcon(FontAwesomeIcons.youtube, const Color(0xFFFF0000), () {}),
               ],
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
+            const Divider(indent: 50, endIndent: 50),
+            const SizedBox(height: 20),
             const Text(
-              "© 2025 YourCompany. All rights reserved.",
-              style: TextStyle(color: Colors.grey, fontSize: 14),
+              "© 2026 Partner.com Hospitality Solutions. All rights reserved.",
+              style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(onPressed: () {}, child: const Text("Privacy Policy", style: TextStyle(color: Colors.grey, fontSize: 12))),
+                const Text("|", style: TextStyle(color: Colors.grey)),
+                TextButton(onPressed: () {}, child: const Text("Terms of Service", style: TextStyle(color: Colors.grey, fontSize: 12))),
+              ],
+            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
