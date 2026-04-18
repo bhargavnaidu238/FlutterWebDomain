@@ -11,10 +11,18 @@ class ApiConfig {
   static const String _production =
       'https://test-host-server-tamg.onrender.com';
 
+  /// FIX: This allows overriding the URL for your "test_website"
+  /// without changing the code manually every time.
+  static const String _apiUrlOverride = String.fromEnvironment('API_URL', defaultValue: '');
+
   static const String _razorpayTestKey = 'rzp_test_RyBLHvNxl52vtv';
   static const String _razorpayLiveKey = 'rzp_live_xxxxxxxx';
 
   static String get baseUrl {
+    // If an override is passed (from Render Build Command), use it.
+    if (_apiUrlOverride.isNotEmpty) return _apiUrlOverride;
+
+    // Otherwise, fall back to existing logic.
     if (kReleaseMode) return _production;
     if (kIsWeb) return _localWeb;
     return _localAndroid;
