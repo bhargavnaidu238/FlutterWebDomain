@@ -166,7 +166,7 @@ class AboutUsPage extends StatelessWidget {
                     ),
                     SizedBox(height: 10),
                     Text(
-                      "📧 www.flemingostays.com/\n📞 +91-93811-01173",
+                      "📧 admin@flemingostays.com\n📞 +91-93811-01173",
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 16, color: Colors.black87),
                     ),
