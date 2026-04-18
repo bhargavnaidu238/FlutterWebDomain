@@ -41,7 +41,7 @@ class LandingPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            "partner.com",
+            "flemingostays.com",
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -336,7 +336,7 @@ class LandingPage extends StatelessWidget {
                   children: const [
                     Icon(Icons.email, color: Colors.white, size: 20),
                     SizedBox(width: 8),
-                    Text("partnerships@partner.com", style: TextStyle(color: Colors.white, fontSize: 14)),
+                    Text("admin@flemingostays.com", style: TextStyle(color: Colors.white, fontSize: 14)),
                   ],
                 ),
                 Row(
@@ -344,7 +344,7 @@ class LandingPage extends StatelessWidget {
                   children: const [
                     Icon(Icons.phone, color: Colors.white, size: 20),
                     SizedBox(width: 8),
-                    Text("+91-800-PARTNER", style: TextStyle(color: Colors.white, fontSize: 14)),
+                    Text("+91-93811-01173", style: TextStyle(color: Colors.white, fontSize: 14)),
                   ],
                 ),
               ],
