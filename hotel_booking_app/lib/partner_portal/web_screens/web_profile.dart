@@ -136,16 +136,21 @@ class _WebProfilePageState extends State<WebProfilePage> {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: "email=${Uri.encodeComponent(widget.email.trim().toLowerCase())}",
       );
+
       final data = jsonDecode(res.body);
+
       if (data['status'] == 'success') {
-        showSnack("Account deleted (status set to Inactive)");
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (_) =>
-                  WebDashboardPage(partnerDetails: widget.partnerDetails)),
-        );
-        fetchProfile();
+        showSnack("Account deleted successfully.");
+
+        ApiService.logout();
+
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/weblogin',
+                (route) => false,
+          );
+        }
       } else {
         showSnack(data['message'] ?? "Delete failed");
       }
@@ -308,7 +313,33 @@ class _WebProfilePageState extends State<WebProfilePage> {
                     icon: const Icon(Icons.delete),
                     label: const Text("Delete Account"),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                    onPressed: deleteAccount,
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text("Confirm Deletion"),
+                            content: const Text(
+                              "Are you sure? You want to delete your account? which cannot be reverted again?",
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text("Cancel"),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  deleteAccount();
+                                },
+                                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                child: const Text("Confirm"),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
                   ),
                 ],
               ),

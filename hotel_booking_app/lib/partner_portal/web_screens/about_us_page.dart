@@ -166,7 +166,7 @@ class AboutUsPage extends StatelessWidget {
                     ),
                     SizedBox(height: 10),
                     Text(
-                      "📧 business@yourcompany.com\n📞 +91-99999-99999",
+                      "📧 admin@flemingostays.com\n📞 +91-93811-01173",
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 16, color: Colors.black87),
                     ),
@@ -195,7 +195,7 @@ class AboutUsPage extends StatelessWidget {
 
               // Footer
               const Text(
-                "© 2025 YourCompany. All rights reserved.",
+                "© 2025 fleming stays. All rights reserved.",
                 style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
               const SizedBox(height: 30),
