@@ -50,10 +50,7 @@ class MyApp extends StatelessWidget {
       title: "Hotel Booking App",
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.indigo),
-
-      // ================= AUTO CHECK LOGIN ON APP START =================
       initialRoute: ApiService.isLoggedIn() ? '/dashboard' : '/',
-
       onGenerateRoute: _generateRoute,
     );
   }
@@ -95,11 +92,8 @@ class MyApp extends StatelessWidget {
         }
 
         final args = settings.arguments;
-
-        // FIX: If args are null (happens on refresh), recover from localStorage
         if (args == null) {
           final savedData = ApiService.getPartnerFullData();
-
           if (savedData == null) {
             debugPrint("No saved partner data found. Redirecting to login.");
             return _noTransitionRoute(const WebLoginPage(), settings);
@@ -107,27 +101,21 @@ class MyApp extends StatelessWidget {
 
           return _noTransitionRoute(
             WebDashboardPage(
-              // FIX: Explicitly cast the Map<String, dynamic> to Map<String, String>
-              // to match WebDashboardPage's constructor requirement.
               partnerDetails: savedData.map((key, value) => MapEntry(key, value.toString())),
             ),
             settings,
           );
         }
 
-        // FIX: Handle cases where arguments are passed as Map<String, dynamic> from Navigator
         if (args is Map) {
           return _noTransitionRoute(
             WebDashboardPage(
-              // FIX: Ensure types match the expected Map<String, String>
               partnerDetails: args.map((key, value) => MapEntry(key.toString(), value.toString())),
             ),
             settings,
           );
         }
-
         return _noTransitionRoute(const WebLoginPage(), settings);
-
     // ================= DEFAULT =================
       default:
         return _errorScreen("Route not found: ${settings.name}");

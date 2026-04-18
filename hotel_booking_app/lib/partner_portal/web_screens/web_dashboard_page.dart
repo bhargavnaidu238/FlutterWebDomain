@@ -10,7 +10,7 @@ import 'View_Bookings_Page.dart';
 import 'about_us_page.dart';
 import 'Web_Finance_Page.dart';
 import 'View_PGs_Page.dart';
-import 'web_reviews_page.dart'; // Ensure this file exists
+import 'web_reviews_page.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 
 class WebDashboardPage extends StatefulWidget {
@@ -159,7 +159,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     final partnerId = widget.partnerDetails['partner_id'] ?? '';
     final email = widget.partnerDetails['email'] ?? '';
 
-    if (MediaQuery.of(context).size.width < 800) Navigator.pop(context); // Auto-close drawer on mobile
+    if (MediaQuery.of(context).size.width < 800) Navigator.pop(context);
 
     if (option == 'Add Hotels') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: partnerId)));
@@ -174,7 +174,6 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     } else if (option == 'Finance') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => FinancePage(partnerId: partnerId)));
     } else if (option == 'Reviews') {
-      // NEW: Navigate to Reviews Page
       Navigator.push(context, MaterialPageRoute(builder: (_) => WebReviewsPage(email: email, partnerDetails: widget.partnerDetails)));
     } else if (option == 'About Us') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutUsPage()));
@@ -192,7 +191,6 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
     }
   }
 
-  // Sidebar Menu Content (Reused for Mobile Drawer and Desktop Sidebar)
   Widget _buildSidebarContent() {
     return Column(
       children: [
@@ -224,7 +222,6 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
             ),
           ),
         _SideMenuItem(icon: Icons.account_balance_wallet, title: 'Finance', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Finance')),
-        // ADDED: Reviews Button in Sidebar
         _SideMenuItem(icon: Icons.rate_review, title: 'Reviews', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Reviews')),
         _SideMenuItem(icon: Icons.settings, title: 'Settings', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('Settings')),
         _SideMenuItem(icon: Icons.info_outline, title: 'About Us', collapsed: isSidebarCollapsed, onTap: () => _onMenuClick('About Us')),
@@ -407,7 +404,6 @@ class _WebDashboardPageState extends State<WebDashboardPage> with SingleTickerPr
                                     color: Colors.purple.shade700,
                                     backWidget: const Center(child: Text('Users (no data)', style: TextStyle(color: Colors.white))),
                                   ),
-                                  // Clickable Reviews Card in Grid
                                   InkWell(
                                     onTap: () => _onMenuClick('Reviews'),
                                     child: DashboardFlipCard(

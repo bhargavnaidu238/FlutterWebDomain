@@ -68,13 +68,11 @@ class _WebLoginPageState extends State<WebLoginPage> {
         partnerDetails = Map<String, String>.from(data)
           ..removeWhere((key, value) =>
           key == 'status' || key == 'message');
-
-        // FIX: Passing the full 'data' map to ensure all partner details are persisted for page refreshes
         ApiService.saveAuthData(
           token: data['token'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
           email: email,
           userId: partnerDetails['userId'] ?? '',
-          fullData: data, // Using the new parameter defined in ApiService
+          fullData: data,
         );
 
         Navigator.pushNamedAndRemoveUntil(
@@ -336,12 +334,10 @@ class _WebLoginPageState extends State<WebLoginPage> {
           ),
         ),
         alignment: Alignment.center,
-        // FIX: Wrapped in SingleChildScrollView for mobile browsers to handle keyboard/small screens
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              // FIX: Mobile Web Compatibility - Calculate dynamic width
               double cardWidth = constraints.maxWidth > 450 ? 400 : constraints.maxWidth * 0.9;
 
               return Container(

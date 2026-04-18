@@ -223,7 +223,6 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
             padding: EdgeInsets.all(isSmallScreen ? 12 : 24),
             child: Column(
               children: [
-                // Header with Responsive Buttons
                 Wrap(
                   alignment: WrapAlignment.spaceBetween,
                   crossAxisAlignment: WrapCrossAlignment.center,

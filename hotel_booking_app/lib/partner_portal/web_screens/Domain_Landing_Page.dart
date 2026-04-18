@@ -253,9 +253,9 @@ class LandingPage extends StatelessWidget {
   // Testimonials Section
   Widget _testimonialsSection() {
     final testimonials = [
-      {"name": "The Grand Heritage", "feedback": "Switching to partner.com reduced our double-booking errors to zero.", "location": "London, UK"},
-      {"name": "Urban Stay Boutique", "feedback": "The revenue management tool boosted our profit by 30%.", "location": "New York, USA"},
-      {"name": "Sunset Resort", "feedback": "Highly recommended for streamlining daily operations.", "location": "Bali, Indonesia"},
+      {"name": "The Grand Heritage", "feedback": "Switching to partner.com reduced our double-booking errors to zero.", "location": "Hyderbad, Telangana"},
+      {"name": "Urban Stay Boutique", "feedback": "The revenue management tool boosted our profit by 30%.", "location": "Bangalore, Karnataka"},
+      {"name": "Sunset Resort", "feedback": "Highly recommended for streamlining daily operations.", "location": "Chennai, Tamil Nadu"},
     ];
 
     return Padding(

@@ -7,7 +7,6 @@ import 'web_dashboard_page.dart';
 class WebReviewsPage extends StatefulWidget {
   final String email;
   final Map<String, String> partnerDetails;
-
   const WebReviewsPage({required this.email, required this.partnerDetails, Key? key}) : super(key: key);
 
   @override
@@ -15,8 +14,8 @@ class WebReviewsPage extends StatefulWidget {
 }
 
 class _WebReviewsPageState extends State<WebReviewsPage> {
-  List<dynamic> allReviews = []; // Original data from DB
-  List<dynamic> displayedReviews = []; // Filtered/Sorted data for UI
+  List<dynamic> allReviews = [];
+  List<dynamic> displayedReviews = [];
   bool isLoading = true;
   double averageRating = 0.0;
 
@@ -161,7 +160,6 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // CHANGED: Displaying User Name instead of User ID
                 Row(
                   children: [
                     Icon(Icons.person, size: 14, color: Colors.grey.shade600),
@@ -295,7 +293,7 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
           Expanded(
             child: Column(
               children: [
-                buildFilterBar(), // Filter Bar at top of reviews
+                buildFilterBar(),
                 Expanded(
                   child: Container(
                     color: Colors.white,

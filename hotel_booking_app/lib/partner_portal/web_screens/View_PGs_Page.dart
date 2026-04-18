@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'Add_PGs_page.dart'; // Ensure the filename matches your project
+import 'Add_PGs_page.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 
 class ViewPGsPage extends StatefulWidget {
@@ -42,8 +42,6 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
           List<String> rows = dataPart.trim().split("\n");
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
-            // Adjusted indexing based on the new schema:
-            // avg_rating (20) and total_reviews (21)
             pgs.add({
               "pg_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',

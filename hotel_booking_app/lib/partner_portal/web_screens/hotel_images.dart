@@ -44,9 +44,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   final Map<String, List<String>> uploadedUrls = {};
   final Map<String, List<_LocalImage>> localImages = {};
 
-  // PREVENTS SERVER CRASH: Files over 3MB are filtered out before upload
   final int maxFileSizeBytes = 3 * 1024 * 1024;
-
   bool _isUploading = false;
 
   @override
@@ -133,10 +131,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
         for (final img in batch) {
           final fileName = "${widget.partnerId}/${widget.hotelId}/$category/${DateTime.now().millisecondsSinceEpoch}_${img.name}";
-
           await supabase.storage.from(bucketName).uploadBinary(fileName, img.bytes!);
-
-          // Generate the Public URL
           final publicUrl = supabase.storage.from(bucketName).getPublicUrl(fileName);
           newUrls.add(publicUrl);
         }
