@@ -17,8 +17,6 @@ class _FinancePageState extends State<FinancePage> {
   bool isLoading = true;
   bool bankExpanded = false;
   bool isPayoutLoading = false;
-
-  // --- NEW STATE VARIABLES ---
   bool isEditingBank = false;
   bool obscureAccount = true;
   bool obscureIfsc = true;
@@ -231,7 +229,7 @@ class _FinancePageState extends State<FinancePage> {
       _showSnack(data['message']?.toString() ?? "Update complete");
 
       if (data['status'] == 'success') {
-        setState(() => isEditingBank = false); // Disable editing on success
+        setState(() => isEditingBank = false);
         fetchFinanceData();
       }
     } catch (e) {

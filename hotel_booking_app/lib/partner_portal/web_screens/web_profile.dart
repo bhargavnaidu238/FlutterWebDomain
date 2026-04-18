@@ -9,7 +9,6 @@ enum ProfileMenuOption { viewProfile, editProfile, changePassword, deleteAccount
 class WebProfilePage extends StatefulWidget {
   final String email;
   final Map<String, String> partnerDetails;
-
   const WebProfilePage({required this.email, required this.partnerDetails, Key? key}) : super(key: key);
 
   @override
@@ -226,7 +225,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
         setState(() {
           selectedOption = option;
         });
-        if (isMobile) Navigator.pop(context); // Close drawer on mobile
+        if (isMobile) Navigator.pop(context);
       },
     );
   }
@@ -419,7 +418,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
       appBar: AppBar(
         backgroundColor: Colors.green.shade700,
         leading: isMobile
-            ? null // Let Scaffold handle drawer icon
+            ? null
             : IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {

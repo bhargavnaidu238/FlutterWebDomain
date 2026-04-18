@@ -274,7 +274,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
           SingleChildScrollView(
             padding: EdgeInsets.all(isMobile ? 15 : 40),
             child: Center(
-              child: Wrap( // Changed to Wrap for mobile compatibility
+              child: Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 30,
                 runSpacing: 20,
@@ -339,7 +339,7 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
                       ),
                     ),
                   ),
-                  if (!isMobile) _buildPreviewSidebar(), // Only show sidebar on desktop or as a separate section
+                  if (!isMobile) _buildPreviewSidebar(),
                 ],
               ),
             ),

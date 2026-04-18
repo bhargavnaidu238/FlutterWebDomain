@@ -100822,7 +100822,7 @@ q=A.a2("Powerful Features to Scale Your Property",s,s,s,A.cZ(s,s,B.ax,s,s,s,s,s,
 r=t.zO
 r=A.a1(new A.S(p,new A.ahT(),r),r.i("a7.E"))
 return A.bJ(s,A.bB(A.c([q,B.bC,B.aAt,B.aud,A.fK(B.e9,r,B.bl,30,30)],t.p),B.r,B.o,B.p),B.q,B.dS,s,s,s,s,s,B.nD,s,s,1/0)},
-auv(){var s,r=null,q=t.N,p=A.c([A.P(["name","The Grand Heritage","feedback","Switching to partner.com reduced our double-booking errors to zero.","location","London, UK"],q,q),A.P(["name","Urban Stay Boutique","feedback","The revenue management tool boosted our profit by 30%.","location","New York, USA"],q,q),A.P(["name","Sunset Resort","feedback","Highly recommended for streamlining daily operations.","location","Bali, Indonesia"],q,q)],t.m0)
+auv(){var s,r=null,q=t.N,p=A.c([A.P(["name","The Grand Heritage","feedback","Switching to partner.com reduced our double-booking errors to zero.","location","Hyderbad, Telangana"],q,q),A.P(["name","Urban Stay Boutique","feedback","The revenue management tool boosted our profit by 30%.","location","Bangalore, Karnataka"],q,q),A.P(["name","Sunset Resort","feedback","Highly recommended for streamlining daily operations.","location","Chennai, Tamil Nadu"],q,q)],t.m0)
 q=A.a2("Trusted by Owners Worldwide",r,r,r,A.cZ(r,r,B.aj,r,r,r,r,r,r,r,r,28,r,r,B.a3,r,r,!0,r,r,r,r,r,r,r,r),B.aX,r)
 s=t.XF
 s=A.a1(new A.S(p,new A.ahU(),s),s.i("a7.E"))

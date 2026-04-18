@@ -11,7 +11,6 @@ import 'View_Hotels_Page.dart';
 class AddHotelsPage extends StatefulWidget {
   final String partnerId;
   final Map<String, dynamic>? hotelData;
-
   const AddHotelsPage({required this.partnerId, Key? key, this.hotelData}) : super(key: key);
 
   @override
@@ -52,7 +51,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
   Map<String, bool> policySelected = {};
 
   final Map<String, List<Uint8List>> localImages = {};
-
   late AnimationController _expandCtrl;
   late Animation<double> _expandAnim;
 
