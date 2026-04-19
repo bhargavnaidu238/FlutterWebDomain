@@ -8,9 +8,8 @@ class ApiConfig {
   static const String _localWeb = 'http://localhost:8080';
   static const String _localAndroid = 'http://10.0.2.2:8080';
   static const String _altLocal = 'http://127.0.0.1:8000';
-  static const String _production =
-      'https://test-host-server-tamg.onrender.com';
-
+  //static const String _production ='https://test-host-server-tamg.onrender.com'; --> Enable it while deploying to production
+  static const String _production = 'https://test-hosting-server.onrender.com';
   /// FIX: This allows overriding the URL for your "test_website"
   /// without changing the code manually every time.
   static const String _apiUrlOverride = String.fromEnvironment('API_URL', defaultValue: '');
@@ -43,7 +42,6 @@ class ApiService {
   static const String _tokenKey = "auth_token";
   static const String _emailKey = "auth_email";
   static const String _userIdKey = "auth_userId";
-  // FIX: Added a key to store the full partner details JSON string
   static const String _partnerDataKey = "partner_full_data";
 
   /// ================= AUTH STORAGE =================
