@@ -98,13 +98,15 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     controllers["PG Contact"]?.text = data['pg_contact']?.toString() ?? '';
 
     selectedPGType = data['pg_type'];
-    aboutController.text = (data['about_this_pg'] ?? data['about_this_property'] ?? '').toString();
+    aboutController.text = (data['about_this_pg'] ?? '').toString();
 
-    if ((data['hotel_location'] ?? '').contains(',')) {
-      final parts = data['hotel_location']!.split(',');
-      latitude = double.tryParse(parts[0]);
-      longitude = double.tryParse(parts[1]);
-      locationController.text = "Lat: ${latitude!.toStringAsFixed(3)}, Lng: ${longitude!.toStringAsFixed(3)}";
+    // IMPLEMENTED: Use separate latitude and longitude columns
+    if (data['latitude'] != null && data['longitude'] != null) {
+      latitude = double.tryParse(data['latitude'].toString());
+      longitude = double.tryParse(data['longitude'].toString());
+      if (latitude != null && longitude != null) {
+        locationController.text = "Lat: ${latitude!.toStringAsFixed(3)}, Lng: ${longitude!.toStringAsFixed(3)}";
+      }
     }
 
     _parseCsvToMap(data['amenities'], amenitySelected, amenityOptions);
@@ -199,13 +201,14 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
 
   Future<void> savePG() async {
     if (!_formKey.currentState!.validate()) return;
-    if (latitude == null) { _showSnack("Please select location on map"); return; }
+    if (latitude == null || longitude == null) { _showSnack("Please select location on map"); return; }
 
     setState(() => isSaving = true);
 
     try {
       final selRooms = roomTypeSelected.entries.where((e) => e.value).map((e) => e.key).toList();
 
+      // IMPLEMENTED: Changed hotel_location to separate latitude and longitude
       final Map<String, String> body = {
         'pg_id': widget.pgData?['pg_id']?.toString() ?? '',
         'partner_id': widget.partnerId,
@@ -218,6 +221,8 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         'state': controllers["State"]!.text,
         'country': controllers["Country"]!.text,
         'pincode': controllers["Pincode"]!.text,
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
         'total_single_sharing_rooms': controllers["Total Single Sharing Rooms"]!.text,
         'total_double_sharing_rooms': controllers["Total Double Sharing Rooms"]!.text,
         'total_three_sharing_rooms': controllers["Total Three Sharing Rooms"]!.text,
@@ -226,11 +231,10 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
         'available_rooms': controllers["Total Double Sharing Rooms"]!.text,
         'amenities': amenitySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
         'policies': policySelected.entries.where((e) => e.value).map((e) => e.key).join(','),
-        'avg_rating': widget.pgData?['avg_rating']?.toString() ?? '0.0', // Rating removed from UI input
+        'avg_rating': widget.pgData?['avg_rating']?.toString() ?? '0.0',
         'total_reviews': widget.pgData?['total_reviews']?.toString() ?? '0',
         'pg_contact': controllers["PG Contact"]!.text,
         'about_this_pg': aboutController.text,
-        'hotel_location': "$latitude,$longitude",
         'status': "Active",
       };
 
