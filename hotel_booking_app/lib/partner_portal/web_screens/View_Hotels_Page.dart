@@ -43,6 +43,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
 
+            // UPDATED column mapping based on latitude and longitude indices
             hotels.add({
               "hotel_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',
@@ -54,19 +55,20 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
               "state": cols.length > 7 ? cols[7] : '',
               "country": cols.length > 8 ? cols[8] : '',
               "pincode": cols.length > 9 ? cols[9] : '',
-              "hotel_location": cols.length > 10 ? cols[10] : '',
-              "total_rooms": cols.length > 11 ? cols[11] : '0',
-              "available_rooms": cols.length > 12 ? cols[12] : '0',
-              "room_price": cols.length > 13 ? cols[13] : '0',
-              "amenities": cols.length > 14 ? cols[14] : '',
-              "policies": cols.length > 15 ? cols[15] : '',
-              "hotel_contact": cols.length > 16 ? cols[16] : '',
-              "about_this_property": cols.length > 17 ? cols[17] : '',
-              "hotel_images": cols.length > 18 ? cols[18] : '',
-              "customization": cols.length > 19 ? cols[19] : 'No',
-              "status": cols.length > 20 ? cols[20] : '',
-              "avg_rating": cols.length > 21 ? cols[21] : '0.0',
-              "total_reviews": cols.length > 22 ? cols[22] : '0',
+              "latitude": cols.length > 10 ? cols[10] : '',   // New column
+              "longitude": cols.length > 11 ? cols[11] : '',  // New column
+              "total_rooms": cols.length > 12 ? cols[12] : '0',
+              "available_rooms": cols.length > 13 ? cols[13] : '0',
+              "room_price": cols.length > 14 ? cols[14] : '0',
+              "amenities": cols.length > 15 ? cols[15] : '',
+              "policies": cols.length > 16 ? cols[16] : '',
+              "hotel_contact": cols.length > 17 ? cols[17] : '',
+              "about_this_property": cols.length > 18 ? cols[18] : '',
+              "hotel_images": cols.length > 19 ? cols[19] : '',
+              "customization": cols.length > 20 ? cols[20] : 'No',
+              "status": cols.length > 21 ? cols[21] : '',
+              "avg_rating": cols.length > 22 ? cols[22] : '0.0',
+              "total_reviews": cols.length > 23 ? cols[23] : '0',
             });
           }
         }

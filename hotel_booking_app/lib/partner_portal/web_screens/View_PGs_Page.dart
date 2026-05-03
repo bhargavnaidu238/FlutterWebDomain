@@ -42,6 +42,9 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
           List<String> rows = dataPart.trim().split("\n");
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
+
+            // Updated indices based on Latitude (10) and Longitude (11)
+            // Previous columns 10-14 shift to 12-16
             pgs.add({
               "pg_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',
@@ -53,22 +56,23 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
               "state": cols.length > 7 ? cols[7] : '',
               "country": cols.length > 8 ? cols[8] : '',
               "pincode": cols.length > 9 ? cols[9] : '',
-              "total_single_sharing_rooms": cols.length > 10 ? cols[10] : '0',
-              "total_double_sharing_rooms": cols.length > 11 ? cols[11] : '0',
-              "total_three_sharing_rooms": cols.length > 12 ? cols[12] : '0',
-              "total_four_sharing_rooms": cols.length > 13 ? cols[13] : '0',
-              "total_five_sharing_rooms": cols.length > 14 ? cols[14] : '0',
-              "hotel_location": cols.length > 15 ? cols[15] : '',
-              "available_rooms": cols.length > 16 ? cols[16] : '0',
-              "room_price": cols.length > 17 ? cols[17] : '0',
-              "amenities": cols.length > 18 ? cols[18] : '',
-              "policies": cols.length > 19 ? cols[19] : '',
-              "avg_rating": cols.length > 20 ? cols[20] : '0.0',
-              "total_reviews": cols.length > 21 ? cols[21] : '0',
-              "pg_contact": cols.length > 22 ? cols[22] : '',
-              "about_this_pg": cols.length > 23 ? cols[23] : '',
-              "pg_images": cols.length > 24 ? cols[24] : '',
-              "status": cols.length > 25 ? cols[25] : '',
+              "latitude": cols.length > 10 ? cols[10] : '',
+              "longitude": cols.length > 11 ? cols[11] : '',
+              "total_single_sharing_rooms": cols.length > 12 ? cols[12] : '0',
+              "total_double_sharing_rooms": cols.length > 13 ? cols[13] : '0',
+              "total_three_sharing_rooms": cols.length > 14 ? cols[14] : '0',
+              "total_four_sharing_rooms": cols.length > 15 ? cols[15] : '0',
+              "total_five_sharing_rooms": cols.length > 16 ? cols[16] : '0',
+              "available_rooms": cols.length > 17 ? cols[17] : '0',
+              "room_price": cols.length > 18 ? cols[18] : '0',
+              "amenities": cols.length > 19 ? cols[19] : '',
+              "policies": cols.length > 20 ? cols[20] : '',
+              "avg_rating": cols.length > 21 ? cols[21] : '0.0',
+              "total_reviews": cols.length > 22 ? cols[22] : '0',
+              "pg_contact": cols.length > 23 ? cols[23] : '',
+              "about_this_pg": cols.length > 24 ? cols[24] : '',
+              "pg_images": cols.length > 25 ? cols[25] : '',
+              "status": cols.length > 26 ? cols[26] : '',
               "total_Rooms": _calculateTotalFromCols(cols),
             });
           }
@@ -87,8 +91,13 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
 
   String _calculateTotalFromCols(List<String> cols) {
     try {
-      if (cols.length < 15) return "0";
-      int total = int.parse(cols[10]) + int.parse(cols[11]) + int.parse(cols[12]) + int.parse(cols[13]) + int.parse(cols[14]);
+      // Adjusted indices for room counts (12, 13, 14, 15, 16)
+      if (cols.length < 17) return "0";
+      int total = int.parse(cols[12]) +
+          int.parse(cols[13]) +
+          int.parse(cols[14]) +
+          int.parse(cols[15]) +
+          int.parse(cols[16]);
       return total.toString();
     } catch (_) {
       return "0";
@@ -237,7 +246,6 @@ class _ViewPGsPageState extends State<ViewPGsPage> {
             padding: EdgeInsets.all(isSmallScreen ? 12 : 24),
             child: Column(
               children: [
-                // Responsive Header
                 Wrap(
                   alignment: WrapAlignment.spaceBetween,
                   crossAxisAlignment: WrapCrossAlignment.center,
