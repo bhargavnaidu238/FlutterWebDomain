@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'View_PGs_Page.dart';
+import 'view_pgs_page.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 
 class AddPGSPage extends StatefulWidget {
@@ -100,7 +100,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     selectedPGType = data['pg_type'];
     aboutController.text = (data['about_this_pg'] ?? '').toString();
 
-    // IMPLEMENTED: Use separate latitude and longitude columns
     if (data['latitude'] != null && data['longitude'] != null) {
       latitude = double.tryParse(data['latitude'].toString());
       longitude = double.tryParse(data['longitude'].toString());
@@ -208,7 +207,6 @@ class _AddPGSPageState extends State<AddPGSPage> with SingleTickerProviderStateM
     try {
       final selRooms = roomTypeSelected.entries.where((e) => e.value).map((e) => e.key).toList();
 
-      // IMPLEMENTED: Changed hotel_location to separate latitude and longitude
       final Map<String, String> body = {
         'pg_id': widget.pgData?['pg_id']?.toString() ?? '',
         'partner_id': widget.partnerId,

@@ -28,8 +28,6 @@ class _FinancePageState extends State<FinancePage> {
   List<Map<String, dynamic>> filteredBookings = [];
   String selectedBookingFilter = "All";
   String bookingDateRange = "All";
-
-  // Pagination for transactions
   int txPage = 1;
   int txPageSize = 10;
 
@@ -41,14 +39,12 @@ class _FinancePageState extends State<FinancePage> {
   final TextEditingController commentsController = TextEditingController();
   final TextEditingController payoutAmountController = TextEditingController();
 
-  // Dropdown selected values (local state)
   String selectedAccountType = 'Savings';
   String selectedPayoutType = 'Monthly';
   bool autoPayout = false;
 
   final double minimumWithdrawal = 5000.0;
 
-  // Helper lists
   final List<String> payoutTypeOptions = [
     "Daily",
     "Weekly",

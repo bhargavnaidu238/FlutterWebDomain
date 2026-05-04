@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'Add_PGs_page.dart';
+import 'add_pgs_page.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 
 class ViewPGsPage extends StatefulWidget {

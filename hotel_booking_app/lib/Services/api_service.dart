@@ -8,20 +8,17 @@ class ApiConfig {
   static const String _localWeb = 'http://localhost:8080';
   static const String _localAndroid = 'http://10.0.2.2:8080';
   static const String _altLocal = 'http://127.0.0.1:8000';
-  //static const String _production ='https://test-host-server-tamg.onrender.com'; --> Enable it while deploying to production
-  static const String _production = 'https://test-hosting-server.onrender.com';
-  /// FIX: This allows overriding the URL for your "test_website"
-  /// without changing the code manually every time.
+  static const String _production ='https://test-host-server-tamg.onrender.com';
+  //static const String _production = 'https://test-hosting-server.onrender.com'; --> For test environment
+
   static const String _apiUrlOverride = String.fromEnvironment('API_URL', defaultValue: '');
 
   static const String _razorpayTestKey = 'rzp_test_RyBLHvNxl52vtv';
   static const String _razorpayLiveKey = 'rzp_live_xxxxxxxx';
 
   static String get baseUrl {
-    // If an override is passed (from Render Build Command), use it.
     if (_apiUrlOverride.isNotEmpty) return _apiUrlOverride;
 
-    // Otherwise, fall back to existing logic.
     if (kReleaseMode) return _production;
     if (kIsWeb) return _localWeb;
     return _localAndroid;
@@ -49,13 +46,12 @@ class ApiService {
     required String token,
     required String email,
     required String userId,
-    Map<String, dynamic>? fullData, // FIX: Added optional parameter to capture full response
+    Map<String, dynamic>? fullData,
   }) {
     html.window.localStorage[_tokenKey] = token;
     html.window.localStorage[_emailKey] = email;
     html.window.localStorage[_userIdKey] = userId;
 
-    // FIX: Save the entire response as a JSON string to persist Partner_Details
     if (fullData != null) {
       html.window.localStorage[_partnerDataKey] = jsonEncode(fullData);
     }
@@ -65,7 +61,6 @@ class ApiService {
   static String? getEmail() => html.window.localStorage[_emailKey];
   static String? getUserId() => html.window.localStorage[_userIdKey];
 
-  // FIX: Added helper to retrieve the full map on refresh
   static Map<String, dynamic>? getPartnerFullData() {
     final data = html.window.localStorage[_partnerDataKey];
     if (data != null) {
@@ -80,12 +75,10 @@ class ApiService {
     html.window.localStorage.remove(_tokenKey);
     html.window.localStorage.remove(_emailKey);
     html.window.localStorage.remove(_userIdKey);
-    // FIX: Clear the full data on logout
     html.window.localStorage.remove(_partnerDataKey);
   }
 
   /// ================= EMAIL OTP =================
-
   static Future<Map<String, dynamic>> sendEmailOtp(String email) async {
 
     final url = Uri.parse('${ApiConfig.baseUrl}/send-email-otp');
@@ -104,7 +97,7 @@ class ApiService {
       }
 
     } catch (e) {
-      print("❌ Send OTP Error: $e");
+      print("Send OTP Error: $e");
     }
 
     return {"status": "error", "message": "Failed to send OTP"};
@@ -132,7 +125,7 @@ class ApiService {
       }
 
     } catch (e) {
-      print("❌ Verify OTP Error: $e");
+      print("Verify OTP Error: $e");
     }
 
     return {"status": "error", "message": "OTP verification failed"};
@@ -171,7 +164,7 @@ class ApiService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print('❌ Register Error: $e');
+      print('Register Error: $e');
       return false;
     }
   }
@@ -204,7 +197,6 @@ class ApiService {
             data['token'] ?? DateTime.now().millisecondsSinceEpoch.toString();
         final userId = data['userId']?.toString() ?? '';
 
-        // FIX: Passed 'data' (the whole response) to saveAuthData to ensure persistency
         saveAuthData(
           token: token,
           email: email,
@@ -223,7 +215,7 @@ class ApiService {
       return {"error": data['error'] ?? "login_failed"};
 
     } catch (e) {
-      print('🚨 Login Error: $e');
+      print('Login Error: $e');
       return {"error": "connection_error"};
     }
   }
@@ -252,7 +244,7 @@ class ApiService {
         return {"matched": data['matched'] == true};
       }
     } catch (e) {
-      print('❌ Verify Forgot Password Error: $e');
+      print('Verify Forgot Password Error: $e');
     }
     return {"matched": false};
   }
@@ -278,7 +270,7 @@ class ApiService {
       return {"success": response.statusCode == 200};
 
     } catch (e) {
-      print('❌ Change Password Error: $e');
+      print('Change Password Error: $e');
       return {"success": false};
     }
   }
@@ -308,7 +300,7 @@ class ApiService {
       }
 
     } catch (e) {
-      print('❌ Change Password (Profile) Error: $e');
+      print('Change Password (Profile) Error: $e');
     }
 
     return false;
@@ -354,7 +346,7 @@ class ProfileApiService {
       }
 
     } catch (e) {
-      print('🚨 FetchProfile Error: $e');
+      print('FetchProfile Error: $e');
     }
 
     return null;
@@ -388,7 +380,7 @@ class ProfileApiService {
       return response.statusCode == 200;
 
     } catch (e) {
-      print('🚨 UpdateProfile Error: $e');
+      print('UpdateProfile Error: $e');
       return false;
     }
   }
@@ -415,7 +407,7 @@ class ProfileApiService {
       return response.statusCode == 200;
 
     } catch (e) {
-      print('❌ Deactivate Error: $e');
+      print('Deactivate Error: $e');
       return false;
     }
   }

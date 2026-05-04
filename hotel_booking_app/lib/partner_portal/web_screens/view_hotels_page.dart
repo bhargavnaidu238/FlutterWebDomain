@@ -43,7 +43,6 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
 
-            // UPDATED column mapping based on latitude and longitude indices
             hotels.add({
               "hotel_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',
@@ -55,8 +54,8 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
               "state": cols.length > 7 ? cols[7] : '',
               "country": cols.length > 8 ? cols[8] : '',
               "pincode": cols.length > 9 ? cols[9] : '',
-              "latitude": cols.length > 10 ? cols[10] : '',   // New column
-              "longitude": cols.length > 11 ? cols[11] : '',  // New column
+              "latitude": cols.length > 10 ? cols[10] : '',
+              "longitude": cols.length > 11 ? cols[11] : '',
               "total_rooms": cols.length > 12 ? cols[12] : '0',
               "available_rooms": cols.length > 13 ? cols[13] : '0',
               "room_price": cols.length > 14 ? cols[14] : '0',

@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
-import 'View_Hotels_Page.dart';
+import 'view_hotels_page.dart';
 
 class AddHotelsPage extends StatefulWidget {
   final String partnerId;
@@ -230,7 +230,6 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         'total_reviews': totalReviews.toString(),
         'hotel_contact': controllers["hotel_contact"]!.text,
         'about_this_property': aboutController.text,
-        // FIX: Ensure coordinates are explicitly stringified for the backend parser
         'latitude': latitude.toString(),
         'longitude': longitude.toString(),
         'status': "Active",

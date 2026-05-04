@@ -43,7 +43,7 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
         if (decoded['status'] == 'success') {
           setState(() {
             allReviews = decoded['data'];
-            applyFilters(); // Initial sort/filter
+            applyFilters();
             if (allReviews.isNotEmpty) {
               double sum = 0;
               for (var r in allReviews) {
@@ -67,16 +67,13 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
     }
   }
 
-  // Logic to Filter and Sort the list locally
   void applyFilters() {
     setState(() {
-      // 1. Filter by Property Type
       displayedReviews = allReviews.where((r) {
         if (filterProperty == "All") return true;
         return r['property_type'] == filterProperty;
       }).toList();
 
-      // 2. Sort Logic
       if (sortOrder == "Recent") {
         displayedReviews.sort((a, b) => b['created_at'].compareTo(a['created_at']));
       } else if (sortOrder == "High to Low") {
@@ -229,7 +226,6 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
         spacing: 20,
         runSpacing: 10,
         children: [
-          // Filter by Type
           DropdownButton<String>(
             value: filterProperty,
             underline: Container(),
@@ -242,7 +238,6 @@ class _WebReviewsPageState extends State<WebReviewsPage> {
               applyFilters();
             },
           ),
-          // Sort by Rating/Date
           DropdownButton<String>(
             value: sortOrder,
             underline: Container(),
