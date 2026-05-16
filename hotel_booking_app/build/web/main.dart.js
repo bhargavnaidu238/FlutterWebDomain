@@ -31667,7 +31667,7 @@ if(q!=null)r.m(0,"style",q)
 return r},
 b7D(a){var s=J.ay(a)
 return{hue:A.cs(s.h(a,"hue")),lightness:A.N8(s.h(a,"lightness")),saturation:A.N8(s.h(a,"saturation")),gamma:A.N8(s.h(a,"gamma")),invert_lightness:A.ke(s.h(a,"invert_lightness")),visibility:A.cs(s.h(a,"visibility")),color:A.cs(s.h(a,"color")),weight:A.hi(s.h(a,"weight"))}},
-dS(){return"https://test-hosting-server.onrender.com"},
+dS(){return"https://test-host-server-tamg.onrender.com"},
 b47(){var s=window.localStorage.getItem("partner_full_data")
 if(s!=null)return t.d.a(B.K.fT(0,s,null))
 return null},
