@@ -103,7 +103,7 @@ class LandingPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Grow Your Hotel Business with partner.com",
+                      "Grow Your Hotel Business with flemingostays.com",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 42,
@@ -145,7 +145,7 @@ class LandingPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "Grow Your Hotel Business with partner.com",
+                "Grow Your Hotel Business with flemingostays.com",
                 style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
@@ -253,7 +253,7 @@ class LandingPage extends StatelessWidget {
   // Testimonials Section
   Widget _testimonialsSection() {
     final testimonials = [
-      {"name": "The Grand Heritage", "feedback": "Switching to partner.com reduced our double-booking errors to zero.", "location": "Hyderbad, Telangana"},
+      {"name": "The Grand Heritage", "feedback": "Switching to flemingostays.com reduced our double-booking errors to zero.", "location": "Hyderbad, Telangana"},
       {"name": "Urban Stay Boutique", "feedback": "The revenue management tool boosted our profit by 30%.", "location": "Bangalore, Karnataka"},
       {"name": "Sunset Resort", "feedback": "Highly recommended for streamlining daily operations.", "location": "Chennai, Tamil Nadu"},
     ];
@@ -389,7 +389,7 @@ class LandingPage extends StatelessWidget {
             const Divider(indent: 50, endIndent: 50),
             const SizedBox(height: 20),
             const Text(
-              "© 2026 Partner.com. All rights reserved.",
+              "© 2026 flemingostays.com. All rights reserved.",
               style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
             const SizedBox(height: 40),
