@@ -8,7 +8,7 @@ class ApiConfig {
   static const String _localWeb = 'http://localhost:8080';
   static const String _localAndroid = 'http://10.0.2.2:8080';
   static const String _altLocal = 'http://127.0.0.1:8000';
-  static const String _production ='https://test-host-server-tamg.onrender.com';
+  static const String _production ='https://test-hosting-server.onrender.com';
   //static const String _production = 'https://test-hosting-server.onrender.com'; --> For test environment
 
   static const String _apiUrlOverride = String.fromEnvironment('API_URL', defaultValue: '');
