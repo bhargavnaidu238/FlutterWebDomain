@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
-import 'View_Hotels_Page.dart';
+import 'view_hotels_page.dart';
 
 class AddHotelsPage extends StatefulWidget {
   final String partnerId;
@@ -95,13 +95,14 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     totalReviews = int.tryParse(data['total_reviews']?.toString() ?? "0") ?? 0;
     selectedHotelType = data['hotel_type'];
     selectedCustomization = data['customization'];
-    String? loc = data['hotel_location'];
-    if (loc != null && loc.contains(',')) {
-      List<String> parts = loc.split(',');
-      latitude = double.tryParse(parts[0]);
-      longitude = double.tryParse(parts[1]);
+
+    latitude = double.tryParse(data['latitude']?.toString() ?? "");
+    longitude = double.tryParse(data['longitude']?.toString() ?? "");
+
+    if (latitude != null && longitude != null) {
       locationController.text = "Lat: $latitude, Lng: $longitude";
     }
+
     _parseCsvToMap(data['amenities'], amenitySelected, amenities);
     _parseCsvToMap(data['policies'], policySelected, policies);
     List<String> savedRooms = data['room_type']?.toString().split(',') ?? [];
@@ -199,7 +200,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
       _showSnack("All fields are mandatory");
       return;
     }
-    if (latitude == null) {
+    if (latitude == null || longitude == null) {
       _showSnack("Please select location on map");
       return;
     }
@@ -207,6 +208,7 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
     try {
       final selRooms = roomSelected.entries.where((e) => e.value).map((e) => e.key).toList();
       final selPrices = selRooms.map((r) => roomPrices[r]?.text.isEmpty ?? true ? "0" : roomPrices[r]!.text).toList();
+
       final Map<String, String> body = {
         'hotel_id': widget.hotelData?['hotel_id']?.toString() ?? '',
         'partner_id': widget.partnerId,
@@ -228,10 +230,12 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
         'total_reviews': totalReviews.toString(),
         'hotel_contact': controllers["hotel_contact"]!.text,
         'about_this_property': aboutController.text,
-        'hotel_location': "$latitude,$longitude",
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
         'status': "Active",
         'hotel_images': widget.hotelData?['hotel_images']?.toString() ?? '',
       };
+
       Map<String, List<String>> imageMap = {};
       bool hasNewImages = false;
       for (var entry in localImages.entries) {
@@ -244,12 +248,15 @@ class _AddHotelsPageState extends State<AddHotelsPage> with SingleTickerProvider
           imageMap[cat] = encodedList;
         }
       }
+
       if (hasNewImages) { body['images'] = jsonEncode(imageMap); }
+
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/webaddhotels'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body,
       ).timeout(const Duration(seconds: 90));
+
       final result = jsonDecode(response.body);
       if (response.statusCode == 200 && result['status'] == 'success') {
         _showSnack(result['message']);

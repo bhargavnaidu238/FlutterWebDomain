@@ -4,12 +4,12 @@ import 'package:flip_card/flip_card.dart';
 import 'package:http/http.dart' as http;
 import 'web_profile.dart';
 import 'add_hotels_page.dart';
-import 'Add_PGs_Page.dart';
-import 'View_Hotels_Page.dart';
-import 'View_Bookings_Page.dart';
+import 'add_pgs_page.dart';
+import 'view_hotels_page.dart';
+import 'view_bookings_page.dart';
 import 'about_us_page.dart';
-import 'Web_Finance_Page.dart';
-import 'View_PGs_Page.dart';
+import 'web_finance_page.dart';
+import 'view_pgs_page.dart';
 import 'web_reviews_page.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 

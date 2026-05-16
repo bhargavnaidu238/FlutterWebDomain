@@ -29,7 +29,7 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  // Header and NavBar - Modified for Mobile Compatibility
+  // Header and NavBar
   Widget _header(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     bool isMobile = screenWidth < 600;
@@ -80,7 +80,7 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  // Hero Section - Design preserved, Layout handled by LayoutBuilder
+  // Hero Section
   Widget _heroSection(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -180,7 +180,7 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  // Offerings Section - Design preserved, Wrap handles responsiveness
+  // Offerings Section
   Widget _offeringsSection() {
     final offerings = [
       {"title": "Smart PMS", "desc": "Automated room allocation and guest check-ins to reduce operational overhead.", "icon": Icons.hotel_class},
@@ -306,7 +306,7 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  // Business Section - Modified for Mobile Compatibility
+  // Business Section
   Widget _businessSection() {
     return LayoutBuilder(builder: (context, constraints) {
       bool isMobile = constraints.maxWidth < 600;

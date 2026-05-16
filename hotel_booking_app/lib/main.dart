@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'partner_portal/web_screens/web_login.dart';
 import 'partner_portal/web_screens/web_register.dart';
 import 'partner_portal/web_screens/web_dashboard_page.dart';
-import 'partner_portal/web_screens/Domain_Landing_Page.dart';
+import 'partner_portal/web_screens/domain_landing_page.dart';
 import 'services/api_service.dart';
 
 Future<void> main() async {

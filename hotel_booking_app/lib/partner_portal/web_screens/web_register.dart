@@ -134,7 +134,7 @@ class _WebRegisterPageState extends State<WebRegisterPage> {
           child: Form(
             key: _formKey,
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 1000), // Limits width on Desktop
+              constraints: const BoxConstraints(maxWidth: 1000),
               padding: EdgeInsets.all(screenWidth < 600 ? 20 : 40),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.15),

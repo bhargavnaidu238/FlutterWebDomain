@@ -1,36 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'add_hotels_page.dart';
+import 'add_pgs_page.dart';
 import 'package:hotel_booking_app/services/api_service.dart';
 
-class ViewHotelsPage extends StatefulWidget {
+class ViewPGsPage extends StatefulWidget {
   final String partnerId;
-  const ViewHotelsPage({required this.partnerId, Key? key}) : super(key: key);
+  const ViewPGsPage({required this.partnerId, Key? key}) : super(key: key);
 
   @override
-  State<ViewHotelsPage> createState() => _ViewHotelsPageState();
+  State<ViewPGsPage> createState() => _ViewPGsPageState();
 }
 
-class _ViewHotelsPageState extends State<ViewHotelsPage> {
-  List<Map<String, String>> hotels = [];
-  List<String> selectedHotels = [];
+class _ViewPGsPageState extends State<ViewPGsPage> {
+  List<Map<String, String>> pgs = [];
+  List<String> selectedPGs = [];
   bool isLoading = true;
   bool selectAll = false;
 
   @override
   void initState() {
     super.initState();
-    fetchHotels();
+    fetchPgs();
   }
 
-  Future<void> fetchHotels() async {
+  Future<void> fetchPgs() async {
     if (!mounted) return;
     setState(() => isLoading = true);
-    hotels.clear();
+    pgs.clear();
 
     try {
       final res = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/webviewhotels'),
+        Uri.parse('${ApiConfig.baseUrl}/webviewpgs'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: "partner_id=${Uri.encodeComponent(widget.partnerId)}",
       );
@@ -43,30 +43,37 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
           for (var row in rows) {
             List<String> cols = row.split("|").map((e) => e.trim()).toList();
 
-            hotels.add({
-              "hotel_id": cols.length > 0 ? cols[0] : '',
+            // Updated indices based on Latitude (10) and Longitude (11)
+            // Previous columns 10-14 shift to 12-16
+            pgs.add({
+              "pg_id": cols.length > 0 ? cols[0] : '',
               "partner_id": cols.length > 1 ? cols[1] : '',
-              "hotel_name": cols.length > 2 ? cols[2] : '',
-              "hotel_type": cols.length > 3 ? cols[3] : '',
+              "pg_name": cols.length > 2 ? cols[2] : '',
+              "pg_type": cols.length > 3 ? cols[3] : '',
               "room_type": cols.length > 4 ? cols[4] : '',
               "address": cols.length > 5 ? cols[5] : '',
               "city": cols.length > 6 ? cols[6] : '',
               "state": cols.length > 7 ? cols[7] : '',
               "country": cols.length > 8 ? cols[8] : '',
               "pincode": cols.length > 9 ? cols[9] : '',
-              "hotel_location": cols.length > 10 ? cols[10] : '',
-              "total_rooms": cols.length > 11 ? cols[11] : '0',
-              "available_rooms": cols.length > 12 ? cols[12] : '0',
-              "room_price": cols.length > 13 ? cols[13] : '0',
-              "amenities": cols.length > 14 ? cols[14] : '',
-              "policies": cols.length > 15 ? cols[15] : '',
-              "hotel_contact": cols.length > 16 ? cols[16] : '',
-              "about_this_property": cols.length > 17 ? cols[17] : '',
-              "hotel_images": cols.length > 18 ? cols[18] : '',
-              "customization": cols.length > 19 ? cols[19] : 'No',
-              "status": cols.length > 20 ? cols[20] : '',
+              "latitude": cols.length > 10 ? cols[10] : '',
+              "longitude": cols.length > 11 ? cols[11] : '',
+              "total_single_sharing_rooms": cols.length > 12 ? cols[12] : '0',
+              "total_double_sharing_rooms": cols.length > 13 ? cols[13] : '0',
+              "total_three_sharing_rooms": cols.length > 14 ? cols[14] : '0',
+              "total_four_sharing_rooms": cols.length > 15 ? cols[15] : '0',
+              "total_five_sharing_rooms": cols.length > 16 ? cols[16] : '0',
+              "available_rooms": cols.length > 17 ? cols[17] : '0',
+              "room_price": cols.length > 18 ? cols[18] : '0',
+              "amenities": cols.length > 19 ? cols[19] : '',
+              "policies": cols.length > 20 ? cols[20] : '',
               "avg_rating": cols.length > 21 ? cols[21] : '0.0',
               "total_reviews": cols.length > 22 ? cols[22] : '0',
+              "pg_contact": cols.length > 23 ? cols[23] : '',
+              "about_this_pg": cols.length > 24 ? cols[24] : '',
+              "pg_images": cols.length > 25 ? cols[25] : '',
+              "status": cols.length > 26 ? cols[26] : '',
+              "total_Rooms": _calculateTotalFromCols(cols),
             });
           }
         }
@@ -74,7 +81,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error fetching hotels: $e")),
+          SnackBar(content: Text("Error fetching pgs: $e")),
         );
       }
     } finally {
@@ -82,29 +89,44 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
     }
   }
 
+  String _calculateTotalFromCols(List<String> cols) {
+    try {
+      // Adjusted indices for room counts (12, 13, 14, 15, 16)
+      if (cols.length < 17) return "0";
+      int total = int.parse(cols[12]) +
+          int.parse(cols[13]) +
+          int.parse(cols[14]) +
+          int.parse(cols[15]) +
+          int.parse(cols[16]);
+      return total.toString();
+    } catch (_) {
+      return "0";
+    }
+  }
+
   void toggleSelectAll(bool? value) {
     setState(() {
       selectAll = value ?? false;
-      selectedHotels = selectAll ? hotels.map((h) => h['hotel_id']!).toList() : [];
+      selectedPGs = selectAll ? pgs.map((h) => h['pg_id']!).toList() : [];
     });
   }
 
-  void toggleHotelSelection(String hotelId, bool? value) {
+  void togglePGSelection(String pgId, bool? value) {
     setState(() {
-      if (value == true) selectedHotels.add(hotelId);
-      else selectedHotels.remove(hotelId);
-      selectAll = selectedHotels.length == hotels.length && hotels.isNotEmpty;
+      if (value == true) selectedPGs.add(pgId);
+      else selectedPGs.remove(pgId);
+      selectAll = selectedPGs.length == pgs.length && pgs.isNotEmpty;
     });
   }
 
   Future<void> confirmDelete() async {
-    if (selectedHotels.isEmpty) return;
+    if (selectedPGs.isEmpty) return;
 
     bool confirmed = await showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Confirm Delete"),
-        content: Text("Delete ${selectedHotels.length} hotel(s)?"),
+        content: Text("Delete ${selectedPGs.length} PG(s)?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
@@ -115,18 +137,19 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
     if (!confirmed) return;
 
     try {
-      final idsStr = selectedHotels.join(",");
+      final idsStr = selectedPGs.join(",");
       await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/webviewhotels'),
+        Uri.parse('${ApiConfig.baseUrl}/webviewpgs'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: "hotel_ids=${Uri.encodeComponent(idsStr)}",
+        body: "pg_ids=${Uri.encodeComponent(idsStr)}",
       );
 
-      fetchHotels();
-      selectedHotels.clear();
+      fetchPgs();
+      selectedPGs.clear();
       selectAll = false;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Hotels deleted successfully.")),
+        const SnackBar(content: Text("PGs deleted successfully.")),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -135,16 +158,16 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
     }
   }
 
-  Widget buildHotelRow(Map<String, String> hotel) {
-    String fullAddress = "${hotel['address']}, ${hotel['city']}, ${hotel['state']} - ${hotel['pincode']}";
-    bool isSelected = selectedHotels.contains(hotel['hotel_id']);
+  Widget buildPGRow(Map<String, String> pg) {
+    String fullAddress = "${pg['address']}, ${pg['city']}, ${pg['state']} - ${pg['pincode']}";
+    bool isSelected = selectedPGs.contains(pg['pg_id']);
 
     return Card(
       color: Colors.white.withOpacity(0.15),
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () => toggleHotelSelection(hotel['hotel_id']!, !isSelected),
+        onTap: () => togglePGSelection(pg['pg_id']!, !isSelected),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -153,7 +176,7 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
             children: [
               Checkbox(
                 value: isSelected,
-                onChanged: (v) => toggleHotelSelection(hotel['hotel_id']!, v),
+                onChanged: (v) => togglePGSelection(pg['pg_id']!, v),
                 activeColor: Colors.green.shade900,
                 side: const BorderSide(color: Colors.white),
               ),
@@ -161,22 +184,22 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(hotel['hotel_name'] ?? 'Unnamed', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text(pg['pg_name'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                     const SizedBox(height: 6),
-                    _infoRow(Icons.business, "Type: ${hotel['hotel_type']}"),
+                    _infoRow(Icons.category, "Type: ${pg['pg_type']}"),
                     _infoRow(Icons.location_on, fullAddress),
-                    _infoRow(Icons.king_bed, "Rooms: ${hotel['total_rooms']} | Price: ₹${hotel['room_price']}"),
-                    _infoRow(Icons.check_circle, "Status: ${hotel['status']}"),
+                    _infoRow(Icons.hotel, "Total Rooms: ${pg['total_Rooms']} | ₹${pg['room_price']}"),
+                    _infoRow(Icons.check_circle, "Status: ${pg['status']}"),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(Icons.star, color: Colors.amber.shade300, size: 18),
                         const SizedBox(width: 4),
-                        Text("${hotel['avg_rating']} (${hotel['total_reviews']} reviews)", style: const TextStyle(color: Colors.white)),
+                        Text("${pg['avg_rating']} (${pg['total_reviews']} reviews)", style: const TextStyle(color: Colors.white)),
                         const SizedBox(width: 15),
                         const Icon(Icons.phone, color: Colors.white70, size: 18),
                         const SizedBox(width: 4),
-                        Text(hotel['hotel_contact'] ?? "N/A", style: const TextStyle(color: Colors.white)),
+                        Text(pg['pg_contact'] ?? "N/A", style: const TextStyle(color: Colors.white)),
                       ],
                     ),
                   ],
@@ -233,27 +256,27 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
-                        Text("View Hotels", style: TextStyle(fontSize: isSmallScreen ? 20 : 26, fontWeight: FontWeight.bold, color: Colors.white)),
+                        Text("View PGs", style: TextStyle(fontSize: isSmallScreen ? 20 : 26, fontWeight: FontWeight.bold, color: Colors.white)),
                       ],
                     ),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _actionButton(
-                          onPressed: selectedHotels.length == 1 ? _handleEdit : null,
+                          onPressed: selectedPGs.length == 1 ? _handleEdit : null,
                           icon: Icons.edit,
                           label: "Edit",
                         ),
                         const SizedBox(width: 8),
                         _actionButton(
-                          onPressed: selectedHotels.isNotEmpty ? confirmDelete : null,
+                          onPressed: selectedPGs.isNotEmpty ? confirmDelete : null,
                           icon: Icons.delete,
                           label: "Delete",
                           color: Colors.redAccent.withOpacity(0.8),
                         ),
                         const SizedBox(width: 8),
                         _actionButton(
-                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddHotelsPage(partnerId: widget.partnerId))).then((_) => fetchHotels()),
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddPGSPage(partnerId: widget.partnerId))).then((_) => fetchPgs()),
                           icon: Icons.add,
                           label: "Add",
                         ),
@@ -272,19 +295,19 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
                     ),
                     const Text("Select All", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
                     const Spacer(),
-                    if (selectedHotels.isNotEmpty)
-                      Text("${selectedHotels.length} Selected", style: const TextStyle(color: Colors.white70)),
+                    if (selectedPGs.isNotEmpty)
+                      Text("${selectedPGs.length} Selected", style: const TextStyle(color: Colors.white70)),
                   ],
                 ),
                 const Divider(color: Colors.white24),
                 Expanded(
                   child: isLoading
                       ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                      : hotels.isEmpty
-                      ? const Center(child: Text("No hotels found.", style: TextStyle(color: Colors.white, fontSize: 18)))
+                      : pgs.isEmpty
+                      ? const Center(child: Text("No PG's found.", style: TextStyle(color: Colors.white, fontSize: 18)))
                       : ListView.builder(
-                    itemCount: hotels.length,
-                    itemBuilder: (context, i) => buildHotelRow(hotels[i]),
+                    itemCount: pgs.length,
+                    itemBuilder: (context, i) => buildPGRow(pgs[i]),
                   ),
                 ),
               ],
@@ -296,15 +319,15 @@ class _ViewHotelsPageState extends State<ViewHotelsPage> {
   }
 
   void _handleEdit() {
-    final hotel = hotels.firstWhere((h) => h['hotel_id'] == selectedHotels[0]);
+    final pg = pgs.firstWhere((h) => h['pg_id'] == selectedPGs[0]);
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AddHotelsPage(partnerId: widget.partnerId, hotelData: hotel),
+        builder: (_) => AddPGSPage(partnerId: widget.partnerId, pgData: pg),
       ),
     ).then((value) {
-      fetchHotels();
-      selectedHotels.clear();
+      fetchPgs();
+      selectedPGs.clear();
       selectAll = false;
     });
   }
